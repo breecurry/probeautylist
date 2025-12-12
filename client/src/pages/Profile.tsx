@@ -6,14 +6,15 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X } from "lucide-react";
+import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Profile() {
   const params = useParams();
@@ -23,6 +24,9 @@ export default function Profile() {
   const business = MOCK_BUSINESSES.find(b => b.id === id) || MOCK_BUSINESSES[0];
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedService, setSelectedService] = useState<string | null>(null);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [isTipOpen, setIsTipOpen] = useState(false);
+  const [tipAmount, setTipAmount] = useState("");
 
   // Simulate "Pending" state if accessed from onboarding or via query param
   const isPending = location.includes("pending") || id === 1; // For demo purposes, let's say ID 1 is the one we just created or is pending
@@ -46,6 +50,24 @@ export default function Profile() {
       title: "Edit Mode",
       description: "Opening profile editor...",
     });
+  };
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsReviewOpen(false);
+    toast({
+      title: "Review Submitted",
+      description: "Thank you for your feedback!",
+    });
+  };
+
+  const handleSendTip = () => {
+    setIsTipOpen(false);
+    toast({
+      title: "Tip Sent!",
+      description: `You sent a $${tipAmount || "0"} tip to ${business.owner}.`,
+    });
+    setTipAmount("");
   };
 
   return (
@@ -101,12 +123,58 @@ export default function Profile() {
                     <span>{business.type}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end gap-2">
                    <div className="flex items-center gap-1 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
                     <Star className="w-5 h-5 fill-primary text-primary" />
                     <span className="font-bold text-lg text-primary">{business.rating}</span>
                     <span className="text-muted-foreground text-sm ml-1">({business.reviews})</span>
                   </div>
+                  
+                  {/* Tip Button */}
+                  <Dialog open={isTipOpen} onOpenChange={setIsTipOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 shadow-sm">
+                        <DollarSign className="w-4 h-4" />
+                        Tip Your Tech
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle>Send a Tip</DialogTitle>
+                        <DialogDescription>
+                          Show your appreciation for {business.owner}. 100% of the tip goes to them.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          {['5', '10', '20'].map((amt) => (
+                            <Button 
+                              key={amt} 
+                              variant="outline" 
+                              className={tipAmount === amt ? "border-primary bg-pink-50 text-primary" : ""}
+                              onClick={() => setTipAmount(amt)}
+                            >
+                              ${amt}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground font-medium">$</span>
+                          <Input 
+                            type="number" 
+                            placeholder="Custom amount" 
+                            value={tipAmount} 
+                            onChange={(e) => setTipAmount(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button onClick={handleSendTip} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                          Send Tip
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </div>
             </div>
@@ -188,6 +256,81 @@ export default function Profile() {
                     />
                   </div>
                 ))}
+              </div>
+            </section>
+
+            {/* Reviews Section */}
+            <section>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-serif font-semibold">Client Reviews</h2>
+                
+                <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <MessageSquare className="w-4 h-4" /> Write a Review
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Leave a Review</DialogTitle>
+                      <DialogDescription>
+                        Share your experience with {business.name}.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmitReview} className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Rating</label>
+                        <div className="flex gap-2">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button type="button" key={star} className="focus:outline-none">
+                              <Star className={`w-6 h-6 ${star <= 5 ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="review" className="text-sm font-medium">Your Review</label>
+                        <Textarea id="review" placeholder="Tell us about your appointment..." required />
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit">Submit Review</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="grid gap-4">
+                {business.reviewList && business.reviewList.length > 0 ? (
+                  business.reviewList.map((review: any) => (
+                    <Card key={review.id} className="border-none bg-pink-50/30">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback>{review.user[0]}</AvatarFallback>
+                            </Avatar>
+                            <span className="font-semibold">{review.user}</span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{review.date}</span>
+                        </div>
+                        <div className="flex mb-2">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-4 h-4 ${i < review.rating ? 'fill-primary text-primary' : 'text-gray-300'}`} 
+                            />
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground">{review.text}</p>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No reviews yet. Be the first to leave one!</p>
+                  </div>
+                )}
               </div>
             </section>
           </div>

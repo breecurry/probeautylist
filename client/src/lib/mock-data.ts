@@ -53,6 +53,11 @@ export const MOCK_BUSINESSES = [
       "I've been styling hair for over 10 years!",
       "I was a finalist in the National Hair Awards 2023.",
       "I love creating custom color blends for my clients."
+    ],
+    reviewList: [
+      { id: 1, user: "Jessica M.", rating: 5, date: "2 days ago", text: "Sarah is amazing! My hair has never looked better. The color is exactly what I wanted." },
+      { id: 2, user: "Ashley T.", rating: 5, date: "1 week ago", text: "Best salon in downtown. Professional, clean, and friendly staff." },
+      { id: 3, user: "Michelle K.", rating: 4, date: "2 weeks ago", text: "Great cut, but took a bit longer than expected." }
     ]
   },
   {
@@ -73,6 +78,10 @@ export const MOCK_BUSINESSES = [
       "I can hand-paint tiny characters on nails!",
       "My favorite nail shape is almond.",
       "I use only non-toxic, vegan polishes."
+    ],
+    reviewList: [
+      { id: 1, user: "Lauren P.", rating: 5, date: "3 days ago", text: "Emily is a true artist! Her designs are incredible." },
+      { id: 2, user: "Sarah W.", rating: 5, date: "1 week ago", text: "My manicure lasted 3 weeks without chipping. Highly recommend!" }
     ]
   },
   {
@@ -92,6 +101,9 @@ export const MOCK_BUSINESSES = [
     funFacts: [
       "I'm a certified organic skincare specialist.",
       "I believe great skin starts from within."
+    ],
+    reviewList: [
+      { id: 1, user: "Amanda B.", rating: 5, date: "1 week ago", text: "My skin is glowing! Jessica really knows her stuff." }
     ]
   },
   {
@@ -111,6 +123,10 @@ export const MOCK_BUSINESSES = [
     funFacts: [
       "I specialize in vintage-style cuts.",
       "I'm a huge sports fan!"
+    ],
+    reviewList: [
+      { id: 1, user: "Tom H.", rating: 5, date: "1 day ago", text: "Best fade in the city. David is a pro." },
+      { id: 2, user: "Mike R.", rating: 4, date: "3 weeks ago", text: "Good cut, fair price." }
     ]
   }
 ];
