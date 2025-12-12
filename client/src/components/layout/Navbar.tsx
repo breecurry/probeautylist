@@ -1,86 +1,213 @@
 import { Link, useLocation } from "wouter";
-import { Scissors, User, Menu, X, Search } from "lucide-react";
+import { Scissors, Menu, LogOut, Calendar, Search, Settings, Shield, LucideIcon, Home } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+interface NavLink {
+  name: string;
+  href: string;
+  icon?: LucideIcon;
+}
 
 export function Navbar() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
 
-  const navLinks = [
-    { name: "Home", href: "/" },
-    { name: "Find a Pro", href: "/search" },
-    { name: "For Business", href: "/auth?type=business" },
+  const handleNavigation = (href: string) => {
+    if (!isAuthenticated && href !== '/') {
+      setLocation('/auth');
+    } else {
+      setLocation(href);
+    }
+    setIsOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setLocation('/');
+  };
+
+  const publicLinks: NavLink[] = [
+    { name: "Home", href: "/", icon: Home },
   ];
 
+  const authenticatedLinks: NavLink[] = [
+    { name: "Home", href: "/", icon: Home },
+    { name: "Search", href: "/search", icon: Search },
+    { name: "Bookings", href: "/bookings", icon: Calendar },
+  ];
+
+  const navLinks: NavLink[] = isAuthenticated ? authenticatedLinks : publicLinks;
+  const showAdmin = user?.role === 'admin';
+
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-pink-100 bg-white/80 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold text-primary">
-            <Scissors className="h-6 w-6" />
-            <span>BeautyConnect</span>
+    <nav className="sticky top-0 z-50 w-full bg-gradient-to-r from-white via-rose-50/30 to-white border-b border-rose-100/50 backdrop-blur-md">
+      <div className="container mx-auto flex h-12 items-center justify-between px-4 md:px-6">
+        <Link href="/" className="flex items-center gap-1.5 font-serif text-lg font-semibold text-rose-400 hover:text-rose-500 transition-colors">
+          <Scissors className="h-4 w-4" />
+          <span className="tracking-wide">BeautyConnect</span>
         </Link>
 
         {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
-            <Link 
+            <button 
               key={link.href} 
-              href={link.href}
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                location === link.href ? "text-primary font-semibold" : "text-muted-foreground"
+              onClick={() => handleNavigation(link.href)}
+              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-rose-400 ${
+                location === link.href ? "text-rose-400" : "text-gray-500"
               }`}
             >
-                {link.name}
-            </Link>
+              {link.name}
+            </button>
           ))}
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" className="text-muted-foreground hover:text-primary hover:bg-pink-50" asChild>
-              <Link href="/auth">
-                Log In
-              </Link>
+          
+          {showAdmin && (
+            <button 
+              onClick={() => handleNavigation('/admin')}
+              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-rose-400 ${
+                location === '/admin' ? "text-rose-400" : "text-gray-500"
+              }`}
+            >
+              Admin
+            </button>
+          )}
+
+          {!isAuthenticated ? (
+            <Button 
+              size="sm" 
+              className="h-8 px-4 text-xs font-medium bg-gradient-to-r from-rose-300 to-rose-400 hover:from-rose-400 hover:to-rose-500 text-white border-0 shadow-sm shadow-rose-200/50 rounded-full"
+              asChild
+            >
+              <Link href="/auth">Login</Link>
             </Button>
-            <Button className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-pink-200" asChild>
-              <Link href="/auth?mode=signup">
-                Get Started
-              </Link>
-            </Button>
-          </div>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-rose-50">
+                  <Avatar className="h-7 w-7 border border-rose-200">
+                    <AvatarFallback className="bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 text-xs font-medium">
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium">{user?.username}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setLocation('/search')}>
+                  <Search className="mr-2 h-4 w-4" />
+                  Find Services
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLocation('/bookings')}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  My Bookings
+                </DropdownMenuItem>
+                {user?.role === 'business_owner' && (
+                  <DropdownMenuItem onClick={() => setLocation('/onboarding?type=business')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    My Business
+                  </DropdownMenuItem>
+                )}
+                {showAdmin && (
+                  <DropdownMenuItem onClick={() => setLocation('/admin')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Admin Panel
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-rose-500 focus:text-rose-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Mobile Nav */}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6 text-foreground" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-rose-50">
+              <Menu className="h-5 w-5 text-rose-400" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[300px] sm:w-[400px]">
-            <nav className="flex flex-col gap-4 mt-8">
-              {navLinks.map((link) => (
-                <Link 
-                  key={link.href} 
-                  href={link.href}
-                  className="text-lg font-medium py-2 hover:text-primary transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
+          <SheetContent side="right" className="w-[280px] bg-gradient-to-b from-white to-rose-50/30">
+            <div className="flex flex-col gap-1 mt-8">
+              {isAuthenticated && (
+                <div className="mb-6 pb-4 border-b border-rose-100">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-rose-200">
+                      <AvatarFallback className="bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 font-medium">
+                        {user?.username?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">{user?.username}</p>
+                      <p className="text-xs text-muted-foreground">{user?.role?.replace('_', ' ')}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {navLinks.map((link) => {
+                const Icon = link.icon;
+                return (
+                  <button 
+                    key={link.href} 
+                    onClick={() => handleNavigation(link.href)}
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                  >
+                    {Icon && <Icon className="h-4 w-4" />}
                     {link.name}
-                </Link>
-              ))}
-              <div className="flex flex-col gap-2 mt-4">
-                <Button variant="outline" className="w-full justify-start" onClick={() => setIsOpen(false)} asChild>
-                  <Link href="/auth">
-                    Log In
-                  </Link>
-                </Button>
-                <Button className="w-full justify-start" onClick={() => setIsOpen(false)} asChild>
-                  <Link href="/auth?mode=signup">
-                    Sign Up
-                  </Link>
-                </Button>
+                  </button>
+                );
+              })}
+              
+              {showAdmin && (
+                <button 
+                  onClick={() => handleNavigation('/admin')}
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                >
+                  <Shield className="h-4 w-4" />
+                  Admin Panel
+                </button>
+              )}
+
+              <div className="mt-4 pt-4 border-t border-rose-100">
+                {!isAuthenticated ? (
+                  <Button 
+                    className="w-full bg-gradient-to-r from-rose-300 to-rose-400 hover:from-rose-400 hover:to-rose-500 text-white rounded-full"
+                    onClick={() => { setIsOpen(false); setLocation('/auth'); }}
+                  >
+                    Login
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline"
+                    className="w-full border-rose-200 text-rose-500 hover:bg-rose-50 rounded-full"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                )}
               </div>
-            </nav>
+            </div>
           </SheetContent>
         </Sheet>
       </div>

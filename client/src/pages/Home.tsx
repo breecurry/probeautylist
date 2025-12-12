@@ -3,14 +3,16 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PLANS, MOCK_BUSINESSES } from "@/lib/mock-data";
-import { Check, Star, MapPin } from "lucide-react";
-// Import the generated image using the alias
+import { Check, Star, MapPin, Calendar, MessageCircle, TrendingUp, Users, Sparkles, Heart, Clock, Shield } from "lucide-react";
+import { Navbar } from "@/components/layout/Navbar";
 import heroImage from "@assets/generated_images/elegant_beauty_salon_interior_with_soft_pink_and_white_tones..png";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section */}
+      <Navbar />
+      
+      {/* Hero Section - UNCHANGED */}
       <section className="relative overflow-hidden pt-16 pb-24 md:pt-24 md:pb-32">
         <div className="container px-4 md:px-6 relative z-10">
           <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
@@ -55,7 +57,6 @@ export default function Home() {
                   className="object-cover w-full h-full transform hover:scale-105 transition-duration-700 transition-transform duration-700 ease-out"
                 />
               </div>
-              {/* Floating Badge */}
               <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl animate-in slide-in-from-bottom-10 fade-in duration-1000">
                 <div className="flex items-center gap-4">
                   <div className="h-12 w-12 rounded-full bg-pink-100 flex items-center justify-center text-primary font-bold text-xl">
@@ -71,13 +72,209 @@ export default function Home() {
           </div>
         </div>
         
-        {/* Background decorative elements */}
         <div className="absolute top-0 right-0 -z-10 h-[600px] w-[600px] bg-pink-50/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4" />
         <div className="absolute bottom-0 left-0 -z-10 h-[400px] w-[400px] bg-rose-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4" />
       </section>
 
+      {/* Why You Need BeautyConnect - For Clients */}
+      <section className="py-20 bg-white">
+        <div className="container px-4 md:px-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="text-rose-400 font-medium text-sm uppercase tracking-wider">For Clients</span>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2">Your Beauty, Your Way</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto mt-4">
+              Stop scrolling through endless social media pages. Find verified, reviewed professionals in seconds.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: MapPin,
+                title: "Local Discovery",
+                description: "Find talented beauty professionals right in your neighborhood. No more guessing who's actually good."
+              },
+              {
+                icon: Star,
+                title: "Verified Reviews",
+                description: "Real reviews from real clients who've actually had appointments. Only completed bookings can leave reviews."
+              },
+              {
+                icon: Calendar,
+                title: "Easy Booking",
+                description: "Book appointments instantly. See real availability, pick your time, and confirm in seconds."
+              },
+              {
+                icon: Heart,
+                title: "Portfolio Browsing",
+                description: "Browse stunning work portfolios. Like your favorites and save them for inspiration."
+              },
+              {
+                icon: MessageCircle,
+                title: "Direct Messaging",
+                description: "Chat directly with professionals before booking. Ask questions, discuss your vision."
+              },
+              {
+                icon: Sparkles,
+                title: "Tip Your Tech",
+                description: "Show appreciation with seamless in-app tipping. Make your stylist's day!"
+              }
+            ].map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Card className="h-full border-none shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-rose-50/30">
+                  <CardContent className="p-6">
+                    <div className="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center mb-4">
+                      <feature.icon className="h-6 w-6 text-rose-400" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground text-sm">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Professionals Need This */}
+      <section className="py-20 bg-gradient-to-br from-rose-50/50 to-pink-50/30">
+        <div className="container px-4 md:px-6">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <span className="text-rose-400 font-medium text-sm uppercase tracking-wider">For Professionals</span>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2 mb-6">
+                Stop Leaving Money on the Table
+              </h2>
+              <p className="text-muted-foreground text-lg mb-8">
+                You're incredible at what you do. But are clients finding you? Social media algorithms change constantly. 
+                Your Instagram reach is dropping. Word of mouth only goes so far.
+              </p>
+              <p className="text-foreground font-medium text-lg mb-8">
+                BeautyConnect puts you in front of clients actively looking to book—right now, in your area.
+              </p>
+
+              <div className="space-y-4">
+                {[
+                  "Get discovered by clients searching for exactly what you offer",
+                  "Build a stunning portfolio that showcases your best work",
+                  "Collect verified reviews that build trust instantly",
+                  "Manage bookings without the back-and-forth DMs",
+                  "Accept tips and payments seamlessly"
+                ].map((benefit, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <div className="h-6 w-6 rounded-full bg-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
+                    <p className="text-gray-700">{benefit}</p>
+                  </div>
+                ))}
+              </div>
+
+              <Button size="lg" className="mt-8 h-12 px-8 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 shadow-lg shadow-rose-200" asChild>
+                <Link href="/auth?type=business">
+                  Start Growing Your Business
+                </Link>
+              </Button>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+              className="grid grid-cols-2 gap-4"
+            >
+              {[
+                { number: "10K+", label: "Active Clients", icon: Users },
+                { number: "500+", label: "Professionals", icon: Sparkles },
+                { number: "4.9", label: "Average Rating", icon: Star },
+                { number: "24/7", label: "Booking Access", icon: Clock }
+              ].map((stat, index) => (
+                <Card key={index} className="border-none shadow-lg bg-white">
+                  <CardContent className="p-6 text-center">
+                    <stat.icon className="h-8 w-8 text-rose-400 mx-auto mb-3" />
+                    <p className="text-3xl font-bold text-rose-500">{stat.number}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* The Problem & Solution */}
+      <section className="py-20 bg-white">
+        <div className="container px-4 md:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto text-center"
+          >
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mb-6">
+              The Old Way is Broken
+            </h2>
+            <div className="grid md:grid-cols-2 gap-8 mt-12">
+              <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100">
+                <h3 className="font-semibold text-lg mb-4 text-gray-500">Without BeautyConnect</h3>
+                <ul className="space-y-3 text-left">
+                  {[
+                    "Scrolling through 50 Instagram accounts",
+                    "No way to know if reviews are real",
+                    "Endless DMs to check availability",
+                    "No-shows and last-minute cancellations",
+                    "Cash-only tips, awkward payment moments"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-gray-500">
+                      <span className="text-red-400">✗</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100">
+                <h3 className="font-semibold text-lg mb-4 text-rose-500">With BeautyConnect</h3>
+                <ul className="space-y-3 text-left">
+                  {[
+                    "Search by location, service, and rating",
+                    "Verified reviews from completed bookings only",
+                    "Real-time availability and instant booking",
+                    "Professional booking management",
+                    "Seamless in-app tipping and payments"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-2 text-gray-700">
+                      <span className="text-rose-400">✓</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Featured Businesses Section */}
-      <section className="py-24 bg-white">
+      <section className="py-24 bg-rose-50/30">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif">Trending Professionals</h2>
@@ -95,7 +292,7 @@ export default function Home() {
                 viewport={{ once: true }}
               >
                 <Link href={`/profile/${business.id}`}>
-                  <Card className="h-full border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
+                  <Card className="h-full border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group bg-white">
                     <div className="aspect-[4/3] overflow-hidden">
                       <img 
                         src={business.image} 
@@ -124,16 +321,22 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+          <div className="text-center mt-10">
+            <Button variant="outline" size="lg" className="rounded-full border-rose-200 text-rose-500 hover:bg-rose-50" asChild>
+              <Link href="/search">View All Professionals</Link>
+            </Button>
+          </div>
         </div>
       </section>
 
       {/* Pricing Section */}
-      <section className="py-24 bg-pink-50/30">
+      <section className="py-24 bg-white">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif">Grow Your Business</h2>
+            <span className="text-rose-400 font-medium text-sm uppercase tracking-wider">Pricing</span>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif">Plans That Grow With You</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of beauty professionals growing their clientele with BeautyConnect.
+              Start free. Upgrade when you're ready to unlock your full potential.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -147,11 +350,11 @@ export default function Home() {
               >
                 <Card className={`h-full flex flex-col relative overflow-hidden transition-all duration-300 ${
                   plan.highlight 
-                    ? 'border-primary shadow-xl scale-105 z-10' 
+                    ? 'border-rose-300 shadow-xl scale-105 z-10' 
                     : 'border-border/50 shadow-md hover:shadow-lg'
                 }`}>
                   {plan.highlight && (
-                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-pink-300 via-primary to-pink-300" />
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-300 via-rose-400 to-rose-300" />
                   )}
                   <CardHeader>
                     <h3 className="text-xl font-bold font-serif">{plan.name}</h3>
@@ -164,14 +367,14 @@ export default function Home() {
                     <ul className="space-y-3">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                          <Check className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                           <span>{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className={`w-full ${plan.highlight ? 'bg-primary hover:bg-primary/90' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
+                    <Button className={`w-full rounded-full ${plan.highlight ? 'bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 text-white' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
                       <Link href={`/auth?plan=${plan.id}&type=business`}>
                         Choose {plan.name}
                       </Link>
@@ -183,6 +386,48 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Final CTA */}
+      <section className="py-20 bg-gradient-to-br from-rose-100 to-pink-100">
+        <div className="container px-4 md:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center max-w-2xl mx-auto"
+          >
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mb-4">
+              Ready to Transform Your Beauty Experience?
+            </h2>
+            <p className="text-muted-foreground text-lg mb-8">
+              Whether you're looking for your next favorite stylist or ready to grow your beauty business, 
+              BeautyConnect is where it all happens.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="h-12 px-8 text-lg rounded-full bg-white text-rose-500 hover:bg-rose-50 shadow-lg" asChild>
+                <Link href="/auth">
+                  Get Started Free
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 border-white/50 text-rose-600 hover:bg-white/20" asChild>
+                <Link href="/search">
+                  Browse Professionals
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 bg-white border-t border-rose-100">
+        <div className="container px-4 md:px-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            © 2024 BeautyConnect. Elevating beauty, one appointment at a time.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
