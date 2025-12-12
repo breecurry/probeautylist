@@ -25,16 +25,21 @@ declare global {
 }
 
 passport.use(
-  new LocalStrategy(async (username, password, done) => {
+  new LocalStrategy(async (usernameOrEmail, password, done) => {
     try {
-      const user = await storage.getUserByUsername(username);
+      // Try to find user by username first, then by email
+      let user = await storage.getUserByUsername(usernameOrEmail);
       if (!user) {
-        return done(null, false, { message: "Invalid username or password" });
+        user = await storage.getUserByEmail(usernameOrEmail);
+      }
+      
+      if (!user) {
+        return done(null, false, { message: "Invalid username/email or password" });
       }
 
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) {
-        return done(null, false, { message: "Invalid username or password" });
+        return done(null, false, { message: "Invalid username/email or password" });
       }
 
       return done(null, { id: user.id, username: user.username, email: user.email, role: user.role });
