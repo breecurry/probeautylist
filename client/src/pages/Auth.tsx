@@ -1,32 +1,78 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Briefcase } from "lucide-react";
+import { User, Briefcase, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { login, register } from "@/lib/api";
 
 export default function Auth() {
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const [role, setRole] = useState<"client" | "business">("client");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   
-  const handleLogin = (e: React.FormEvent) => {
+  const [loginData, setLoginData] = useState({ usernameOrEmail: "", password: "" });
+  const [signupData, setSignupData] = useState({ username: "", email: "", password: "" });
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock login - redirect to appropriate dashboard/home
-    if (role === 'business') {
-      // If business, maybe check if onboarding is needed
-      setLocation('/onboarding?type=business');
-    } else {
-      setLocation('/search');
+    setIsLoading(true);
+    
+    try {
+      const user = await login(loginData.usernameOrEmail, loginData.password);
+      toast({
+        title: "Welcome back!",
+        description: `Logged in as ${user.username}`,
+      });
+      
+      if (user.role === 'admin') {
+        setLocation('/admin');
+      } else if (user.role === 'business_owner') {
+        setLocation('/search');
+      } else {
+        setLocation('/search');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock signup - redirect to onboarding
-    setLocation(`/onboarding?type=${role}`);
+    setIsLoading(true);
+    
+    try {
+      const userRole = role === 'business' ? 'business_owner' : 'client';
+      const user = await register(signupData.username, signupData.email, signupData.password, userRole);
+      toast({
+        title: "Account created!",
+        description: `Welcome, ${user.username}!`,
+      });
+      
+      if (role === 'business') {
+        setLocation('/onboarding?type=business');
+      } else {
+        setLocation('/search');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "Could not create account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -41,29 +87,45 @@ export default function Auth() {
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4 bg-white/50">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="login" data-testid="tab-login">Login</TabsTrigger>
+            <TabsTrigger value="signup" data-testid="tab-signup">Sign Up</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
             <Card className="border-none shadow-xl shadow-pink-100">
               <CardHeader>
                 <CardTitle>Login</CardTitle>
-                <CardDescription>Enter your credentials to access your account.</CardDescription>
+                <CardDescription>Enter your username or email to access your account.</CardDescription>
               </CardHeader>
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="hello@example.com" required />
+                    <Label htmlFor="usernameOrEmail">Username or Email</Label>
+                    <Input 
+                      id="usernameOrEmail" 
+                      type="text" 
+                      placeholder="username or email@example.com" 
+                      required 
+                      data-testid="input-username-email"
+                      value={loginData.usernameOrEmail}
+                      onChange={(e) => setLoginData({ ...loginData, usernameOrEmail: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" required />
+                    <Input 
+                      id="password" 
+                      type="password" 
+                      required 
+                      data-testid="input-password"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    />
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
+                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading} data-testid="button-login">
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     Sign In
                   </Button>
                 </CardFooter>
@@ -79,7 +141,6 @@ export default function Auth() {
               </CardHeader>
               <form onSubmit={handleSignup}>
                 <CardContent className="space-y-6">
-                  {/* Role Selection */}
                   <div className="grid grid-cols-2 gap-4">
                     <div 
                       className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${
@@ -88,6 +149,7 @@ export default function Auth() {
                           : 'border-transparent bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => setRole('client')}
+                      data-testid="role-client"
                     >
                       <User className="w-8 h-8 mx-auto mb-2" />
                       <div className="font-medium">Client</div>
@@ -99,6 +161,7 @@ export default function Auth() {
                           : 'border-transparent bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => setRole('business')}
+                      data-testid="role-business"
                     >
                       <Briefcase className="w-8 h-8 mx-auto mb-2" />
                       <div className="font-medium">Business</div>
@@ -106,16 +169,44 @@ export default function Auth() {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="signup-username">Username</Label>
+                    <Input 
+                      id="signup-username" 
+                      type="text" 
+                      placeholder="your_username" 
+                      required 
+                      data-testid="input-signup-username"
+                      value={signupData.username}
+                      onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
-                    <Input id="signup-email" type="email" placeholder="hello@example.com" required />
+                    <Input 
+                      id="signup-email" 
+                      type="email" 
+                      placeholder="hello@example.com" 
+                      required 
+                      data-testid="input-signup-email"
+                      value={signupData.email}
+                      onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input id="signup-password" type="password" required />
+                    <Input 
+                      id="signup-password" 
+                      type="password" 
+                      required 
+                      data-testid="input-signup-password"
+                      value={signupData.password}
+                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                    />
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
+                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading} data-testid="button-signup">
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                     Continue as {role === 'client' ? 'Client' : 'Business Owner'}
                   </Button>
                 </CardFooter>
