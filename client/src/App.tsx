@@ -11,6 +11,8 @@ import Onboarding from "@/pages/Onboarding";
 import Search from "@/pages/Search";
 import Profile from "@/pages/Profile";
 import Admin from "@/pages/Admin";
+import MyBusinesses from "@/pages/MyBusinesses";
+import Bookings from "@/pages/Bookings";
 
 function Router() {
   return (
@@ -21,6 +23,8 @@ function Router() {
       <Route path="/search" component={Search} />
       <Route path="/profile/:id" component={Profile} />
       <Route path="/admin" component={Admin} />
+      <Route path="/my-businesses" component={MyBusinesses} />
+      <Route path="/bookings" component={Bookings} />
       <Route component={NotFound} />
     </Switch>
   );

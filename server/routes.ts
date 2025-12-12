@@ -629,6 +629,9 @@ export async function registerRoutes(
 
   app.post("/api/bookings/:id/confirm-deposit", requireAuth, async (req, res, next) => {
     try {
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+      
       const booking = await storage.getBooking(req.params.id);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
@@ -639,6 +642,32 @@ export async function registerRoutes(
       }
 
       const { paymentIntentId } = req.body;
+      if (!paymentIntentId) {
+        return res.status(400).json({ message: "Payment intent ID required" });
+      }
+
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status !== 'succeeded') {
+        return res.status(400).json({ message: "Payment has not been completed" });
+      }
+
+      if (paymentIntent.metadata.bookingId !== req.params.id) {
+        return res.status(400).json({ message: "Payment does not match this booking" });
+      }
+
+      if (paymentIntent.metadata.userId !== req.user!.id) {
+        return res.status(403).json({ message: "Payment does not belong to you" });
+      }
+
+      const business = await storage.getBusiness(booking.businessId);
+      if (business && business.depositRequired && business.depositAmount) {
+        const expectedAmount = Math.round(parseFloat(business.depositAmount) * 100);
+        if (paymentIntent.amount < expectedAmount) {
+          return res.status(400).json({ message: "Payment amount does not match required deposit" });
+        }
+      }
+
       const updated = await storage.updateBookingDeposit(req.params.id, true, paymentIntentId);
       res.json(updated);
     } catch (error) {

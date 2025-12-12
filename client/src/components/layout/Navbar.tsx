@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Scissors, Menu, LogOut, Calendar, Search, Settings, Shield, LucideIcon, Home } from "lucide-react";
+import { Scissors, Menu, LogOut, Calendar, Search, Settings, Shield, LucideIcon, Home, Store } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -48,7 +48,19 @@ export function Navbar() {
     { name: "Bookings", href: "/bookings", icon: Calendar },
   ];
 
-  const navLinks: NavLink[] = isAuthenticated ? authenticatedLinks : publicLinks;
+  const businessOwnerLinks: NavLink[] = [
+    { name: "Home", href: "/", icon: Home },
+    { name: "Search", href: "/search", icon: Search },
+    { name: "My Businesses", href: "/my-businesses", icon: Store },
+    { name: "Bookings", href: "/bookings", icon: Calendar },
+  ];
+
+  const isBusinessOwner = user?.role === 'business_owner';
+  const navLinks: NavLink[] = !isAuthenticated 
+    ? publicLinks 
+    : isBusinessOwner 
+      ? businessOwnerLinks 
+      : authenticatedLinks;
   const showAdmin = user?.role === 'admin';
 
   return (
@@ -113,15 +125,21 @@ export function Navbar() {
                   <Search className="mr-2 h-4 w-4" />
                   Find Services
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLocation('/bookings')}>
+                <DropdownMenuItem onClick={() => setLocation('/bookings')} data-testid="dropdown-my-bookings">
                   <Calendar className="mr-2 h-4 w-4" />
                   My Bookings
                 </DropdownMenuItem>
                 {user?.role === 'business_owner' && (
-                  <DropdownMenuItem onClick={() => setLocation('/onboarding?type=business')}>
-                    <Settings className="mr-2 h-4 w-4" />
-                    My Business
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={() => setLocation('/my-businesses')} data-testid="dropdown-my-businesses">
+                      <Store className="mr-2 h-4 w-4" />
+                      My Businesses
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLocation('/onboarding?type=business')} data-testid="dropdown-add-business">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Add Business
+                    </DropdownMenuItem>
+                  </>
                 )}
                 {showAdmin && (
                   <DropdownMenuItem onClick={() => setLocation('/admin')}>
