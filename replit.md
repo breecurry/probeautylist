@@ -44,6 +44,8 @@ Preferred communication style: Simple, everyday language.
 - `portfolioLikes` / `portfolioComments` - Social engagement features
 - `messages` - Direct messaging between users
 - `tips` - Client tips for service providers
+- `notifications` - In-app notifications for booking reminders and other alerts
+  - Fields: `userId`, `bookingId`, `type`, `title`, `message`, `read`, `reminderType`, `createdAt`
 
 ### Two-Way Review System
 - **Client → Business**: Clients can leave reviews after their booking is marked as completed by the business
@@ -56,6 +58,14 @@ Preferred communication style: Simple, everyday language.
 - Settings include: `depositRequired` toggle, `depositAmount` (in dollars), `advanceNoticeHours`
 - Deposits are processed through Stripe PaymentIntents
 - The confirm-deposit endpoint validates the PaymentIntent status, metadata, and amount before marking the deposit as paid
+
+### In-App Notification System
+- Notifications are displayed via a bell icon in the navbar (both desktop and mobile)
+- Notification scheduler runs every hour to create booking reminders
+- Reminder intervals: 7 days, 3 days, 48 hours, and 24 hours before appointments
+- Both clients and business owners receive reminders for their bookings
+- API endpoints: GET /api/notifications, GET /api/notifications/unread-count, PATCH /api/notifications/:id/read, PATCH /api/notifications/read-all
+- Scheduler file: `server/notificationScheduler.ts`
 
 ### Authentication & Authorization
 - Session-based authentication with PostgreSQL persistence
