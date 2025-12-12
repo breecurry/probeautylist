@@ -9,10 +9,11 @@ import {
   type PortfolioComment, type InsertPortfolioComment,
   type Message, type InsertMessage,
   type Tip, type InsertTip,
-  users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips
+  type Notification, type InsertNotification,
+  users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications
 } from "@shared/schema";
 import { db } from "../db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, gt } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -60,6 +61,14 @@ export interface IStorage {
   canBusinessReviewClient(bookingId: string, businessOwnerId: string): Promise<boolean>;
   createClientReview(review: InsertClientReview): Promise<ClientReview>;
   updateBookingDeposit(id: string, depositPaid: boolean, stripePaymentIntentId?: string): Promise<Booking | undefined>;
+  
+  getNotificationsByUser(userId: string): Promise<Notification[]>;
+  getUnreadNotificationCount(userId: string): Promise<number>;
+  markNotificationRead(id: string): Promise<Notification | undefined>;
+  markAllNotificationsRead(userId: string): Promise<void>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getUpcomingBookingsForReminders(): Promise<Booking[]>;
+  hasReminderBeenSent(bookingId: string, userId: string, reminderType: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -282,6 +291,58 @@ export class DatabaseStorage implements IStorage {
     }
     const result = await db.update(bookings).set(updateData).where(eq(bookings.id, id)).returning();
     return result[0];
+  }
+
+  async getNotificationsByUser(userId: string): Promise<Notification[]> {
+    return db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async getUnreadNotificationCount(userId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(notifications)
+      .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+    return Number(result[0]?.count || 0);
+  }
+
+  async markNotificationRead(id: string): Promise<Notification | undefined> {
+    const result = await db.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async markAllNotificationsRead(userId: string): Promise<void> {
+    await db.update(notifications)
+      .set({ read: true })
+      .where(eq(notifications.userId, userId));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const result = await db.insert(notifications).values(notification).returning();
+    return result[0];
+  }
+
+  async getUpcomingBookingsForReminders(): Promise<Booking[]> {
+    const now = new Date();
+    return db.select().from(bookings)
+      .where(and(
+        eq(bookings.status, 'confirmed'),
+        gt(bookings.date, now)
+      ));
+  }
+
+  async hasReminderBeenSent(bookingId: string, userId: string, reminderType: string): Promise<boolean> {
+    const result = await db.select().from(notifications)
+      .where(and(
+        eq(notifications.bookingId, bookingId),
+        eq(notifications.userId, userId),
+        eq(notifications.reminderType, reminderType)
+      ))
+      .limit(1);
+    return result.length > 0;
   }
 }
 

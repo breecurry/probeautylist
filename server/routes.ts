@@ -675,5 +675,44 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/notifications", requireAuth, async (req, res, next) => {
+    try {
+      const notifications = await storage.getNotificationsByUser(req.user!.id);
+      res.json(notifications);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/notifications/unread-count", requireAuth, async (req, res, next) => {
+    try {
+      const count = await storage.getUnreadNotificationCount(req.user!.id);
+      res.json({ count });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/:id/read", requireAuth, async (req, res, next) => {
+    try {
+      const notification = await storage.markNotificationRead(req.params.id);
+      if (!notification) {
+        return res.status(404).json({ message: "Notification not found" });
+      }
+      res.json(notification);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/notifications/read-all", requireAuth, async (req, res, next) => {
+    try {
+      await storage.markAllNotificationsRead(req.user!.id);
+      res.json({ message: "All notifications marked as read" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }
