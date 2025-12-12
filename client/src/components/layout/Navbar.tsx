@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { NotificationBell } from "@/components/NotificationBell";
 
 interface NavLink {
   name: string;
@@ -105,7 +106,9 @@ export function Navbar() {
               <Link href="/auth">Login</Link>
             </Button>
           ) : (
-            <DropdownMenu>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-rose-50">
                   <Avatar className="h-7 w-7 border border-rose-200">
@@ -153,7 +156,8 @@ export function Navbar() {
                   Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+            </div>
           )}
         </div>
 
@@ -168,16 +172,19 @@ export function Navbar() {
             <div className="flex flex-col gap-1 mt-8">
               {isAuthenticated && (
                 <div className="mb-6 pb-4 border-b border-rose-100">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border border-rose-200">
-                      <AvatarFallback className="bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 font-medium">
-                        {user?.username?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-sm">{user?.username}</p>
-                      <p className="text-xs text-muted-foreground">{user?.role?.replace('_', ' ')}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border border-rose-200">
+                        <AvatarFallback className="bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 font-medium">
+                          {user?.username?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-sm">{user?.username}</p>
+                        <p className="text-xs text-muted-foreground">{user?.role?.replace('_', ' ')}</p>
+                      </div>
                     </div>
+                    <NotificationBell />
                   </div>
                 </div>
               )}

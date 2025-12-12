@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Briefcase, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
 import { login, register } from "@/lib/api";
 
 export default function Auth() {
@@ -14,6 +15,7 @@ export default function Auth() {
   const [role, setRole] = useState<"client" | "business">("client");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { refreshUser } = useAuth();
   
   const [loginData, setLoginData] = useState({ usernameOrEmail: "", password: "" });
   const [signupData, setSignupData] = useState({ username: "", email: "", password: "" });
@@ -24,6 +26,7 @@ export default function Auth() {
     
     try {
       const user = await login(loginData.usernameOrEmail, loginData.password);
+      await refreshUser();
       toast({
         title: "Welcome back!",
         description: `Logged in as ${user.username}`,
@@ -54,6 +57,7 @@ export default function Auth() {
     try {
       const userRole = role === 'business' ? 'business_owner' : 'client';
       const user = await register(signupData.username, signupData.email, signupData.password, userRole);
+      await refreshUser();
       toast({
         title: "Account created!",
         description: `Welcome, ${user.username}!`,
