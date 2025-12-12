@@ -3,14 +3,17 @@ import { Navbar } from "@/components/layout/Navbar";
 import { MOCK_BUSINESSES } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
 
 export default function Profile() {
   const params = useParams();
@@ -43,7 +46,6 @@ export default function Profile() {
       title: "Edit Mode",
       description: "Opening profile editor...",
     });
-    // In a real app, this would redirect to /onboarding?mode=edit or similar
   };
 
   return (
@@ -191,8 +193,8 @@ export default function Profile() {
           </div>
 
           {/* Sidebar Booking */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-24">
+          <div className="lg:col-span-1 space-y-6">
+            <div className="sticky top-24 space-y-6">
               <Card className="border-none shadow-xl shadow-pink-100/50">
                 <CardHeader>
                   <CardTitle className="font-serif">Book Appointment</CardTitle>
@@ -260,23 +262,181 @@ export default function Profile() {
                 </CardContent>
               </Card>
 
-              {/* Owner Info Mockup */}
-              <Card className="mt-6 border-none shadow-md">
-                <CardContent className="p-4 flex items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={`https://i.pravatar.cc/150?u=${business.id}`} />
-                    <AvatarFallback>OW</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium text-sm">Owner</p>
-                    <p className="font-serif font-bold">{business.owner}</p>
+              {/* Enhanced Owner Info Card */}
+              <Card className="border-none shadow-md bg-gradient-to-br from-white to-pink-50/30">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
+                      <AvatarImage src={`https://i.pravatar.cc/150?u=${business.id}`} />
+                      <AvatarFallback>OW</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">Meet your tech</p>
+                      <p className="font-serif font-bold text-xl">{business.owner}</p>
+                    </div>
                   </div>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-2">
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2 text-muted-foreground">
+                      <MapPin className="w-4 h-4 shrink-0 mt-0.5 text-primary/70" />
+                      <span>{business.address || `${business.location}, Cityville`}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="w-4 h-4 shrink-0 text-primary/70" />
+                      <span>{business.phone || "(555) 123-4567"}</span>
+                    </div>
+                  </div>
+
+                  {business.funFacts && business.funFacts.length > 0 && (
+                    <div className="bg-white/60 p-3 rounded-lg border border-pink-100/50">
+                      <div className="flex items-center gap-1.5 mb-2 text-primary font-medium text-xs uppercase tracking-wide">
+                        <Sparkles className="w-3 h-3" /> Fun Facts
+                      </div>
+                      <ul className="space-y-1.5">
+                        {business.funFacts.map((fact, i) => (
+                          <li key={i} className="text-xs text-muted-foreground italic flex items-start gap-1.5">
+                            <span className="text-pink-300">•</span> {fact}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </CardContent>
+                <CardFooter className="pt-0">
+                  <MessagingSheet business={business} />
+                </CardFooter>
               </Card>
             </div>
           </div>
         </div>
       </main>
     </div>
+  );
+}
+
+function MessagingSheet({ business }: { business: any }) {
+  const [messages, setMessages] = useState<{role: 'user' | 'business', text: string, time: string}[]>([
+    { role: 'business', text: `Hi there! I'm ${business.owner}. Let me know if you have any questions about my services!`, time: '10:00 AM' }
+  ]);
+  const [input, setInput] = useState("");
+  const { toast } = useToast();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Determine if locked based on tier
+  // For demo: User is viewing a business. 
+  // Requirement: "locked for free plan business users". 
+  // If the business is 'free', messaging is locked FOR THE BUSINESS OWNER? Or for everyone?
+  // "in app messaging but it should show locked for the free plan business users... All customers should have complete access to messages."
+  // This implies customers can ALWAYS message, but business owners on free plans cannot reply or see them?
+  // Let's interpret this as: If I am the business owner and on free plan, I can't use it.
+  // But here we are viewing the profile as a CLIENT. Clients should have access.
+  // However, if the business is on a free plan, maybe they can't receive messages?
+  // Let's implement it such that if the business tier is 'free', the feature is restricted/limited.
+  
+  const isLocked = business.tier === 'free';
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleSend = () => {
+    if (!input.trim()) return;
+
+    // Profanity Filter
+    const profanityRegex = /badword|profanity|curse|damn|hell/i; // Simple example list
+    if (profanityRegex.test(input)) {
+      toast({
+        title: "Message Blocked",
+        description: "Profanity is not allowed. Repeated violations will result in account closure.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newMessage = { role: 'user' as const, text: input, time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+    setMessages([...messages, newMessage]);
+    setInput("");
+
+    // Simulate reply
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        role: 'business',
+        text: isLocked 
+          ? "[Auto-Reply] This business is on a Starter plan and may have limited access to messages. Please call them directly for urgent inquiries."
+          : "Thanks for your message! I'll get back to you shortly.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }]);
+    }, 1000);
+  };
+
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="outline" className="w-full gap-2 border-primary/20 hover:bg-pink-50 text-primary">
+          <MessageSquare className="w-4 h-4" />
+          Message {business.owner.split(' ')[0]}
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full sm:w-[400px] flex flex-col h-full">
+        <SheetHeader className="border-b pb-4">
+          <SheetTitle className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={`https://i.pravatar.cc/150?u=${business.id}`} />
+              <AvatarFallback>OW</AvatarFallback>
+            </Avatar>
+            Chat with {business.owner}
+          </SheetTitle>
+          <SheetDescription>
+            Ask about services, availability, or consultations.
+          </SheetDescription>
+        </SheetHeader>
+
+        <ScrollArea className="flex-1 pr-4 -mr-4 py-4">
+          <div className="space-y-4">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                  msg.role === 'user' 
+                    ? 'bg-primary text-primary-foreground rounded-tr-none' 
+                    : 'bg-muted rounded-tl-none'
+                }`}>
+                  <p className="text-sm">{msg.text}</p>
+                  <span className="text-[10px] opacity-70 block text-right mt-1">{msg.time}</span>
+                </div>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        <div className="border-t pt-4 mt-auto">
+          {isLocked && (
+            <div className="bg-yellow-50 text-yellow-800 text-xs p-2 rounded mb-2 flex items-center gap-2">
+               <Lock className="w-3 h-3" />
+               <span>Business has limited messaging access (Free Plan).</span>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input 
+              placeholder="Type a message..." 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            />
+            <Button size="icon" onClick={handleSend} className="shrink-0">
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2 text-center">
+            Profanity is strictly prohibited. Violations may lead to account ban.
+          </p>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

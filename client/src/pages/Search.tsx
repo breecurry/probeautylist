@@ -5,12 +5,29 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Search as SearchIcon, Star, Filter } from "lucide-react";
+import { MapPin, Search as SearchIcon, Star, Filter, Loader2, Navigation } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Search() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [isLocating, setIsLocating] = useState(false);
+  const { toast } = useToast();
+
+  const handleUseLocation = () => {
+    setIsLocating(true);
+    
+    // Simulate geo-location API delay
+    setTimeout(() => {
+      setIsLocating(false);
+      setSearchTerm("Downtown"); // Mock result of finding location
+      toast({
+        title: "Location Found",
+        description: "Showing professionals near Downtown, Cityville",
+      });
+    }, 1500);
+  };
 
   const filteredBusinesses = MOCK_BUSINESSES.filter(b => {
     const matchesSearch = b.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -35,14 +52,25 @@ export default function Search() {
           <h1 className="text-3xl font-serif font-bold mb-6">Find Beauty Professionals</h1>
           
           <div className="flex flex-col md:flex-row gap-4 max-w-4xl">
-            <div className="relative flex-1">
-              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search by name or location..." 
-                className="pl-10 h-12 bg-white"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="relative flex-1 flex gap-2">
+              <div className="relative flex-1">
+                <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search by name or location..." 
+                  className="pl-10 h-12 bg-white"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <Button 
+                variant="outline" 
+                className="h-12 w-12 shrink-0 bg-white border-input hover:bg-gray-50 text-muted-foreground"
+                onClick={handleUseLocation}
+                disabled={isLocating}
+                title="Use my location"
+              >
+                {isLocating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
+              </Button>
             </div>
             <div className="w-full md:w-[200px]">
               <Select value={selectedType} onValueChange={setSelectedType}>
