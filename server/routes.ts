@@ -441,5 +441,105 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/stripe/create-payment-intent", requireAuth, async (req, res, next) => {
+    try {
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+      
+      const { amount, businessId } = req.body;
+      
+      if (!amount || amount < 50) {
+        return res.status(400).json({ message: "Amount must be at least $0.50" });
+      }
+
+      const user = await storage.getUser(req.user!.id);
+      let customerId = user?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: req.user!.email,
+          metadata: { userId: req.user!.id },
+        });
+        customerId = customer.id;
+        await storage.updateUserStripeCustomerId(req.user!.id, customerId);
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount),
+        currency: 'usd',
+        customer: customerId,
+        metadata: {
+          businessId: businessId || '',
+          userId: req.user!.id,
+        },
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/stripe/create-subscription-checkout", requireAuth, async (req, res, next) => {
+    try {
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+      
+      const { businessId, tier } = req.body;
+      
+      const business = await storage.getBusiness(businessId);
+      if (!business || business.ownerId !== req.user!.id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const priceMapping: Record<string, number> = {
+        'bronze': 99,
+        'silver': 500,
+        'gold': 2000,
+      };
+
+      const user = await storage.getUser(req.user!.id);
+      let customerId = user?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: req.user!.email,
+          metadata: { userId: req.user!.id },
+        });
+        customerId = customer.id;
+        await storage.updateUserStripeCustomerId(req.user!.id, customerId);
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        line_items: [{
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${tier.charAt(0).toUpperCase() + tier.slice(1)} Plan`,
+              description: `Monthly subscription for ${business.name}`,
+            },
+            unit_amount: priceMapping[tier] || 0,
+            recurring: { interval: 'month' },
+          },
+          quantity: 1,
+        }],
+        mode: 'subscription',
+        success_url: `${req.headers.origin}/profile/${businessId}?upgrade=success`,
+        cancel_url: `${req.headers.origin}/profile/${businessId}?upgrade=cancelled`,
+        metadata: {
+          businessId,
+          tier,
+          userId: req.user!.id,
+        },
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }
