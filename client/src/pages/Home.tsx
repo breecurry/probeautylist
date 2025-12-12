@@ -30,16 +30,16 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/search">
-                  <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-pink-200 hover:shadow-pink-300 transition-all">
+                <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-pink-200 hover:shadow-pink-300 transition-all" asChild>
+                  <Link href="/search">
                     Find a Professional
-                  </Button>
-                </Link>
-                <Link href="/auth?type=business">
-                  <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 hover:bg-pink-50">
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 hover:bg-pink-50" asChild>
+                  <Link href="/auth?type=business">
                     List Your Business
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </motion.div>
             <motion.div 
@@ -171,11 +171,11 @@ export default function Home() {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Link href={`/auth?plan=${plan.id}&type=business`}>
-                      <Button className={`w-full ${plan.highlight ? 'bg-primary hover:bg-primary/90' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`}>
+                    <Button className={`w-full ${plan.highlight ? 'bg-primary hover:bg-primary/90' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
+                      <Link href={`/auth?plan=${plan.id}&type=business`}>
                         Choose {plan.name}
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </CardFooter>
                 </Card>
               </motion.div>

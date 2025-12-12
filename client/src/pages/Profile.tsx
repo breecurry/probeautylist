@@ -55,8 +55,8 @@ export default function Profile() {
       <main className="container px-4 md:px-6 py-8">
         {/* Breadcrumb-ish */}
         <div className="mb-6">
-          <Link href="/search">
-            <a className="text-sm text-muted-foreground hover:text-primary transition-colors">← Back to Search</a>
+          <Link href="/search" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+            ← Back to Search
           </Link>
         </div>
 

@@ -17,35 +17,35 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-pink-100 bg-white/80 backdrop-blur-md">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Link href="/">
-          <a className="flex items-center gap-2 font-serif text-2xl font-bold text-primary">
+        <Link href="/" className="flex items-center gap-2 font-serif text-2xl font-bold text-primary">
             <Scissors className="h-6 w-6" />
             <span>BeautyConnect</span>
-          </a>
         </Link>
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <a className={`text-sm font-medium transition-colors hover:text-primary ${
+            <Link 
+              key={link.href} 
+              href={link.href}
+              className={`text-sm font-medium transition-colors hover:text-primary ${
                 location === link.href ? "text-primary font-semibold" : "text-muted-foreground"
-              }`}>
+              }`}
+            >
                 {link.name}
-              </a>
             </Link>
           ))}
           <div className="flex items-center gap-4">
-            <Link href="/auth">
-              <Button variant="ghost" className="text-muted-foreground hover:text-primary hover:bg-pink-50">
+            <Button variant="ghost" className="text-muted-foreground hover:text-primary hover:bg-pink-50" asChild>
+              <Link href="/auth">
                 Log In
-              </Button>
-            </Link>
-            <Link href="/auth?mode=signup">
-              <Button className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-pink-200">
+              </Link>
+            </Button>
+            <Button className="bg-primary text-white hover:bg-primary/90 shadow-md shadow-pink-200" asChild>
+              <Link href="/auth?mode=signup">
                 Get Started
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
 
@@ -59,26 +59,26 @@ export function Navbar() {
           <SheetContent side="right" className="w-[300px] sm:w-[400px]">
             <nav className="flex flex-col gap-4 mt-8">
               {navLinks.map((link) => (
-                <Link key={link.href} href={link.href}>
-                  <a 
-                    className="text-lg font-medium py-2 hover:text-primary transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
+                <Link 
+                  key={link.href} 
+                  href={link.href}
+                  className="text-lg font-medium py-2 hover:text-primary transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
                     {link.name}
-                  </a>
                 </Link>
               ))}
               <div className="flex flex-col gap-2 mt-4">
-                <Link href="/auth">
-                  <Button variant="outline" className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setIsOpen(false)} asChild>
+                  <Link href="/auth">
                     Log In
-                  </Button>
-                </Link>
-                <Link href="/auth?mode=signup">
-                  <Button className="w-full justify-start" onClick={() => setIsOpen(false)}>
+                  </Link>
+                </Button>
+                <Button className="w-full justify-start" onClick={() => setIsOpen(false)} asChild>
+                  <Link href="/auth?mode=signup">
                     Sign Up
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </nav>
           </SheetContent>
