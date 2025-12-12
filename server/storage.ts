@@ -1,38 +1,237 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { 
+  type User, type InsertUser, 
+  type Business, type InsertBusiness,
+  type Booking, type InsertBooking,
+  type Review, type InsertReview,
+  type PortfolioItem, type InsertPortfolioItem,
+  type PortfolioLike, type InsertPortfolioLike,
+  type PortfolioComment, type InsertPortfolioComment,
+  type Message, type InsertMessage,
+  type Tip, type InsertTip,
+  users, businesses, bookings, reviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips
+} from "@shared/schema";
+import { db } from "../db";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  
+  getBusiness(id: string): Promise<Business | undefined>;
+  getBusinessesByOwner(ownerId: string): Promise<Business[]>;
+  getApprovedBusinesses(): Promise<Business[]>;
+  getPendingBusinesses(): Promise<Business[]>;
+  createBusiness(business: InsertBusiness): Promise<Business>;
+  updateBusiness(id: string, data: Partial<Business>): Promise<Business | undefined>;
+  approveBusiness(id: string): Promise<Business | undefined>;
+  
+  getBooking(id: string): Promise<Booking | undefined>;
+  getBookingsByClient(clientId: string): Promise<Booking[]>;
+  getBookingsByBusiness(businessId: string): Promise<Booking[]>;
+  createBooking(booking: InsertBooking): Promise<Booking>;
+  updateBookingStatus(id: string, status: string): Promise<Booking | undefined>;
+  markBookingCompleted(id: string): Promise<Booking | undefined>;
+  
+  getReviewsByBusiness(businessId: string): Promise<Review[]>;
+  canUserReview(bookingId: string, clientId: string): Promise<boolean>;
+  createReview(review: InsertReview): Promise<Review>;
+  
+  getPortfolioByBusiness(businessId: string): Promise<PortfolioItem[]>;
+  createPortfolioItem(item: InsertPortfolioItem): Promise<PortfolioItem>;
+  deletePortfolioItem(id: string): Promise<boolean>;
+  
+  getLikesForItem(itemId: string): Promise<number>;
+  hasUserLikedItem(itemId: string, userId: string): Promise<boolean>;
+  toggleLike(itemId: string, userId: string): Promise<boolean>;
+  
+  getCommentsForItem(itemId: string): Promise<PortfolioComment[]>;
+  createComment(comment: InsertPortfolioComment): Promise<PortfolioComment>;
+  
+  getMessagesBetweenUsers(userId1: string, userId2: string): Promise<Message[]>;
+  createMessage(message: InsertMessage): Promise<Message>;
+  
+  createTip(tip: InsertTip): Promise<Tip>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    return result[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+
+  async getBusiness(id: string): Promise<Business | undefined> {
+    const result = await db.select().from(businesses).where(eq(businesses.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getBusinessesByOwner(ownerId: string): Promise<Business[]> {
+    return db.select().from(businesses).where(eq(businesses.ownerId, ownerId));
+  }
+
+  async getApprovedBusinesses(): Promise<Business[]> {
+    return db.select().from(businesses).where(eq(businesses.approved, true)).orderBy(desc(businesses.createdAt));
+  }
+
+  async getPendingBusinesses(): Promise<Business[]> {
+    return db.select().from(businesses).where(eq(businesses.approved, false)).orderBy(desc(businesses.createdAt));
+  }
+
+  async createBusiness(business: InsertBusiness): Promise<Business> {
+    const result = await db.insert(businesses).values(business).returning();
+    return result[0];
+  }
+
+  async updateBusiness(id: string, data: Partial<Business>): Promise<Business | undefined> {
+    const result = await db.update(businesses).set(data).where(eq(businesses.id, id)).returning();
+    return result[0];
+  }
+
+  async approveBusiness(id: string): Promise<Business | undefined> {
+    const result = await db.update(businesses).set({ approved: true }).where(eq(businesses.id, id)).returning();
+    return result[0];
+  }
+
+  async getBooking(id: string): Promise<Booking | undefined> {
+    const result = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    return result[0];
+  }
+
+  async getBookingsByClient(clientId: string): Promise<Booking[]> {
+    return db.select().from(bookings).where(eq(bookings.clientId, clientId)).orderBy(desc(bookings.createdAt));
+  }
+
+  async getBookingsByBusiness(businessId: string): Promise<Booking[]> {
+    return db.select().from(bookings).where(eq(bookings.businessId, businessId)).orderBy(desc(bookings.createdAt));
+  }
+
+  async createBooking(booking: InsertBooking): Promise<Booking> {
+    const result = await db.insert(bookings).values(booking).returning();
+    return result[0];
+  }
+
+  async updateBookingStatus(id: string, status: string): Promise<Booking | undefined> {
+    const result = await db.update(bookings).set({ status }).where(eq(bookings.id, id)).returning();
+    return result[0];
+  }
+
+  async markBookingCompleted(id: string): Promise<Booking | undefined> {
+    const result = await db.update(bookings)
+      .set({ completedByBusiness: true, status: 'completed' })
+      .where(eq(bookings.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getReviewsByBusiness(businessId: string): Promise<Review[]> {
+    return db.select().from(reviews).where(eq(reviews.businessId, businessId)).orderBy(desc(reviews.createdAt));
+  }
+
+  async canUserReview(bookingId: string, clientId: string): Promise<boolean> {
+    const booking = await db.select().from(bookings)
+      .where(and(eq(bookings.id, bookingId), eq(bookings.clientId, clientId)))
+      .limit(1);
+    
+    if (!booking[0] || !booking[0].completedByBusiness) {
+      return false;
+    }
+
+    const existingReview = await db.select().from(reviews).where(eq(reviews.bookingId, bookingId)).limit(1);
+    return existingReview.length === 0;
+  }
+
+  async createReview(review: InsertReview): Promise<Review> {
+    const result = await db.insert(reviews).values(review).returning();
+    return result[0];
+  }
+
+  async getPortfolioByBusiness(businessId: string): Promise<PortfolioItem[]> {
+    return db.select().from(portfolioItems).where(eq(portfolioItems.businessId, businessId)).orderBy(desc(portfolioItems.createdAt));
+  }
+
+  async createPortfolioItem(item: InsertPortfolioItem): Promise<PortfolioItem> {
+    const result = await db.insert(portfolioItems).values(item).returning();
+    return result[0];
+  }
+
+  async deletePortfolioItem(id: string): Promise<boolean> {
+    const result = await db.delete(portfolioItems).where(eq(portfolioItems.id, id));
+    return true;
+  }
+
+  async getLikesForItem(itemId: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(portfolioLikes)
+      .where(eq(portfolioLikes.portfolioItemId, itemId));
+    return Number(result[0]?.count || 0);
+  }
+
+  async hasUserLikedItem(itemId: string, userId: string): Promise<boolean> {
+    const result = await db.select().from(portfolioLikes)
+      .where(and(eq(portfolioLikes.portfolioItemId, itemId), eq(portfolioLikes.userId, userId)))
+      .limit(1);
+    return result.length > 0;
+  }
+
+  async toggleLike(itemId: string, userId: string): Promise<boolean> {
+    const existing = await db.select().from(portfolioLikes)
+      .where(and(eq(portfolioLikes.portfolioItemId, itemId), eq(portfolioLikes.userId, userId)))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      await db.delete(portfolioLikes).where(eq(portfolioLikes.id, existing[0].id));
+      return false;
+    } else {
+      await db.insert(portfolioLikes).values({ portfolioItemId: itemId, userId });
+      return true;
+    }
+  }
+
+  async getCommentsForItem(itemId: string): Promise<PortfolioComment[]> {
+    return db.select().from(portfolioComments)
+      .where(eq(portfolioComments.portfolioItemId, itemId))
+      .orderBy(desc(portfolioComments.createdAt));
+  }
+
+  async createComment(comment: InsertPortfolioComment): Promise<PortfolioComment> {
+    const result = await db.insert(portfolioComments).values(comment).returning();
+    return result[0];
+  }
+
+  async getMessagesBetweenUsers(userId1: string, userId2: string): Promise<Message[]> {
+    return db.select().from(messages)
+      .where(
+        sql`(${messages.senderId} = ${userId1} AND ${messages.receiverId} = ${userId2}) 
+           OR (${messages.senderId} = ${userId2} AND ${messages.receiverId} = ${userId1})`
+      )
+      .orderBy(messages.createdAt);
+  }
+
+  async createMessage(message: InsertMessage): Promise<Message> {
+    const result = await db.insert(messages).values(message).returning();
+    return result[0];
+  }
+
+  async createTip(tip: InsertTip): Promise<Tip> {
+    const result = await db.insert(tips).values(tip).returning();
+    return result[0];
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
