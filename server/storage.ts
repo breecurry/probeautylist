@@ -3,12 +3,13 @@ import {
   type Business, type InsertBusiness,
   type Booking, type InsertBooking,
   type Review, type InsertReview,
+  type ClientReview, type InsertClientReview,
   type PortfolioItem, type InsertPortfolioItem,
   type PortfolioLike, type InsertPortfolioLike,
   type PortfolioComment, type InsertPortfolioComment,
   type Message, type InsertMessage,
   type Tip, type InsertTip,
-  users, businesses, bookings, reviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips
+  users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -54,6 +55,11 @@ export interface IStorage {
   createMessage(message: InsertMessage): Promise<Message>;
   
   createTip(tip: InsertTip): Promise<Tip>;
+  
+  getClientReviewsByClient(clientId: string): Promise<ClientReview[]>;
+  canBusinessReviewClient(bookingId: string, businessOwnerId: string): Promise<boolean>;
+  createClientReview(review: InsertClientReview): Promise<ClientReview>;
+  updateBookingDeposit(id: string, depositPaid: boolean, stripePaymentIntentId?: string): Promise<Booking | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -236,6 +242,45 @@ export class DatabaseStorage implements IStorage {
 
   async createTip(tip: InsertTip): Promise<Tip> {
     const result = await db.insert(tips).values(tip).returning();
+    return result[0];
+  }
+
+  async getClientReviewsByClient(clientId: string): Promise<ClientReview[]> {
+    return db.select().from(clientReviews).where(eq(clientReviews.clientId, clientId)).orderBy(desc(clientReviews.createdAt));
+  }
+
+  async canBusinessReviewClient(bookingId: string, businessOwnerId: string): Promise<boolean> {
+    const booking = await db.select().from(bookings)
+      .where(eq(bookings.id, bookingId))
+      .limit(1);
+    
+    if (!booking[0] || !booking[0].completedByBusiness) {
+      return false;
+    }
+
+    const business = await db.select().from(businesses)
+      .where(eq(businesses.id, booking[0].businessId))
+      .limit(1);
+    
+    if (!business[0] || business[0].ownerId !== businessOwnerId) {
+      return false;
+    }
+
+    const existingReview = await db.select().from(clientReviews).where(eq(clientReviews.bookingId, bookingId)).limit(1);
+    return existingReview.length === 0;
+  }
+
+  async createClientReview(review: InsertClientReview): Promise<ClientReview> {
+    const result = await db.insert(clientReviews).values(review).returning();
+    return result[0];
+  }
+
+  async updateBookingDeposit(id: string, depositPaid: boolean, stripePaymentIntentId?: string): Promise<Booking | undefined> {
+    const updateData: any = { depositPaid };
+    if (stripePaymentIntentId) {
+      updateData.stripePaymentIntentId = stripePaymentIntentId;
+    }
+    const result = await db.update(bookings).set(updateData).where(eq(bookings.id, id)).returning();
     return result[0];
   }
 }

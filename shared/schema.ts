@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, timestamp, boolean, decimal, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, timestamp, boolean, decimal } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -26,6 +26,9 @@ export const businesses = pgTable("businesses", {
   tier: text("tier").notNull().default("free"),
   approved: boolean("approved").notNull().default(false),
   funFacts: text("fun_facts").array(),
+  depositRequired: boolean("deposit_required").notNull().default(false),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  advanceNoticeHours: integer("advance_notice_hours").notNull().default(24),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -38,10 +41,23 @@ export const bookings = pgTable("bookings", {
   date: timestamp("date").notNull(),
   status: text("status").notNull().default("pending"),
   completedByBusiness: boolean("completed_by_business").notNull().default(false),
+  depositPaid: boolean("deposit_paid").notNull().default(false),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").notNull().references(() => bookings.id).unique(),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  rating: integer("rating").notNull(),
+  comment: text("comment").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const clientReviews = pgTable("client_reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bookingId: varchar("booking_id").notNull().references(() => bookings.id).unique(),
   businessId: varchar("business_id").notNull().references(() => businesses.id),
@@ -108,9 +124,16 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   createdAt: true,
   status: true,
   completedByBusiness: true,
+  depositPaid: true,
+  stripePaymentIntentId: true,
 });
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertClientReviewSchema = createInsertSchema(clientReviews).omit({
   id: true,
   createdAt: true,
 });
@@ -151,6 +174,9 @@ export type Booking = typeof bookings.$inferSelect;
 
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviews.$inferSelect;
+
+export type InsertClientReview = z.infer<typeof insertClientReviewSchema>;
+export type ClientReview = typeof clientReviews.$inferSelect;
 
 export type InsertPortfolioItem = z.infer<typeof insertPortfolioItemSchema>;
 export type PortfolioItem = typeof portfolioItems.$inferSelect;
