@@ -9,7 +9,7 @@ import { pool } from "../db";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema } from "@shared/schema";
+import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema } from "@shared/schema";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -541,6 +541,106 @@ export async function registerRoutes(
       });
 
       res.json({ url: session.url });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/clients/:id/reviews", async (req, res, next) => {
+    try {
+      const reviews = await storage.getClientReviewsByClient(req.params.id);
+      res.json(reviews);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/client-reviews", requireAuth, async (req, res, next) => {
+    try {
+      const result = insertClientReviewSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const canReview = await storage.canBusinessReviewClient(result.data.bookingId, req.user!.id);
+      if (!canReview) {
+        return res.status(403).json({ message: "You can only review clients after completing their booking" });
+      }
+
+      const review = await storage.createClientReview(result.data);
+      res.json(review);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/stripe/create-deposit-intent", requireAuth, async (req, res, next) => {
+    try {
+      const { getUncachableStripeClient } = await import("./stripeClient");
+      const stripe = await getUncachableStripeClient();
+      
+      const { bookingId } = req.body;
+      
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      if (booking.clientId !== req.user!.id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const business = await storage.getBusiness(booking.businessId);
+      if (!business || !business.depositRequired || !business.depositAmount) {
+        return res.status(400).json({ message: "Deposit not required for this business" });
+      }
+
+      const depositAmount = Math.round(parseFloat(business.depositAmount) * 100);
+
+      const user = await storage.getUser(req.user!.id);
+      let customerId = user?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: req.user!.email,
+          metadata: { userId: req.user!.id },
+        });
+        customerId = customer.id;
+        await storage.updateUserStripeCustomerId(req.user!.id, customerId);
+      }
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: depositAmount,
+        currency: 'usd',
+        customer: customerId,
+        metadata: {
+          bookingId,
+          businessId: booking.businessId,
+          userId: req.user!.id,
+          type: 'deposit',
+        },
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret, amount: depositAmount });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/bookings/:id/confirm-deposit", requireAuth, async (req, res, next) => {
+    try {
+      const booking = await storage.getBooking(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      if (booking.clientId !== req.user!.id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { paymentIntentId } = req.body;
+      const updated = await storage.updateBookingDeposit(req.params.id, true, paymentIntentId);
+      res.json(updated);
     } catch (error) {
       next(error);
     }
