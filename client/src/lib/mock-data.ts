@@ -5,32 +5,40 @@ export const PLANS = [
     name: 'Starter',
     price: 'Free',
     priceValue: 0,
-    features: ['Basic Profile', 'Search Listing', 'Accept 5 Bookings/mo'],
-    highlight: false
+    features: ['Basic Profile', 'Search Listing', 'Unlimited Bookings', 'Portfolio (5 Photos)', 'Client Reviews'],
+    highlight: false,
+    photoLimit: 5,
+    socialFeatures: false
   },
   {
     id: 'bronze',
     name: 'Bronze',
     price: '$0.99',
     priceValue: 0.99,
-    features: ['Enhanced Profile', 'Priority Search', 'Accept 20 Bookings/mo'],
-    highlight: false
+    features: ['Enhanced Profile', 'Priority Search', 'Unlimited Bookings', 'Portfolio (30 Photos)', 'Social Features (Likes/Comments)'],
+    highlight: false,
+    photoLimit: 30,
+    socialFeatures: true
   },
   {
     id: 'silver',
     name: 'Silver',
     price: '$5.00',
     priceValue: 5.00,
-    features: ['Photo Gallery (10 images)', 'Top of Search', 'Unlimited Bookings', 'Client Reviews'],
-    highlight: true
+    features: ['Unlimited Portfolio', 'Top of Search', 'Unlimited Bookings', 'Client Reviews', 'Social Features'],
+    highlight: true,
+    photoLimit: 9999,
+    socialFeatures: true
   },
   {
     id: 'gold',
     name: 'Gold',
     price: '$20.00',
     priceValue: 20.00,
-    features: ['Featured Homepage Spot', 'Unlimited Gallery', 'Video Intro', 'Premium Badge', 'Dedicated Support', 'Analytics Dashboard'],
-    highlight: true
+    features: ['Featured Homepage Spot', 'Unlimited Gallery', 'Video Intro', 'Premium Badge', 'Dedicated Support'],
+    highlight: true,
+    photoLimit: 9999,
+    socialFeatures: true
   }
 ];
 
@@ -58,6 +66,14 @@ export const MOCK_BUSINESSES = [
       { id: 1, user: "Jessica M.", rating: 5, date: "2 days ago", text: "Sarah is amazing! My hair has never looked better. The color is exactly what I wanted." },
       { id: 2, user: "Ashley T.", rating: 5, date: "1 week ago", text: "Best salon in downtown. Professional, clean, and friendly staff." },
       { id: 3, user: "Michelle K.", rating: 4, date: "2 weeks ago", text: "Great cut, but took a bit longer than expected." }
+    ],
+    portfolio: [
+      { id: 1, url: "https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=800&q=80", likes: 45, comments: 12, likedByMe: false },
+      { id: 2, url: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80", likes: 89, comments: 24, likedByMe: true },
+      { id: 3, url: "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&w=800&q=80", likes: 32, comments: 5, likedByMe: false },
+      { id: 4, url: "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=800&q=80", likes: 112, comments: 31, likedByMe: true },
+      { id: 5, url: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?auto=format&fit=crop&w=800&q=80", likes: 67, comments: 8, likedByMe: false },
+      { id: 6, url: "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=800&q=80", likes: 23, comments: 2, likedByMe: false },
     ]
   },
   {
@@ -82,6 +98,11 @@ export const MOCK_BUSINESSES = [
     reviewList: [
       { id: 1, user: "Lauren P.", rating: 5, date: "3 days ago", text: "Emily is a true artist! Her designs are incredible." },
       { id: 2, user: "Sarah W.", rating: 5, date: "1 week ago", text: "My manicure lasted 3 weeks without chipping. Highly recommend!" }
+    ],
+    portfolio: [
+      { id: 1, url: "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=800&q=80", likes: 120, comments: 45, likedByMe: false },
+      { id: 2, url: "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=800&q=80", likes: 98, comments: 22, likedByMe: true },
+      { id: 3, url: "https://images.unsplash.com/photo-1519014816548-bf5fe059e98b?auto=format&fit=crop&w=800&q=80", likes: 56, comments: 10, likedByMe: false },
     ]
   },
   {
@@ -104,6 +125,10 @@ export const MOCK_BUSINESSES = [
     ],
     reviewList: [
       { id: 1, user: "Amanda B.", rating: 5, date: "1 week ago", text: "My skin is glowing! Jessica really knows her stuff." }
+    ],
+    portfolio: [
+       { id: 1, url: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80", likes: 12, comments: 1, likedByMe: false },
+       { id: 2, url: "https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=800&q=80", likes: 8, comments: 0, likedByMe: false }
     ]
   },
   {
@@ -127,6 +152,11 @@ export const MOCK_BUSINESSES = [
     reviewList: [
       { id: 1, user: "Tom H.", rating: 5, date: "1 day ago", text: "Best fade in the city. David is a pro." },
       { id: 2, user: "Mike R.", rating: 4, date: "3 weeks ago", text: "Good cut, fair price." }
+    ],
+    portfolio: [
+       { id: 1, url: "https://images.unsplash.com/photo-1593702295094-aea8c5c13d7e?auto=format&fit=crop&w=800&q=80", likes: 5, comments: 0, likedByMe: false },
+       { id: 2, url: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=800&q=80", likes: 8, comments: 0, likedByMe: false },
+       { id: 3, url: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=800&q=80", likes: 3, comments: 0, likedByMe: false }
     ]
   }
 ];

@@ -1,12 +1,12 @@
 import { useParams, Link, useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
-import { MOCK_BUSINESSES } from "@/lib/mock-data";
+import { MOCK_BUSINESSES, PLANS } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp } from "lucide-react";
+import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -22,14 +22,17 @@ export default function Profile() {
   const { toast } = useToast();
   const id = parseInt(params.id || "1");
   const business = MOCK_BUSINESSES.find(b => b.id === id) || MOCK_BUSINESSES[0];
+  const currentPlan = PLANS.find(p => p.id === business.tier) || PLANS[0];
+  
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isTipOpen, setIsTipOpen] = useState(false);
   const [tipAmount, setTipAmount] = useState("");
+  const [hasCompletedService, setHasCompletedService] = useState(false); // Mock state for review permission
 
   // Simulate "Pending" state if accessed from onboarding or via query param
-  const isPending = location.includes("pending") || id === 1; // For demo purposes, let's say ID 1 is the one we just created or is pending
+  const isPending = location.includes("pending") || id === 1; 
 
   const services = [
     { name: "Full Service Cut & Style", price: "$65", duration: "60 min" },
@@ -43,6 +46,15 @@ export default function Profile() {
       title: "Booking Request Sent",
       description: `Request sent to ${business.name} for ${date?.toLocaleDateString()}`,
     });
+    // For demo purposes, let's simulate a completed booking after a few seconds so we can test the review feature
+    setTimeout(() => {
+        toast({
+            title: "Demo: Service Completed",
+            description: "Simulating that you have completed this service. You can now leave a review.",
+            duration: 5000,
+        });
+        setHasCompletedService(true);
+    }, 3000);
   };
 
   const handleEdit = () => {
@@ -51,6 +63,18 @@ export default function Profile() {
       description: "Opening profile editor...",
     });
   };
+
+  const handleReviewClick = () => {
+    if (!hasCompletedService) {
+        toast({
+            title: "Review Unavailable",
+            description: "You must complete a service and have it confirmed by the technician before leaving a review.",
+            variant: "destructive"
+        });
+        return;
+    }
+    setIsReviewOpen(true);
+  }
 
   const handleSubmitReview = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +93,10 @@ export default function Profile() {
     });
     setTipAmount("");
   };
+
+  const socialFeaturesEnabled = currentPlan.socialFeatures;
+  const photoLimit = currentPlan.photoLimit;
+  const portfolioItems = business.portfolio ? business.portfolio.slice(0, photoLimit) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -236,7 +264,7 @@ export default function Profile() {
               </div>
             </section>
 
-            {/* Gallery Mockup */}
+            {/* Portfolio / Social Feed */}
             <section>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-serif font-semibold">Portfolio</h2>
@@ -246,17 +274,49 @@ export default function Profile() {
                   </Button>
                 )}
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {[1,2,3,4,5,6].map((i) => (
-                  <div key={i} className="aspect-square rounded-lg bg-gray-100 overflow-hidden relative group">
-                    <img 
-                      src={`https://images.unsplash.com/photo-${i === 1 ? '1562322140-8baeececf3df' : '1560066984-138dadb4c035'}?auto=format&fit=crop&w=400&q=80`} 
-                      alt="Portfolio" 
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                    />
-                  </div>
+              
+              {!socialFeaturesEnabled && (
+                 <p className="text-xs text-muted-foreground mb-4 italic">
+                    * Showing recent work. Like and comment features not available.
+                 </p>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {portfolioItems.map((item) => (
+                  <Card key={item.id} className="border-none shadow-md overflow-hidden bg-white">
+                    <div className="aspect-square relative group">
+                        <img 
+                            src={item.url} 
+                            alt="Portfolio Work" 
+                            className="w-full h-full object-cover"
+                        />
+                        {/* Overlay Gradient for Text readability if needed, though clean style prefers white space below */}
+                    </div>
+                    {socialFeaturesEnabled && (
+                        <CardFooter className="p-3 border-t bg-pink-50/20 flex justify-between items-center">
+                            <div className="flex gap-4">
+                                <button className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${item.likedByMe ? 'text-pink-500' : 'text-muted-foreground hover:text-pink-500'}`}>
+                                    <Heart className={`w-5 h-5 ${item.likedByMe ? 'fill-current' : ''}`} />
+                                    <span>{item.likes}</span>
+                                </button>
+                                <button className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                                    <MessageCircle className="w-5 h-5" />
+                                    <span>{item.comments}</span>
+                                </button>
+                            </div>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
+                                <Send className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                        </CardFooter>
+                    )}
+                  </Card>
                 ))}
               </div>
+              {portfolioItems.length === 0 && (
+                  <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed">
+                      <p className="text-muted-foreground">No photos added yet.</p>
+                  </div>
+              )}
             </section>
 
             {/* Reviews Section */}
@@ -264,12 +324,11 @@ export default function Profile() {
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-serif font-semibold">Client Reviews</h2>
                 
+                <Button variant="outline" className="gap-2" onClick={handleReviewClick}>
+                  <MessageSquare className="w-4 h-4" /> Write a Review
+                </Button>
+
                 <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="gap-2">
-                      <MessageSquare className="w-4 h-4" /> Write a Review
-                    </Button>
-                  </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Leave a Review</DialogTitle>
@@ -450,6 +509,17 @@ export default function Profile() {
                   <MessagingSheet business={business} />
                 </CardFooter>
               </Card>
+              
+              {hasCompletedService && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 flex items-start gap-2">
+                    <Check className="w-4 h-4 mt-0.5" />
+                    <div>
+                        <p className="font-bold">Service Completed</p>
+                        <p className="text-xs">Technician confirmed completion. You may now leave a review.</p>
+                    </div>
+                </div>
+              )}
+
             </div>
           </div>
         </div>
