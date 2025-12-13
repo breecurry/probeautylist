@@ -3,6 +3,7 @@ import {
   type Business, type InsertBusiness,
   type Booking, type InsertBooking,
   type Review, type InsertReview,
+  type ReviewPhoto, type InsertReviewPhoto,
   type ClientReview, type InsertClientReview,
   type PortfolioItem, type InsertPortfolioItem,
   type PortfolioLike, type InsertPortfolioLike,
@@ -20,9 +21,17 @@ import {
   type GroupBooking, type InsertGroupBooking,
   type GroupBookingGuest, type InsertGroupBookingGuest,
   type InspirationBoardItem, type InsertInspirationBoardItem,
-  users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
+  type StaffMember, type InsertStaffMember,
+  type FollowUpSettings, type InsertFollowUpSettings,
+  type FollowUpMessage, type InsertFollowUpMessage,
+  type ClientNote, type InsertClientNote,
+  type GiftCard, type InsertGiftCard,
+  type SocialMediaSettings, type InsertSocialMediaSettings,
+  type Expense, type InsertExpense,
+  users, businesses, bookings, reviews, reviewPhotos, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
   loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders, waitlistEntries,
-  groupBookings, groupBookingGuests, inspirationBoardItems
+  groupBookings, groupBookingGuests, inspirationBoardItems, staffMembers, followUpSettings, followUpMessages, clientNotes, giftCards,
+  socialMediaSettings, expenses
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
@@ -52,6 +61,12 @@ export interface IStorage {
   getReviewsByBusiness(businessId: string): Promise<Review[]>;
   canUserReview(bookingId: string, clientId: string): Promise<boolean>;
   createReview(review: InsertReview): Promise<Review>;
+  getReview(id: string): Promise<Review | undefined>;
+  
+  addPhotoToReview(data: InsertReviewPhoto): Promise<ReviewPhoto>;
+  getPhotosForReview(reviewId: string): Promise<ReviewPhoto[]>;
+  deleteReviewPhoto(id: string): Promise<boolean>;
+  getReviewPhoto(id: string): Promise<ReviewPhoto | undefined>;
   
   getPortfolioByBusiness(businessId: string): Promise<PortfolioItem[]>;
   createPortfolioItem(item: InsertPortfolioItem): Promise<PortfolioItem>;
@@ -153,6 +168,45 @@ export interface IStorage {
   getClientNoShowCount(clientId: string): Promise<number>;
   isClientBlockedForBusiness(clientId: string, businessId: string): Promise<boolean>;
   getNoShowBookingsForBusiness(businessId: string): Promise<Booking[]>;
+  
+  createStaffMember(data: InsertStaffMember): Promise<StaffMember>;
+  getStaffMembersByBusiness(businessId: string): Promise<StaffMember[]>;
+  getStaffMember(id: string): Promise<StaffMember | undefined>;
+  updateStaffMember(id: string, data: Partial<StaffMember>): Promise<StaffMember | undefined>;
+  deleteStaffMember(id: string): Promise<boolean>;
+  
+  getFollowUpSettings(businessId: string): Promise<FollowUpSettings | undefined>;
+  createFollowUpSettings(data: InsertFollowUpSettings): Promise<FollowUpSettings>;
+  updateFollowUpSettings(businessId: string, data: Partial<FollowUpSettings>): Promise<FollowUpSettings | undefined>;
+  createFollowUpMessage(data: InsertFollowUpMessage): Promise<FollowUpMessage>;
+  getPendingFollowUps(): Promise<FollowUpMessage[]>;
+  markFollowUpSent(id: string): Promise<FollowUpMessage | undefined>;
+  getFollowUpMessagesByBusiness(businessId: string): Promise<FollowUpMessage[]>;
+  
+  getClientNotesForBusiness(businessId: string, clientId: string): Promise<ClientNote[]>;
+  createClientNote(data: InsertClientNote): Promise<ClientNote>;
+  updateClientNote(id: string, note: string): Promise<ClientNote | undefined>;
+  deleteClientNote(id: string): Promise<boolean>;
+  getClientNote(id: string): Promise<ClientNote | undefined>;
+  
+  createGiftCard(data: InsertGiftCard): Promise<GiftCard>;
+  getGiftCardByCode(code: string): Promise<GiftCard | undefined>;
+  getGiftCardsByBusiness(businessId: string): Promise<GiftCard[]>;
+  getGiftCardsPurchasedByUser(userId: string): Promise<GiftCard[]>;
+  redeemGiftCard(code: string, amount: number): Promise<GiftCard | undefined>;
+  generateGiftCardCode(): string;
+  
+  getSocialMediaSettings(businessId: string): Promise<SocialMediaSettings | undefined>;
+  createSocialMediaSettings(data: InsertSocialMediaSettings): Promise<SocialMediaSettings>;
+  updateSocialMediaSettings(businessId: string, data: Partial<SocialMediaSettings>): Promise<SocialMediaSettings | undefined>;
+  
+  createExpense(data: InsertExpense): Promise<Expense>;
+  getExpensesByBusiness(businessId: string): Promise<Expense[]>;
+  getExpensesByBusinessAndDateRange(businessId: string, startDate: Date, endDate: Date): Promise<Expense[]>;
+  updateExpense(id: string, data: Partial<Expense>): Promise<Expense | undefined>;
+  deleteExpense(id: string): Promise<boolean>;
+  getExpense(id: string): Promise<Expense | undefined>;
+  getProfitSummary(businessId: string): Promise<{ totalRevenue: number; totalExpenses: number; profit: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -263,6 +317,34 @@ export class DatabaseStorage implements IStorage {
 
   async createReview(review: InsertReview): Promise<Review> {
     const result = await db.insert(reviews).values(review).returning();
+    return result[0];
+  }
+
+  async getReview(id: string): Promise<Review | undefined> {
+    const result = await db.select().from(reviews).where(eq(reviews.id, id)).limit(1);
+    return result[0];
+  }
+
+  async addPhotoToReview(data: InsertReviewPhoto): Promise<ReviewPhoto> {
+    const result = await db.insert(reviewPhotos).values(data).returning();
+    return result[0];
+  }
+
+  async getPhotosForReview(reviewId: string): Promise<ReviewPhoto[]> {
+    return db.select().from(reviewPhotos)
+      .where(eq(reviewPhotos.reviewId, reviewId))
+      .orderBy(desc(reviewPhotos.createdAt));
+  }
+
+  async deleteReviewPhoto(id: string): Promise<boolean> {
+    await db.delete(reviewPhotos).where(eq(reviewPhotos.id, id));
+    return true;
+  }
+
+  async getReviewPhoto(id: string): Promise<ReviewPhoto | undefined> {
+    const result = await db.select().from(reviewPhotos)
+      .where(eq(reviewPhotos.id, id))
+      .limit(1);
     return result[0];
   }
 
@@ -1269,6 +1351,264 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.noShow, true)
       ))
       .orderBy(desc(bookings.createdAt));
+  }
+
+  async createStaffMember(data: InsertStaffMember): Promise<StaffMember> {
+    const result = await db.insert(staffMembers).values(data).returning();
+    return result[0];
+  }
+
+  async getStaffMembersByBusiness(businessId: string): Promise<StaffMember[]> {
+    return db.select().from(staffMembers)
+      .where(eq(staffMembers.businessId, businessId))
+      .orderBy(desc(staffMembers.createdAt));
+  }
+
+  async getStaffMember(id: string): Promise<StaffMember | undefined> {
+    const result = await db.select().from(staffMembers).where(eq(staffMembers.id, id)).limit(1);
+    return result[0];
+  }
+
+  async updateStaffMember(id: string, data: Partial<StaffMember>): Promise<StaffMember | undefined> {
+    const result = await db.update(staffMembers).set(data).where(eq(staffMembers.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteStaffMember(id: string): Promise<boolean> {
+    await db.delete(staffMembers).where(eq(staffMembers.id, id));
+    return true;
+  }
+
+  async getFollowUpSettings(businessId: string): Promise<FollowUpSettings | undefined> {
+    const result = await db.select().from(followUpSettings)
+      .where(eq(followUpSettings.businessId, businessId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createFollowUpSettings(data: InsertFollowUpSettings): Promise<FollowUpSettings> {
+    const result = await db.insert(followUpSettings).values(data).returning();
+    return result[0];
+  }
+
+  async updateFollowUpSettings(businessId: string, data: Partial<FollowUpSettings>): Promise<FollowUpSettings | undefined> {
+    const result = await db.update(followUpSettings)
+      .set(data)
+      .where(eq(followUpSettings.businessId, businessId))
+      .returning();
+    return result[0];
+  }
+
+  async createFollowUpMessage(data: InsertFollowUpMessage): Promise<FollowUpMessage> {
+    const result = await db.insert(followUpMessages).values(data).returning();
+    return result[0];
+  }
+
+  async getPendingFollowUps(): Promise<FollowUpMessage[]> {
+    const result = await db.execute(sql`
+      SELECT fm.* FROM follow_up_messages fm
+      INNER JOIN bookings b ON b.id = fm.booking_id
+      WHERE fm.sent_at IS NULL
+        AND b.status = 'completed'
+        AND b.completed_by_business = true
+      ORDER BY fm.created_at ASC
+    `);
+    return (result.rows as any[]).map(row => ({
+      id: row.id,
+      bookingId: row.booking_id,
+      businessId: row.business_id,
+      clientId: row.client_id,
+      message: row.message,
+      sentAt: row.sent_at ? new Date(row.sent_at) : null,
+      createdAt: new Date(row.created_at),
+    }));
+  }
+
+  async markFollowUpSent(id: string): Promise<FollowUpMessage | undefined> {
+    const result = await db.update(followUpMessages)
+      .set({ sentAt: new Date() })
+      .where(eq(followUpMessages.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getFollowUpMessagesByBusiness(businessId: string): Promise<FollowUpMessage[]> {
+    return db.select().from(followUpMessages)
+      .where(eq(followUpMessages.businessId, businessId))
+      .orderBy(desc(followUpMessages.createdAt));
+  }
+
+  async getClientNotesForBusiness(businessId: string, clientId: string): Promise<ClientNote[]> {
+    return db.select().from(clientNotes)
+      .where(and(
+        eq(clientNotes.businessId, businessId),
+        eq(clientNotes.clientId, clientId)
+      ))
+      .orderBy(desc(clientNotes.createdAt));
+  }
+
+  async createClientNote(data: InsertClientNote): Promise<ClientNote> {
+    const result = await db.insert(clientNotes).values(data).returning();
+    return result[0];
+  }
+
+  async updateClientNote(id: string, note: string): Promise<ClientNote | undefined> {
+    const result = await db.update(clientNotes)
+      .set({ note })
+      .where(eq(clientNotes.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteClientNote(id: string): Promise<boolean> {
+    await db.delete(clientNotes).where(eq(clientNotes.id, id));
+    return true;
+  }
+
+  async getClientNote(id: string): Promise<ClientNote | undefined> {
+    const result = await db.select().from(clientNotes)
+      .where(eq(clientNotes.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  generateGiftCardCode(): string {
+    return Math.random().toString(36).substring(2, 10).toUpperCase() + Math.random().toString(36).substring(2, 10).toUpperCase();
+  }
+
+  async createGiftCard(data: InsertGiftCard): Promise<GiftCard> {
+    const code = this.generateGiftCardCode();
+    const result = await db.insert(giftCards).values({
+      ...data,
+      code,
+      balance: data.amount,
+    }).returning();
+    return result[0];
+  }
+
+  async getGiftCardByCode(code: string): Promise<GiftCard | undefined> {
+    const result = await db.select().from(giftCards)
+      .where(eq(giftCards.code, code))
+      .limit(1);
+    return result[0];
+  }
+
+  async getGiftCardsByBusiness(businessId: string): Promise<GiftCard[]> {
+    return db.select().from(giftCards)
+      .where(eq(giftCards.businessId, businessId))
+      .orderBy(desc(giftCards.createdAt));
+  }
+
+  async getGiftCardsPurchasedByUser(userId: string): Promise<GiftCard[]> {
+    return db.select().from(giftCards)
+      .where(eq(giftCards.purchaserId, userId))
+      .orderBy(desc(giftCards.createdAt));
+  }
+
+  async redeemGiftCard(code: string, amount: number): Promise<GiftCard | undefined> {
+    const giftCard = await this.getGiftCardByCode(code);
+    if (!giftCard) return undefined;
+    
+    const currentBalance = parseFloat(giftCard.balance);
+    if (amount > currentBalance) return undefined;
+    
+    const newBalance = (currentBalance - amount).toFixed(2);
+    const updateData: any = { balance: newBalance };
+    
+    if (parseFloat(newBalance) === 0) {
+      updateData.redeemedAt = new Date();
+    }
+    
+    const result = await db.update(giftCards)
+      .set(updateData)
+      .where(eq(giftCards.code, code))
+      .returning();
+    return result[0];
+  }
+
+  async getSocialMediaSettings(businessId: string): Promise<SocialMediaSettings | undefined> {
+    const result = await db.select().from(socialMediaSettings)
+      .where(eq(socialMediaSettings.businessId, businessId))
+      .limit(1);
+    return result[0];
+  }
+
+  async createSocialMediaSettings(data: InsertSocialMediaSettings): Promise<SocialMediaSettings> {
+    const result = await db.insert(socialMediaSettings).values(data).returning();
+    return result[0];
+  }
+
+  async updateSocialMediaSettings(businessId: string, data: Partial<SocialMediaSettings>): Promise<SocialMediaSettings | undefined> {
+    const result = await db.update(socialMediaSettings)
+      .set(data)
+      .where(eq(socialMediaSettings.businessId, businessId))
+      .returning();
+    return result[0];
+  }
+
+  async createExpense(data: InsertExpense): Promise<Expense> {
+    const result = await db.insert(expenses).values(data).returning();
+    return result[0];
+  }
+
+  async getExpensesByBusiness(businessId: string): Promise<Expense[]> {
+    return db.select().from(expenses)
+      .where(eq(expenses.businessId, businessId))
+      .orderBy(desc(expenses.date));
+  }
+
+  async getExpensesByBusinessAndDateRange(businessId: string, startDate: Date, endDate: Date): Promise<Expense[]> {
+    return db.select().from(expenses)
+      .where(and(
+        eq(expenses.businessId, businessId),
+        gte(expenses.date, startDate),
+        lte(expenses.date, endDate)
+      ))
+      .orderBy(desc(expenses.date));
+  }
+
+  async updateExpense(id: string, data: Partial<Expense>): Promise<Expense | undefined> {
+    const result = await db.update(expenses)
+      .set(data)
+      .where(eq(expenses.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteExpense(id: string): Promise<boolean> {
+    await db.delete(expenses).where(eq(expenses.id, id));
+    return true;
+  }
+
+  async getExpense(id: string): Promise<Expense | undefined> {
+    const result = await db.select().from(expenses)
+      .where(eq(expenses.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async getProfitSummary(businessId: string): Promise<{ totalRevenue: number; totalExpenses: number; profit: number }> {
+    const revenueResult = await db.execute(sql`
+      SELECT COALESCE(SUM(CAST(service_price AS DECIMAL(10,2))), 0) as total_revenue
+      FROM bookings
+      WHERE business_id = ${businessId}
+        AND status = 'completed'
+        AND completed_by_business = true
+    `);
+    const totalRevenue = parseFloat((revenueResult.rows[0] as any)?.total_revenue) || 0;
+
+    const expensesResult = await db.execute(sql`
+      SELECT COALESCE(SUM(CAST(amount AS DECIMAL(10,2))), 0) as total_expenses
+      FROM expenses
+      WHERE business_id = ${businessId}
+    `);
+    const totalExpenses = parseFloat((expensesResult.rows[0] as any)?.total_expenses) || 0;
+
+    return {
+      totalRevenue,
+      totalExpenses,
+      profit: totalRevenue - totalExpenses
+    };
   }
 }
 

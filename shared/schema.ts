@@ -68,6 +68,14 @@ export const reviews = pgTable("reviews", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const reviewPhotos = pgTable("review_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  reviewId: varchar("review_id").notNull().references(() => reviews.id),
+  photoUrl: text("photo_url").notNull(),
+  caption: text("caption"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const clientReviews = pgTable("client_reviews", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   bookingId: varchar("booking_id").notNull().references(() => bookings.id).unique(),
@@ -241,6 +249,82 @@ export const inspirationBoardItems = pgTable("inspiration_board_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const staffMembers = pgTable("staff_members", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  role: text("role").notNull(),
+  specialties: text("specialties").array(),
+  schedule: text("schedule"),
+  profilePhoto: text("profile_photo"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const followUpSettings = pgTable("follow_up_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  enabled: boolean("enabled").notNull().default(false),
+  delayHours: integer("delay_hours").notNull().default(24),
+  messageTemplate: text("message_template"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const followUpMessages = pgTable("follow_up_messages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").notNull().references(() => bookings.id),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const clientNotes = pgTable("client_notes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  note: text("note").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const giftCards = pgTable("gift_cards", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  purchaserId: varchar("purchaser_id").notNull().references(() => users.id),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  recipientEmail: text("recipient_email").notNull(),
+  recipientName: text("recipient_name").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  balance: decimal("balance", { precision: 10, scale: 2 }).notNull(),
+  code: text("code").notNull().unique(),
+  message: text("message"),
+  stripePaymentId: text("stripe_payment_id"),
+  redeemedAt: timestamp("redeemed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const socialMediaSettings = pgTable("social_media_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id).unique(),
+  instagramEnabled: boolean("instagram_enabled").notNull().default(false),
+  instagramHandle: text("instagram_handle"),
+  autoPostPortfolio: boolean("auto_post_portfolio").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const expenses = pgTable("expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  category: text("category").notNull(),
+  description: text("description").notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  date: timestamp("date").notNull(),
+  recurring: boolean("recurring").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -263,6 +347,11 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
 });
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReviewPhotoSchema = createInsertSchema(reviewPhotos).omit({
   id: true,
   createdAt: true,
 });
@@ -361,6 +450,45 @@ export const insertInspirationBoardItemSchema = createInsertSchema(inspirationBo
   createdAt: true,
 });
 
+export const insertStaffMemberSchema = createInsertSchema(staffMembers).omit({
+  id: true,
+  createdAt: true,
+  active: true,
+});
+
+export const insertFollowUpSettingsSchema = createInsertSchema(followUpSettings).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertFollowUpMessageSchema = createInsertSchema(followUpMessages).omit({
+  id: true,
+  createdAt: true,
+  sentAt: true,
+});
+
+export const insertClientNoteSchema = createInsertSchema(clientNotes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertGiftCardSchema = createInsertSchema(giftCards).omit({
+  id: true,
+  createdAt: true,
+  balance: true,
+  redeemedAt: true,
+});
+
+export const insertSocialMediaSettingsSchema = createInsertSchema(socialMediaSettings).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertExpenseSchema = createInsertSchema(expenses).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -372,6 +500,9 @@ export type Booking = typeof bookings.$inferSelect;
 
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 export type Review = typeof reviews.$inferSelect;
+
+export type InsertReviewPhoto = z.infer<typeof insertReviewPhotoSchema>;
+export type ReviewPhoto = typeof reviewPhotos.$inferSelect;
 
 export type InsertClientReview = z.infer<typeof insertClientReviewSchema>;
 export type ClientReview = typeof clientReviews.$inferSelect;
@@ -423,3 +554,24 @@ export type GroupBookingGuest = typeof groupBookingGuests.$inferSelect;
 
 export type InsertInspirationBoardItem = z.infer<typeof insertInspirationBoardItemSchema>;
 export type InspirationBoardItem = typeof inspirationBoardItems.$inferSelect;
+
+export type InsertStaffMember = z.infer<typeof insertStaffMemberSchema>;
+export type StaffMember = typeof staffMembers.$inferSelect;
+
+export type InsertFollowUpSettings = z.infer<typeof insertFollowUpSettingsSchema>;
+export type FollowUpSettings = typeof followUpSettings.$inferSelect;
+
+export type InsertFollowUpMessage = z.infer<typeof insertFollowUpMessageSchema>;
+export type FollowUpMessage = typeof followUpMessages.$inferSelect;
+
+export type InsertClientNote = z.infer<typeof insertClientNoteSchema>;
+export type ClientNote = typeof clientNotes.$inferSelect;
+
+export type InsertGiftCard = z.infer<typeof insertGiftCardSchema>;
+export type GiftCard = typeof giftCards.$inferSelect;
+
+export type InsertSocialMediaSettings = z.infer<typeof insertSocialMediaSettingsSchema>;
+export type SocialMediaSettings = typeof socialMediaSettings.$inferSelect;
+
+export type InsertExpense = z.infer<typeof insertExpenseSchema>;
+export type Expense = typeof expenses.$inferSelect;

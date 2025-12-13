@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { LoyaltySettings } from "@/components/LoyaltySettings";
+import { StaffManagement } from "@/components/StaffManagement";
 
 interface Business {
   id: string;
@@ -455,6 +456,11 @@ export default function MyBusinesses() {
                 
                 {/* Waitlist Section */}
                 <BusinessWaitlistSection businessId={business.id} businessName={business.name} />
+
+                {/* Staff Management Section */}
+                <div data-testid={`staff-section-${business.id}`}>
+                  <StaffManagement businessId={business.id} />
+                </div>
 
                 {business.tier === 'gold' && (
                   <div data-testid={`loyalty-section-${business.id}`}>

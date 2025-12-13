@@ -9,7 +9,7 @@ import { pool } from "../db";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema, insertInspirationBoardItemSchema } from "@shared/schema";
+import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertReviewPhotoSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema, insertInspirationBoardItemSchema, insertStaffMemberSchema, insertFollowUpSettingsSchema, insertClientNoteSchema, insertGiftCardSchema, insertSocialMediaSettingsSchema, insertExpenseSchema } from "@shared/schema";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -459,6 +459,64 @@ export async function registerRoutes(
 
       const review = await storage.createReview(result.data);
       res.json(review);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/reviews/:id/photos", async (req, res, next) => {
+    try {
+      const photos = await storage.getPhotosForReview(req.params.id);
+      res.json(photos);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/reviews/:id/photos", requireAuth, async (req, res, next) => {
+    try {
+      const review = await storage.getReview(req.params.id);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      if (review.clientId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only add photos to your own reviews" });
+      }
+
+      const result = insertReviewPhotoSchema.safeParse({
+        ...req.body,
+        reviewId: req.params.id,
+      });
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const photo = await storage.addPhotoToReview(result.data);
+      res.json(photo);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/review-photos/:id", requireAuth, async (req, res, next) => {
+    try {
+      const photo = await storage.getReviewPhoto(req.params.id);
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+
+      const review = await storage.getReview(photo.reviewId);
+      if (!review) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+
+      if (review.clientId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only delete photos from your own reviews" });
+      }
+
+      await storage.deleteReviewPhoto(req.params.id);
+      res.json({ message: "Photo deleted" });
     } catch (error) {
       next(error);
     }
@@ -1882,6 +1940,512 @@ export async function registerRoutes(
     try {
       const isSaved = await storage.isItemOnInspirationBoard(req.user!.id, req.params.portfolioItemId);
       res.json({ isSaved });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/staff", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const staff = await storage.getStaffMembersByBusiness(req.params.id);
+      res.json(staff);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/staff", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const result = insertStaffMemberSchema.safeParse({ ...req.body, businessId: req.params.id });
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const staff = await storage.createStaffMember(result.data);
+      res.json(staff);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/staff/:id", requireAuth, async (req, res, next) => {
+    try {
+      const staff = await storage.getStaffMember(req.params.id);
+      if (!staff) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+
+      const business = await storage.getBusiness(staff.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      res.json(staff);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/staff/:id", requireAuth, async (req, res, next) => {
+    try {
+      const staff = await storage.getStaffMember(req.params.id);
+      if (!staff) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+
+      const business = await storage.getBusiness(staff.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const updated = await storage.updateStaffMember(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/staff/:id", requireAuth, async (req, res, next) => {
+    try {
+      const staff = await storage.getStaffMember(req.params.id);
+      if (!staff) {
+        return res.status(404).json({ message: "Staff member not found" });
+      }
+
+      const business = await storage.getBusiness(staff.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deleteStaffMember(req.params.id);
+      res.json({ message: "Staff member deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/follow-up-settings", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const settings = await storage.getFollowUpSettings(req.params.id);
+      res.json(settings || null);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/follow-up-settings", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const existingSettings = await storage.getFollowUpSettings(req.params.id);
+      
+      if (existingSettings) {
+        const updated = await storage.updateFollowUpSettings(req.params.id, {
+          enabled: req.body.enabled,
+          delayHours: req.body.delayHours,
+          messageTemplate: req.body.messageTemplate,
+        });
+        return res.json(updated);
+      } else {
+        const result = insertFollowUpSettingsSchema.safeParse({ ...req.body, businessId: req.params.id });
+        if (!result.success) {
+          return res.status(400).json({ message: fromZodError(result.error).message });
+        }
+        const settings = await storage.createFollowUpSettings(result.data);
+        return res.json(settings);
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/follow-ups", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const followUps = await storage.getFollowUpMessagesByBusiness(req.params.id);
+      res.json(followUps);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:businessId/clients/:clientId/notes", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.businessId);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const notes = await storage.getClientNotesForBusiness(req.params.businessId, req.params.clientId);
+      res.json(notes);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:businessId/clients/:clientId/notes", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.businessId);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const result = insertClientNoteSchema.safeParse({
+        businessId: req.params.businessId,
+        clientId: req.params.clientId,
+        note: req.body.note,
+      });
+
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const note = await storage.createClientNote(result.data);
+      res.json(note);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/client-notes/:id", requireAuth, async (req, res, next) => {
+    try {
+      const clientNote = await storage.getClientNote(req.params.id);
+      if (!clientNote) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+
+      const business = await storage.getBusiness(clientNote.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const updated = await storage.updateClientNote(req.params.id, req.body.note);
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/client-notes/:id", requireAuth, async (req, res, next) => {
+    try {
+      const clientNote = await storage.getClientNote(req.params.id);
+      if (!clientNote) {
+        return res.status(404).json({ message: "Note not found" });
+      }
+
+      const business = await storage.getBusiness(clientNote.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deleteClientNote(req.params.id);
+      res.json({ message: "Note deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/gift-cards", requireAuth, async (req, res, next) => {
+    try {
+      const result = insertGiftCardSchema.safeParse({
+        ...req.body,
+        purchaserId: req.user!.id,
+      });
+
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const business = await storage.getBusiness(result.data.businessId);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      const giftCard = await storage.createGiftCard(result.data);
+      res.json(giftCard);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/gift-cards/purchased", requireAuth, async (req, res, next) => {
+    try {
+      const giftCards = await storage.getGiftCardsPurchasedByUser(req.user!.id);
+      res.json(giftCards);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/gift-cards", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const giftCards = await storage.getGiftCardsByBusiness(req.params.id);
+      res.json(giftCards);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/gift-cards/check/:code", async (req, res, next) => {
+    try {
+      const giftCard = await storage.getGiftCardByCode(req.params.code);
+      if (!giftCard) {
+        return res.status(404).json({ message: "Gift card not found" });
+      }
+
+      res.json({
+        code: giftCard.code,
+        balance: giftCard.balance,
+        amount: giftCard.amount,
+        businessId: giftCard.businessId,
+        redeemedAt: giftCard.redeemedAt,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/gift-cards/:code/redeem", requireAuth, async (req, res, next) => {
+    try {
+      const { amount } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Amount must be greater than 0" });
+      }
+
+      const giftCard = await storage.getGiftCardByCode(req.params.code);
+      if (!giftCard) {
+        return res.status(404).json({ message: "Gift card not found" });
+      }
+
+      const business = await storage.getBusiness(giftCard.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden - only the business owner can redeem gift cards" });
+      }
+
+      const currentBalance = parseFloat(giftCard.balance);
+      if (amount > currentBalance) {
+        return res.status(400).json({ message: `Insufficient balance. Current balance: $${currentBalance.toFixed(2)}` });
+      }
+
+      const updated = await storage.redeemGiftCard(req.params.code, amount);
+      if (!updated) {
+        return res.status(400).json({ message: "Failed to redeem gift card" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/social-media-settings", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const settings = await storage.getSocialMediaSettings(req.params.id);
+      res.json(settings || null);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/social-media-settings", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const existingSettings = await storage.getSocialMediaSettings(req.params.id);
+      
+      if (existingSettings) {
+        const updated = await storage.updateSocialMediaSettings(req.params.id, req.body);
+        return res.json(updated);
+      } else {
+        const result = insertSocialMediaSettingsSchema.safeParse({
+          ...req.body,
+          businessId: req.params.id,
+        });
+
+        if (!result.success) {
+          return res.status(400).json({ message: fromZodError(result.error).message });
+        }
+
+        const settings = await storage.createSocialMediaSettings(result.data);
+        res.json(settings);
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/expenses", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const expenses = await storage.getExpensesByBusiness(req.params.id);
+      res.json(expenses);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/expenses", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const result = insertExpenseSchema.safeParse({
+        ...req.body,
+        businessId: req.params.id,
+      });
+
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const expense = await storage.createExpense(result.data);
+      res.json(expense);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/expenses/:id", requireAuth, async (req, res, next) => {
+    try {
+      const expense = await storage.getExpense(req.params.id);
+      if (!expense) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+
+      const business = await storage.getBusiness(expense.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const updated = await storage.updateExpense(req.params.id, req.body);
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/expenses/:id", requireAuth, async (req, res, next) => {
+    try {
+      const expense = await storage.getExpense(req.params.id);
+      if (!expense) {
+        return res.status(404).json({ message: "Expense not found" });
+      }
+
+      const business = await storage.getBusiness(expense.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deleteExpense(req.params.id);
+      res.json({ message: "Expense deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/profit-summary", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const summary = await storage.getProfitSummary(req.params.id);
+      res.json(summary);
     } catch (error) {
       next(error);
     }
