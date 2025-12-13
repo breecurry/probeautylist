@@ -14,6 +14,7 @@ export const users = pgTable("users", {
   role: text("role").notNull().default("client"),
   stripeCustomerId: text("stripe_customer_id"),
   usernameChanged: boolean("username_changed").notNull().default(false),
+  birthDate: timestamp("birth_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -124,6 +125,44 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const loyaltyPrograms = pgTable("loyalty_programs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  enabled: boolean("enabled").notNull().default(false),
+  visitThreshold: integer("visit_threshold").notNull().default(10),
+  discountPercent: integer("discount_percent").notNull().default(20),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const clientLoyaltyProgress = pgTable("client_loyalty_progress", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  visitCount: integer("visit_count").notNull().default(0),
+  rewardsEarned: integer("rewards_earned").notNull().default(0),
+  rewardsRedeemed: integer("rewards_redeemed").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const referralCodes = pgTable("referral_codes", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  code: text("code").notNull().unique(),
+  discountPercent: integer("discount_percent").notNull(),
+  maxUses: integer("max_uses"),
+  usedCount: integer("used_count").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const referrals = pgTable("referrals", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  referralCodeId: varchar("referral_code_id").notNull().references(() => referralCodes.id),
+  referrerId: varchar("referrer_id").notNull().references(() => users.id),
+  referredId: varchar("referred_id").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -185,6 +224,27 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   read: true,
 });
 
+export const insertLoyaltyProgramSchema = createInsertSchema(loyaltyPrograms).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertClientLoyaltyProgressSchema = createInsertSchema(clientLoyaltyProgress).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertReferralCodeSchema = createInsertSchema(referralCodes).omit({
+  id: true,
+  createdAt: true,
+  usedCount: true,
+});
+
+export const insertReferralSchema = createInsertSchema(referrals).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -217,3 +277,15 @@ export type Tip = typeof tips.$inferSelect;
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+export type InsertLoyaltyProgram = z.infer<typeof insertLoyaltyProgramSchema>;
+export type LoyaltyProgram = typeof loyaltyPrograms.$inferSelect;
+
+export type InsertClientLoyaltyProgress = z.infer<typeof insertClientLoyaltyProgressSchema>;
+export type ClientLoyaltyProgress = typeof clientLoyaltyProgress.$inferSelect;
+
+export type InsertReferralCode = z.infer<typeof insertReferralCodeSchema>;
+export type ReferralCode = typeof referralCodes.$inferSelect;
+
+export type InsertReferral = z.infer<typeof insertReferralSchema>;
+export type Referral = typeof referrals.$inferSelect;

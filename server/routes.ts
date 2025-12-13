@@ -9,7 +9,7 @@ import { pool } from "../db";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema } from "@shared/schema";
+import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema } from "@shared/schema";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -293,6 +293,15 @@ export async function registerRoutes(
       }
 
       const updated = await storage.markBookingCompleted(req.params.id);
+      
+      if (business.tier === 'gold') {
+        try {
+          await storage.incrementClientVisit(booking.clientId, booking.businessId);
+        } catch (loyaltyError) {
+          console.error('Loyalty tracking error (non-fatal):', loyaltyError);
+        }
+      }
+      
       res.json(updated);
     } catch (error) {
       next(error);
@@ -888,6 +897,306 @@ export async function registerRoutes(
 
       const analytics = await storage.getBusinessAnalytics(req.params.id);
       res.json(analytics);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/loyalty", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "Loyalty program is only available for Gold tier businesses" });
+      }
+
+      const loyaltyProgram = await storage.getLoyaltyProgram(req.params.id);
+      res.json(loyaltyProgram || { enabled: false, visitThreshold: 10, discountPercent: 20 });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/loyalty", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "Loyalty program is only available for Gold tier businesses" });
+      }
+
+      const loyaltyValidationSchema = z.object({
+        enabled: z.boolean().optional(),
+        visitThreshold: z.number().int().min(1, "Visit threshold must be at least 1"),
+        discountPercent: z.number().int().min(0, "Discount must be at least 0%").max(100, "Discount cannot exceed 100%"),
+      });
+
+      const validationResult = loyaltyValidationSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: fromZodError(validationResult.error).message });
+      }
+
+      const existing = await storage.getLoyaltyProgram(req.params.id);
+      
+      if (existing) {
+        const updated = await storage.updateLoyaltyProgram(req.params.id, {
+          enabled: validationResult.data.enabled,
+          visitThreshold: validationResult.data.visitThreshold,
+          discountPercent: validationResult.data.discountPercent,
+        });
+        res.json(updated);
+      } else {
+        const result = insertLoyaltyProgramSchema.safeParse({
+          businessId: req.params.id,
+          enabled: validationResult.data.enabled,
+          visitThreshold: validationResult.data.visitThreshold,
+          discountPercent: validationResult.data.discountPercent,
+        });
+        
+        if (!result.success) {
+          return res.status(400).json({ message: fromZodError(result.error).message });
+        }
+        
+        const created = await storage.createLoyaltyProgram(result.data);
+        res.json(created);
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/referral-codes", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "Referral codes are only available for Gold tier businesses" });
+      }
+
+      const codes = await storage.getReferralCodes(req.params.id);
+      res.json(codes);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/referral-codes", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "Referral codes are only available for Gold tier businesses" });
+      }
+
+      const referralCodeValidationSchema = z.object({
+        code: z.string().min(1, "Code is required"),
+        discountPercent: z.number().int().min(0, "Discount must be at least 0%").max(100, "Discount cannot exceed 100%"),
+        maxUses: z.number().int().min(1, "Max uses must be at least 1").nullable().optional(),
+        active: z.boolean().optional(),
+      });
+
+      const validationResult = referralCodeValidationSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: fromZodError(validationResult.error).message });
+      }
+
+      const existingCode = await storage.getReferralCodeByCode(validationResult.data.code);
+      if (existingCode) {
+        return res.status(400).json({ message: "Referral code already exists" });
+      }
+
+      const result = insertReferralCodeSchema.safeParse({
+        businessId: req.params.id,
+        code: validationResult.data.code,
+        discountPercent: validationResult.data.discountPercent,
+        maxUses: validationResult.data.maxUses || null,
+        active: validationResult.data.active !== false,
+      });
+
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const created = await storage.createReferralCode(result.data);
+      res.json(created);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/businesses/:id/referral-codes/:codeId", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "Referral codes are only available for Gold tier businesses" });
+      }
+
+      const referralCodeUpdateSchema = z.object({
+        active: z.boolean().optional(),
+        discountPercent: z.number().int().min(0, "Discount must be at least 0%").max(100, "Discount cannot exceed 100%").optional(),
+        maxUses: z.number().int().min(1, "Max uses must be at least 1").nullable().optional(),
+      });
+
+      const validationResult = referralCodeUpdateSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: fromZodError(validationResult.error).message });
+      }
+
+      const updated = await storage.updateReferralCode(req.params.codeId, {
+        active: validationResult.data.active,
+        discountPercent: validationResult.data.discountPercent,
+        maxUses: validationResult.data.maxUses,
+      });
+
+      if (!updated) {
+        return res.status(404).json({ message: "Referral code not found" });
+      }
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/birthdays", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "Birthday alerts are only available for Gold tier businesses" });
+      }
+
+      const clients = await storage.getClientsWithBirthdaysSoon(req.params.id);
+      res.json(clients);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/clients/loyalty/:businessId", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.businessId);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      const loyaltyProgram = await storage.getLoyaltyProgram(req.params.businessId);
+      const progress = await storage.getClientLoyaltyProgress(req.user!.id, req.params.businessId);
+
+      res.json({
+        loyaltyProgram: loyaltyProgram || null,
+        progress: progress || { visitCount: 0, rewardsEarned: 0, rewardsRedeemed: 0 },
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/referral-codes/redeem", requireAuth, async (req, res, next) => {
+    try {
+      const { code, referrerId } = req.body;
+
+      if (!code) {
+        return res.status(400).json({ message: "Referral code is required" });
+      }
+
+      if (!referrerId) {
+        return res.status(400).json({ message: "Referrer ID is required" });
+      }
+
+      const referredId = req.user!.id;
+
+      if (referrerId === referredId) {
+        return res.status(400).json({ message: "You cannot redeem a referral code for yourself" });
+      }
+
+      const referralCode = await storage.getReferralCodeByCode(code);
+      if (!referralCode) {
+        return res.status(400).json({ message: "Invalid referral code" });
+      }
+
+      if (!referralCode.active) {
+        return res.status(400).json({ message: "This referral code is no longer active" });
+      }
+
+      if (referralCode.maxUses !== null && referralCode.usedCount >= referralCode.maxUses) {
+        return res.status(400).json({ message: "This referral code has reached its usage limit" });
+      }
+
+      const hasBookedWithBusiness = await storage.hasUserBookedWithBusiness(referredId, referralCode.businessId);
+      if (!hasBookedWithBusiness) {
+        return res.status(400).json({ message: "You must have booked with this business before using a referral code" });
+      }
+
+      const referral = await storage.redeemReferralCode(code, referrerId, referredId);
+      
+      if (!referral) {
+        return res.status(400).json({ message: "You have already used this referral code" });
+      }
+
+      res.json(referral);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/users/birthdate", requireAuth, async (req, res, next) => {
+    try {
+      const { birthDate } = req.body;
+      
+      if (!birthDate) {
+        return res.status(400).json({ message: "Birth date is required" });
+      }
+
+      const updated = await storage.updateUserBirthDate(req.user!.id, new Date(birthDate));
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ message: "Birth date updated successfully" });
     } catch (error) {
       next(error);
     }

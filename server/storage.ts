@@ -10,10 +10,15 @@ import {
   type Message, type InsertMessage,
   type Tip, type InsertTip,
   type Notification, type InsertNotification,
-  users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications
+  type LoyaltyProgram, type InsertLoyaltyProgram,
+  type ClientLoyaltyProgress, type InsertClientLoyaltyProgress,
+  type ReferralCode, type InsertReferralCode,
+  type Referral, type InsertReferral,
+  users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
+  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals
 } from "@shared/schema";
 import { db } from "../db";
-import { eq, and, desc, sql, gt } from "drizzle-orm";
+import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -81,6 +86,20 @@ export interface IStorage {
     topServices: { serviceName: string; revenue: number; count: number }[];
     conversionRate: number;
   }>;
+  
+  getLoyaltyProgram(businessId: string): Promise<LoyaltyProgram | undefined>;
+  createLoyaltyProgram(data: InsertLoyaltyProgram): Promise<LoyaltyProgram>;
+  updateLoyaltyProgram(businessId: string, data: Partial<LoyaltyProgram>): Promise<LoyaltyProgram | undefined>;
+  getClientLoyaltyProgress(clientId: string, businessId: string): Promise<ClientLoyaltyProgress | undefined>;
+  incrementClientVisit(clientId: string, businessId: string): Promise<ClientLoyaltyProgress | null>;
+  getReferralCodes(businessId: string): Promise<ReferralCode[]>;
+  createReferralCode(data: InsertReferralCode): Promise<ReferralCode>;
+  updateReferralCode(id: string, data: Partial<ReferralCode>): Promise<ReferralCode | undefined>;
+  getReferralCodeByCode(code: string): Promise<ReferralCode | undefined>;
+  redeemReferralCode(code: string, referrerId: string, referredId: string): Promise<Referral | null>;
+  getClientsWithBirthdaysSoon(businessId: string): Promise<{ id: string; firstName: string | null; lastName: string | null; birthDate: Date | null }[]>;
+  updateUserBirthDate(userId: string, birthDate: Date): Promise<User | undefined>;
+  hasUserBookedWithBusiness(userId: string, businessId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -542,6 +561,153 @@ export class DatabaseStorage implements IStorage {
       topServices,
       conversionRate,
     };
+  }
+
+  async getLoyaltyProgram(businessId: string): Promise<LoyaltyProgram | undefined> {
+    const result = await db.select().from(loyaltyPrograms).where(eq(loyaltyPrograms.businessId, businessId)).limit(1);
+    return result[0];
+  }
+
+  async createLoyaltyProgram(data: InsertLoyaltyProgram): Promise<LoyaltyProgram> {
+    const result = await db.insert(loyaltyPrograms).values(data).returning();
+    return result[0];
+  }
+
+  async updateLoyaltyProgram(businessId: string, data: Partial<LoyaltyProgram>): Promise<LoyaltyProgram | undefined> {
+    const result = await db.update(loyaltyPrograms).set(data).where(eq(loyaltyPrograms.businessId, businessId)).returning();
+    return result[0];
+  }
+
+  async getClientLoyaltyProgress(clientId: string, businessId: string): Promise<ClientLoyaltyProgress | undefined> {
+    const result = await db.select().from(clientLoyaltyProgress)
+      .where(and(eq(clientLoyaltyProgress.clientId, clientId), eq(clientLoyaltyProgress.businessId, businessId)))
+      .limit(1);
+    return result[0];
+  }
+
+  async incrementClientVisit(clientId: string, businessId: string): Promise<ClientLoyaltyProgress | null> {
+    const loyaltyProgram = await this.getLoyaltyProgram(businessId);
+    
+    if (!loyaltyProgram || !loyaltyProgram.enabled) {
+      return null;
+    }
+
+    const existing = await this.getClientLoyaltyProgress(clientId, businessId);
+    
+    if (existing) {
+      const newVisitCount = existing.visitCount + 1;
+      let newRewardsEarned = existing.rewardsEarned;
+      
+      if (newVisitCount >= loyaltyProgram.visitThreshold) {
+        const earnedFromVisits = Math.floor(newVisitCount / loyaltyProgram.visitThreshold);
+        if (earnedFromVisits > existing.rewardsEarned) {
+          newRewardsEarned = earnedFromVisits;
+        }
+      }
+      
+      const result = await db.update(clientLoyaltyProgress)
+        .set({ visitCount: newVisitCount, rewardsEarned: newRewardsEarned })
+        .where(eq(clientLoyaltyProgress.id, existing.id))
+        .returning();
+      return result[0];
+    } else {
+      const result = await db.insert(clientLoyaltyProgress).values({
+        clientId,
+        businessId,
+        visitCount: 1,
+        rewardsEarned: 0,
+        rewardsRedeemed: 0,
+      }).returning();
+      return result[0];
+    }
+  }
+
+  async getReferralCodes(businessId: string): Promise<ReferralCode[]> {
+    return db.select().from(referralCodes).where(eq(referralCodes.businessId, businessId)).orderBy(desc(referralCodes.createdAt));
+  }
+
+  async createReferralCode(data: InsertReferralCode): Promise<ReferralCode> {
+    const result = await db.insert(referralCodes).values(data).returning();
+    return result[0];
+  }
+
+  async updateReferralCode(id: string, data: Partial<ReferralCode>): Promise<ReferralCode | undefined> {
+    const result = await db.update(referralCodes).set(data).where(eq(referralCodes.id, id)).returning();
+    return result[0];
+  }
+
+  async getReferralCodeByCode(code: string): Promise<ReferralCode | undefined> {
+    const result = await db.select().from(referralCodes).where(eq(referralCodes.code, code)).limit(1);
+    return result[0];
+  }
+
+  async redeemReferralCode(code: string, referrerId: string, referredId: string): Promise<Referral | null> {
+    const referralCode = await this.getReferralCodeByCode(code);
+    
+    if (!referralCode || !referralCode.active) {
+      return null;
+    }
+    
+    if (referralCode.maxUses !== null && referralCode.usedCount >= referralCode.maxUses) {
+      return null;
+    }
+    
+    const existingReferral = await db.select().from(referrals)
+      .where(and(eq(referrals.referralCodeId, referralCode.id), eq(referrals.referredId, referredId)))
+      .limit(1);
+    
+    if (existingReferral.length > 0) {
+      return null;
+    }
+    
+    await db.update(referralCodes)
+      .set({ usedCount: referralCode.usedCount + 1 })
+      .where(eq(referralCodes.id, referralCode.id));
+    
+    const result = await db.insert(referrals).values({
+      referralCodeId: referralCode.id,
+      referrerId,
+      referredId,
+    }).returning();
+    
+    return result[0];
+  }
+
+  async getClientsWithBirthdaysSoon(businessId: string): Promise<{ id: string; firstName: string | null; lastName: string | null; birthDate: Date | null }[]> {
+    const result = await db.execute(sql`
+      SELECT DISTINCT u.id, u.first_name as "firstName", u.last_name as "lastName", u.birth_date as "birthDate"
+      FROM users u
+      INNER JOIN bookings b ON b.client_id = u.id
+      WHERE b.business_id = ${businessId}
+        AND u.birth_date IS NOT NULL
+        AND (
+          (EXTRACT(MONTH FROM u.birth_date) = EXTRACT(MONTH FROM CURRENT_DATE) 
+           AND EXTRACT(DAY FROM u.birth_date) >= EXTRACT(DAY FROM CURRENT_DATE)
+           AND EXTRACT(DAY FROM u.birth_date) <= EXTRACT(DAY FROM CURRENT_DATE) + 7)
+          OR
+          (EXTRACT(MONTH FROM u.birth_date) = EXTRACT(MONTH FROM CURRENT_DATE + INTERVAL '7 days')
+           AND EXTRACT(DAY FROM u.birth_date) <= EXTRACT(DAY FROM CURRENT_DATE + INTERVAL '7 days'))
+        )
+    `);
+    
+    return (result.rows as any[]).map(row => ({
+      id: row.id,
+      firstName: row.firstName,
+      lastName: row.lastName,
+      birthDate: row.birthDate ? new Date(row.birthDate) : null,
+    }));
+  }
+
+  async updateUserBirthDate(userId: string, birthDate: Date): Promise<User | undefined> {
+    const result = await db.update(users).set({ birthDate }).where(eq(users.id, userId)).returning();
+    return result[0];
+  }
+
+  async hasUserBookedWithBusiness(userId: string, businessId: string): Promise<boolean> {
+    const result = await db.select().from(bookings)
+      .where(and(eq(bookings.clientId, userId), eq(bookings.businessId, businessId)))
+      .limit(1);
+    return result.length > 0;
   }
 }
 

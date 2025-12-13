@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Store, DollarSign, Clock, Save } from "lucide-react";
+import { Store, DollarSign, Clock, Save, Crown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
+import { LoyaltySettings } from "@/components/LoyaltySettings";
 
 interface Business {
   id: string;
@@ -22,6 +24,7 @@ interface Business {
   depositRequired: boolean;
   depositAmount: string | null;
   advanceNoticeHours: number;
+  tier: string;
 }
 
 interface BusinessSettings {
@@ -91,6 +94,12 @@ function BusinessCard({ business }: { business: Business }) {
         <CardTitle className="flex items-center gap-2 text-rose-700">
           <Store className="h-5 w-5" />
           <span data-testid={`business-name-${business.id}`}>{business.name}</span>
+          {business.tier === 'gold' && (
+            <Badge className="bg-yellow-500 text-white" data-testid={`badge-gold-${business.id}`}>
+              <Crown className="h-3 w-3 mr-1" />
+              Gold
+            </Badge>
+          )}
         </CardTitle>
         <p className="text-sm text-muted-foreground">{business.serviceType} • {business.location}</p>
       </CardHeader>
@@ -250,9 +259,22 @@ export default function MyBusinesses() {
             </CardContent>
           </Card>
         ) : businesses && businesses.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2" data-testid="businesses-list">
+          <div className="space-y-8" data-testid="businesses-list">
             {businesses.map((business) => (
-              <BusinessCard key={business.id} business={business} />
+              <div key={business.id} className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                  <BusinessCard business={business} />
+                </div>
+                {business.tier === 'gold' && (
+                  <div data-testid={`loyalty-section-${business.id}`}>
+                    <h2 className="text-xl font-semibold text-rose-700 mb-4 flex items-center gap-2">
+                      <Crown className="h-5 w-5 text-yellow-500" />
+                      Loyalty & Referral Engine - {business.name}
+                    </h2>
+                    <LoyaltySettings businessId={business.id} businessName={business.name} />
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         ) : (
