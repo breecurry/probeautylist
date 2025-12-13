@@ -714,5 +714,73 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/users/:id/profile", async (req, res, next) => {
+    try {
+      const { user, reviews } = await storage.getClientProfile(req.params.id);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      let displayName: string;
+      if (user.firstName) {
+        if (user.lastName) {
+          displayName = `${user.firstName} ${user.lastName.charAt(0).toUpperCase()}.`;
+        } else {
+          displayName = user.firstName;
+        }
+      } else {
+        displayName = user.username.substring(0, 8);
+      }
+      
+      const reviewsWithBusinessInfo = await Promise.all(
+        reviews.map(async (review) => {
+          const business = await storage.getBusiness(review.businessId);
+          return {
+            id: review.id,
+            businessName: business?.name || "Unknown Business",
+            rating: review.rating,
+            comment: review.comment,
+            createdAt: review.createdAt,
+          };
+        })
+      );
+      
+      res.json({
+        id: user.id,
+        displayName,
+        profilePhoto: user.profilePhoto,
+        reviews: reviewsWithBusinessInfo,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/users/profile", requireAuth, async (req, res, next) => {
+    try {
+      const { firstName, lastName, profilePhoto } = req.body;
+      
+      const updateData: { firstName?: string; lastName?: string; profilePhoto?: string } = {};
+      if (firstName !== undefined) updateData.firstName = firstName;
+      if (lastName !== undefined) updateData.lastName = lastName;
+      if (profilePhoto !== undefined) updateData.profilePhoto = profilePhoto;
+      
+      const updated = await storage.updateUserProfile(req.user!.id, updateData);
+      if (!updated) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        id: updated.id,
+        firstName: updated.firstName,
+        lastName: updated.lastName,
+        profilePhoto: updated.profilePhoto,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }

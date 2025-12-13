@@ -18,7 +18,7 @@ export default function Auth() {
   const { refreshUser } = useAuth();
   
   const [loginData, setLoginData] = useState({ usernameOrEmail: "", password: "" });
-  const [signupData, setSignupData] = useState({ username: "", email: "", password: "" });
+  const [signupData, setSignupData] = useState({ username: "", email: "", password: "", firstName: "", lastName: "" });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +56,7 @@ export default function Auth() {
     
     try {
       const userRole = role === 'business' ? 'business_owner' : 'client';
-      const user = await register(signupData.username, signupData.email, signupData.password, userRole);
+      const user = await register(signupData.username, signupData.email, signupData.password, userRole, signupData.firstName, signupData.lastName);
       await refreshUser();
       toast({
         title: "Account created!",
@@ -169,6 +169,31 @@ export default function Auth() {
                     >
                       <Briefcase className="w-8 h-8 mx-auto mb-2" />
                       <div className="font-medium">Business</div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-firstname">First Name</Label>
+                      <Input 
+                        id="signup-firstname" 
+                        type="text" 
+                        placeholder="John" 
+                        data-testid="input-signup-firstname"
+                        value={signupData.firstName}
+                        onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-lastname">Last Name</Label>
+                      <Input 
+                        id="signup-lastname" 
+                        type="text" 
+                        placeholder="Doe" 
+                        data-testid="input-signup-lastname"
+                        value={signupData.lastName}
+                        onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
+                      />
                     </div>
                   </div>
 

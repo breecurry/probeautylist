@@ -13,6 +13,7 @@ import Profile from "@/pages/Profile";
 import Admin from "@/pages/Admin";
 import MyBusinesses from "@/pages/MyBusinesses";
 import Bookings from "@/pages/Bookings";
+import CustomerProfile from "@/pages/CustomerProfile";
 
 function Router() {
   return (
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/admin" component={Admin} />
       <Route path="/my-businesses" component={MyBusinesses} />
       <Route path="/bookings" component={Bookings} />
+      <Route path="/customer/:id" component={CustomerProfile} />
       <Route component={NotFound} />
     </Switch>
   );

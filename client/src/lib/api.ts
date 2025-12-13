@@ -25,8 +25,8 @@ export async function login(username: string, password: string) {
   return apiRequest('POST', '/api/auth/login', { username, password });
 }
 
-export async function register(username: string, email: string, password: string, role: string = 'client') {
-  return apiRequest('POST', '/api/auth/register', { username, email, password, role });
+export async function register(username: string, email: string, password: string, role: string = 'client', firstName?: string, lastName?: string) {
+  return apiRequest('POST', '/api/auth/register', { username, email, password, role, firstName, lastName });
 }
 
 export async function logout() {

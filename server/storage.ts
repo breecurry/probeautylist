@@ -69,6 +69,8 @@ export interface IStorage {
   createNotification(notification: InsertNotification): Promise<Notification>;
   getUpcomingBookingsForReminders(): Promise<Booking[]>;
   hasReminderBeenSent(bookingId: string, userId: string, reminderType: string): Promise<boolean>;
+  getClientProfile(clientId: string): Promise<{ user: { id: string; firstName: string | null; lastName: string | null; profilePhoto: string | null; username: string } | undefined; reviews: ClientReview[] }>;
+  updateUserProfile(userId: string, data: { firstName?: string; lastName?: string; profilePhoto?: string }): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -343,6 +345,30 @@ export class DatabaseStorage implements IStorage {
       ))
       .limit(1);
     return result.length > 0;
+  }
+
+  async getClientProfile(clientId: string): Promise<{ user: { id: string; firstName: string | null; lastName: string | null; profilePhoto: string | null; username: string } | undefined; reviews: ClientReview[] }> {
+    const userResult = await db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profilePhoto: users.profilePhoto,
+      username: users.username,
+    }).from(users).where(eq(users.id, clientId)).limit(1);
+    
+    const reviewsResult = await db.select().from(clientReviews)
+      .where(eq(clientReviews.clientId, clientId))
+      .orderBy(desc(clientReviews.createdAt));
+    
+    return {
+      user: userResult[0],
+      reviews: reviewsResult,
+    };
+  }
+
+  async updateUserProfile(userId: string, data: { firstName?: string; lastName?: string; profilePhoto?: string }): Promise<User | undefined> {
+    const result = await db.update(users).set(data).where(eq(users.id, userId)).returning();
+    return result[0];
   }
 }
 
