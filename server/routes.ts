@@ -84,6 +84,23 @@ function requireRole(role: string) {
   };
 }
 
+const PAID_TIERS = ['bronze', 'silver', 'gold'];
+const GOLD_ONLY = ['gold'];
+
+async function requireBusinessTier(businessId: string, allowedTiers: string[], res: any): Promise<boolean> {
+  const business = await storage.getBusiness(businessId);
+  if (!business) {
+    res.status(404).json({ message: "Business not found" });
+    return false;
+  }
+  if (!allowedTiers.includes(business.tier)) {
+    const tierName = allowedTiers.includes('bronze') ? 'paid' : 'Gold';
+    res.status(403).json({ message: `This feature requires a ${tierName} subscription plan. Please upgrade to access this feature.` });
+    return false;
+  }
+  return true;
+}
+
 const profanityWords = ['badword', 'profanity', 'curse', 'damn', 'hell', 'shit', 'fuck', 'ass', 'bitch'];
 
 function containsProfanity(text: string): boolean {
@@ -366,6 +383,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(booking.businessId, PAID_TIERS, res)) return;
+
       const updated = await storage.markBookingAsNoShow(req.params.id);
       
       await storage.createNotification({
@@ -392,6 +411,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
 
       const noShowBookings = await storage.getNoShowBookingsForBusiness(req.params.id);
       res.json(noShowBookings);
@@ -484,6 +505,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "You can only add photos to your own reviews" });
       }
 
+      if (!await requireBusinessTier(review.businessId, PAID_TIERS, res)) return;
+
       const result = insertReviewPhotoSchema.safeParse({
         ...req.body,
         reviewId: req.params.id,
@@ -514,6 +537,8 @@ export async function registerRoutes(
       if (review.clientId !== req.user!.id) {
         return res.status(403).json({ message: "You can only delete photos from your own reviews" });
       }
+
+      if (!await requireBusinessTier(review.businessId, PAID_TIERS, res)) return;
 
       await storage.deleteReviewPhoto(req.params.id);
       res.json({ message: "Photo deleted" });
@@ -1495,6 +1520,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
+
       const photos = await storage.getPendingBeforeAfterPhotosByBusiness(req.params.id);
       res.json(photos);
     } catch (error) {
@@ -1513,6 +1540,8 @@ export async function registerRoutes(
       if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(photo.businessId, PAID_TIERS, res)) return;
 
       const approved = await storage.approveBeforeAfterPhoto(req.params.id);
       res.json(approved);
@@ -1536,6 +1565,8 @@ export async function registerRoutes(
       if (!isClient && !isBusinessOwner && !isAdmin) {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(photo.businessId, PAID_TIERS, res)) return;
 
       await storage.deleteBeforeAfterPhoto(req.params.id);
       res.json({ message: "Deleted" });
@@ -1619,6 +1650,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
+
       const rebookingSettingsSchema = z.object({
         rebookingEnabled: z.boolean().optional(),
         defaultRebookingDays: z.number().int().min(7, "Minimum 7 days").max(365, "Maximum 365 days").optional(),
@@ -1677,6 +1710,8 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Business not found" });
       }
 
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
+
       const result = insertWaitlistEntrySchema.safeParse({
         clientId: req.user!.id,
         businessId: req.params.id,
@@ -1705,6 +1740,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
 
       const entries = await storage.getWaitlistForBusiness(req.params.id);
       res.json(entries);
@@ -1738,6 +1775,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(entry.businessId, PAID_TIERS, res)) return;
+
       await storage.removeFromWaitlist(req.params.id);
       res.json({ message: "Removed from waitlist" });
     } catch (error) {
@@ -1762,6 +1801,8 @@ export async function registerRoutes(
       if (!business || !business.approved) {
         return res.status(404).json({ message: "Business not found or not approved" });
       }
+
+      if (!await requireBusinessTier(businessId, PAID_TIERS, res)) return;
 
       let totalPrice = 0;
       const validatedGuests = [];
@@ -1878,6 +1919,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Not authorized" });
       }
 
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
+
       const groupBookings = await storage.getGroupBookingsForBusiness(req.params.id);
       res.json(groupBookings);
     } catch (error) {
@@ -1892,6 +1935,8 @@ export async function registerRoutes(
       if (!portfolioItemId || !businessId) {
         return res.status(400).json({ message: "portfolioItemId and businessId are required" });
       }
+
+      if (!await requireBusinessTier(businessId, PAID_TIERS, res)) return;
 
       const item = await storage.addToInspirationBoard(req.user!.id, portfolioItemId, businessId, note);
       res.json(item);
@@ -1956,6 +2001,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
+
       const staff = await storage.getStaffMembersByBusiness(req.params.id);
       res.json(staff);
     } catch (error) {
@@ -1973,6 +2020,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
 
       const result = insertStaffMemberSchema.safeParse({ ...req.body, businessId: req.params.id });
       if (!result.success) {
@@ -1998,6 +2047,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(staff.businessId, PAID_TIERS, res)) return;
+
       res.json(staff);
     } catch (error) {
       next(error);
@@ -2015,6 +2066,8 @@ export async function registerRoutes(
       if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(staff.businessId, PAID_TIERS, res)) return;
 
       const updated = await storage.updateStaffMember(req.params.id, req.body);
       res.json(updated);
@@ -2035,6 +2088,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(staff.businessId, PAID_TIERS, res)) return;
+
       await storage.deleteStaffMember(req.params.id);
       res.json({ message: "Staff member deleted" });
     } catch (error) {
@@ -2053,6 +2108,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
+
       const settings = await storage.getFollowUpSettings(req.params.id);
       res.json(settings || null);
     } catch (error) {
@@ -2070,6 +2127,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
 
       const existingSettings = await storage.getFollowUpSettings(req.params.id);
       
@@ -2103,6 +2162,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
 
       const followUps = await storage.getFollowUpMessagesByBusiness(req.params.id);
       res.json(followUps);
@@ -2211,6 +2272,8 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Business not found" });
       }
 
+      if (!await requireBusinessTier(result.data.businessId, PAID_TIERS, res)) return;
+
       const giftCard = await storage.createGiftCard(result.data);
       res.json(giftCard);
     } catch (error) {
@@ -2237,6 +2300,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, PAID_TIERS, res)) return;
 
       const giftCards = await storage.getGiftCardsByBusiness(req.params.id);
       res.json(giftCards);
@@ -2282,6 +2347,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden - only the business owner can redeem gift cards" });
       }
 
+      if (!await requireBusinessTier(giftCard.businessId, PAID_TIERS, res)) return;
+
       const currentBalance = parseFloat(giftCard.balance);
       if (amount > currentBalance) {
         return res.status(400).json({ message: `Insufficient balance. Current balance: $${currentBalance.toFixed(2)}` });
@@ -2309,6 +2376,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
+
       const settings = await storage.getSocialMediaSettings(req.params.id);
       res.json(settings || null);
     } catch (error) {
@@ -2326,6 +2395,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
 
       const existingSettings = await storage.getSocialMediaSettings(req.params.id);
       
@@ -2361,6 +2432,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
+
       const expenses = await storage.getExpensesByBusiness(req.params.id);
       res.json(expenses);
     } catch (error) {
@@ -2378,6 +2451,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
 
       const result = insertExpenseSchema.safeParse({
         ...req.body,
@@ -2407,6 +2482,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(expense.businessId, GOLD_ONLY, res)) return;
+
       const updated = await storage.updateExpense(req.params.id, req.body);
       res.json(updated);
     } catch (error) {
@@ -2426,6 +2503,8 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Forbidden" });
       }
 
+      if (!await requireBusinessTier(expense.businessId, GOLD_ONLY, res)) return;
+
       await storage.deleteExpense(req.params.id);
       res.json({ message: "Expense deleted" });
     } catch (error) {
@@ -2443,6 +2522,8 @@ export async function registerRoutes(
       if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
         return res.status(403).json({ message: "Forbidden" });
       }
+
+      if (!await requireBusinessTier(req.params.id, GOLD_ONLY, res)) return;
 
       const summary = await storage.getProfitSummary(req.params.id);
       res.json(summary);
