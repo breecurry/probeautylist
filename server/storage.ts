@@ -14,8 +14,9 @@ import {
   type ClientLoyaltyProgress, type InsertClientLoyaltyProgress,
   type ReferralCode, type InsertReferralCode,
   type Referral, type InsertReferral,
+  type BeforeAfterPhoto, type InsertBeforeAfterPhoto,
   users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
-  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals
+  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
@@ -106,6 +107,14 @@ export interface IStorage {
   getBookingsByWeekday(businessId: string): Promise<{ day: number; dayName: string; count: number }[]>;
   getBookingsByHour(businessId: string): Promise<{ hour: number; count: number }[]>;
   getServiceRevenueMix(businessId: string): Promise<{ serviceName: string; revenue: number; percentage: number; count: number }[]>;
+  
+  createBeforeAfterPhoto(data: InsertBeforeAfterPhoto): Promise<BeforeAfterPhoto>;
+  getBeforeAfterPhotosByBusiness(businessId: string): Promise<BeforeAfterPhoto[]>;
+  getPendingBeforeAfterPhotosByBusiness(businessId: string): Promise<BeforeAfterPhoto[]>;
+  getBeforeAfterPhotosByClient(clientId: string): Promise<BeforeAfterPhoto[]>;
+  approveBeforeAfterPhoto(id: string): Promise<BeforeAfterPhoto | undefined>;
+  deleteBeforeAfterPhoto(id: string): Promise<boolean>;
+  getBeforeAfterPhoto(id: string): Promise<BeforeAfterPhoto | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -819,6 +828,47 @@ export class DatabaseStorage implements IStorage {
       ...s,
       percentage: totalRevenue > 0 ? (s.revenue / totalRevenue) * 100 : 0
     }));
+  }
+
+  async createBeforeAfterPhoto(data: InsertBeforeAfterPhoto): Promise<BeforeAfterPhoto> {
+    const result = await db.insert(beforeAfterPhotos).values(data).returning();
+    return result[0];
+  }
+
+  async getBeforeAfterPhotosByBusiness(businessId: string): Promise<BeforeAfterPhoto[]> {
+    return db.select().from(beforeAfterPhotos)
+      .where(and(eq(beforeAfterPhotos.businessId, businessId), eq(beforeAfterPhotos.approved, true)))
+      .orderBy(desc(beforeAfterPhotos.createdAt));
+  }
+
+  async getPendingBeforeAfterPhotosByBusiness(businessId: string): Promise<BeforeAfterPhoto[]> {
+    return db.select().from(beforeAfterPhotos)
+      .where(and(eq(beforeAfterPhotos.businessId, businessId), eq(beforeAfterPhotos.approved, false)))
+      .orderBy(desc(beforeAfterPhotos.createdAt));
+  }
+
+  async getBeforeAfterPhotosByClient(clientId: string): Promise<BeforeAfterPhoto[]> {
+    return db.select().from(beforeAfterPhotos)
+      .where(eq(beforeAfterPhotos.clientId, clientId))
+      .orderBy(desc(beforeAfterPhotos.createdAt));
+  }
+
+  async approveBeforeAfterPhoto(id: string): Promise<BeforeAfterPhoto | undefined> {
+    const result = await db.update(beforeAfterPhotos)
+      .set({ approved: true })
+      .where(eq(beforeAfterPhotos.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteBeforeAfterPhoto(id: string): Promise<boolean> {
+    await db.delete(beforeAfterPhotos).where(eq(beforeAfterPhotos.id, id));
+    return true;
+  }
+
+  async getBeforeAfterPhoto(id: string): Promise<BeforeAfterPhoto | undefined> {
+    const result = await db.select().from(beforeAfterPhotos).where(eq(beforeAfterPhotos.id, id)).limit(1);
+    return result[0];
   }
 }
 

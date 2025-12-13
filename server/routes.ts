@@ -9,7 +9,7 @@ import { pool } from "../db";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema } from "@shared/schema";
+import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema } from "@shared/schema";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -1290,6 +1290,110 @@ export async function registerRoutes(
       const insights = await generateGrowthInsights(req.params.id);
       
       res.json(insights);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/bookings/:id/before-after", requireAuth, async (req, res, next) => {
+    try {
+      const booking = await storage.getBooking(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      if (booking.clientId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only upload photos for your own bookings" });
+      }
+
+      if (!booking.completedByBusiness) {
+        return res.status(400).json({ message: "You can only upload before/after photos for completed services" });
+      }
+
+      const result = insertBeforeAfterPhotoSchema.safeParse({
+        bookingId: req.params.id,
+        clientId: req.user!.id,
+        businessId: booking.businessId,
+        beforePhotoUrl: req.body.beforePhotoUrl,
+        afterPhotoUrl: req.body.afterPhotoUrl,
+        caption: req.body.caption,
+      });
+
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const photo = await storage.createBeforeAfterPhoto(result.data);
+      res.json(photo);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/before-after", async (req, res, next) => {
+    try {
+      const photos = await storage.getBeforeAfterPhotosByBusiness(req.params.id);
+      res.json(photos);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/before-after/pending", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const photos = await storage.getPendingBeforeAfterPhotosByBusiness(req.params.id);
+      res.json(photos);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/before-after/:id/approve", requireAuth, async (req, res, next) => {
+    try {
+      const photo = await storage.getBeforeAfterPhoto(req.params.id);
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+
+      const business = await storage.getBusiness(photo.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const approved = await storage.approveBeforeAfterPhoto(req.params.id);
+      res.json(approved);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/before-after/:id", requireAuth, async (req, res, next) => {
+    try {
+      const photo = await storage.getBeforeAfterPhoto(req.params.id);
+      if (!photo) {
+        return res.status(404).json({ message: "Photo not found" });
+      }
+
+      const business = await storage.getBusiness(photo.businessId);
+      const isClient = photo.clientId === req.user!.id;
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+
+      if (!isClient && !isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deleteBeforeAfterPhoto(req.params.id);
+      res.json({ message: "Deleted" });
     } catch (error) {
       next(error);
     }

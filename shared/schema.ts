@@ -164,6 +164,18 @@ export const referrals = pgTable("referrals", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const beforeAfterPhotos = pgTable("before_after_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  bookingId: varchar("booking_id").notNull().references(() => bookings.id),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  beforePhotoUrl: text("before_photo_url").notNull(),
+  afterPhotoUrl: text("after_photo_url").notNull(),
+  caption: text("caption"),
+  approved: boolean("approved").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -247,6 +259,12 @@ export const insertReferralSchema = createInsertSchema(referrals).omit({
   createdAt: true,
 });
 
+export const insertBeforeAfterPhotoSchema = createInsertSchema(beforeAfterPhotos).omit({
+  id: true,
+  createdAt: true,
+  approved: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -291,3 +309,6 @@ export type ReferralCode = typeof referralCodes.$inferSelect;
 
 export type InsertReferral = z.infer<typeof insertReferralSchema>;
 export type Referral = typeof referrals.$inferSelect;
+
+export type InsertBeforeAfterPhoto = z.infer<typeof insertBeforeAfterPhotoSchema>;
+export type BeforeAfterPhoto = typeof beforeAfterPhotos.$inferSelect;

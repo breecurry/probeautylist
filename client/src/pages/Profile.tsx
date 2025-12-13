@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescri
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { BeforeAfterGallery } from "@/components/BeforeAfterGallery";
 
 export default function Profile() {
   const params = useParams();
@@ -319,6 +320,13 @@ export default function Profile() {
                   </div>
               )}
             </section>
+
+            {/* Before & After Gallery */}
+            <BeforeAfterGallery 
+              businessId={String(id)} 
+              isOwner={isPending}
+              showUpload={hasCompletedService}
+            />
 
             {/* Reviews Section */}
             <section>
