@@ -39,13 +39,24 @@ Preferred communication style: Simple, everyday language.
 - `bookings` - Appointment bookings with deposit tracking
   - Fields: `depositPaid`, `depositAmount`, `stripePaymentIntentId`, `completedByBusiness`
 - `reviews` - Business reviews from clients (gated to completed bookings)
+- `reviewPhotos` - Photos attached to reviews
 - `clientReviews` - Reviews of clients from businesses (gated to completed bookings)
 - `portfolioItems` - Business portfolio photos
 - `portfolioLikes` / `portfolioComments` - Social engagement features
 - `messages` - Direct messaging between users
 - `tips` - Client tips for service providers
 - `notifications` - In-app notifications for booking reminders and other alerts
-  - Fields: `userId`, `bookingId`, `type`, `title`, `message`, `read`, `reminderType`, `createdAt`
+- `beforeAfterPhotos` - Client transformation photos linked to bookings
+- `rebookingReminders` - Smart rebooking suggestions after appointments
+- `waitlistEntries` - Waitlist for busy stylists
+- `groupBookings` / `groupBookingGuests` - Group booking for parties
+- `inspirationBoardItems` - Saved portfolio photos for style inspiration
+- `staffMembers` - Team members with schedules and specialties
+- `followUpSettings` / `followUpMessages` - Automated post-appointment follow-ups
+- `clientNotes` - Private notes about clients (business owner only)
+- `giftCards` - Purchasable gift cards with balance tracking
+- `socialMediaSettings` - Social media integration settings (stub)
+- `expenses` - Business expense tracking for profit calculation
 
 ### Two-Way Review System
 - **Client → Business**: Clients can leave reviews after their booking is marked as completed by the business
