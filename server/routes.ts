@@ -182,6 +182,45 @@ export async function registerRoutes(
     res.json(req.user);
   });
 
+  // One-time admin setup endpoint - creates admin if none exists
+  app.post("/api/auth/setup-admin", async (req, res, next) => {
+    try {
+      const { username, email, password, setupKey } = req.body;
+      
+      // Require a setup key for security
+      if (setupKey !== "beautyconnect-admin-2024") {
+        return res.status(403).json({ message: "Invalid setup key" });
+      }
+      
+      // Check if any admin already exists
+      const existingAdmins = await storage.getUsersByRole("admin");
+      if (existingAdmins && existingAdmins.length > 0) {
+        return res.status(400).json({ message: "Admin account already exists. Use normal login." });
+      }
+      
+      if (!username || !email || !password) {
+        return res.status(400).json({ message: "Username, email, and password are required" });
+      }
+      
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUser({
+        username,
+        email,
+        password: hashedPassword,
+        role: "admin",
+      });
+      
+      req.login({ id: user.id, username: user.username, email: user.email, role: user.role }, (err) => {
+        if (err) {
+          return next(err);
+        }
+        return res.json({ id: user.id, username: user.username, email: user.email, role: user.role });
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  });
+
   app.get("/api/businesses", async (req, res, next) => {
     try {
       const businesses = await storage.getApprovedBusinesses();
