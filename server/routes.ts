@@ -273,8 +273,49 @@ export async function registerRoutes(
         return res.status(400).json({ message: fromZodError(result.error).message });
       }
 
-      const booking = await storage.createBooking(result.data);
+      const business = await storage.getBusiness(result.data.businessId);
+      const isGoldBusiness = business?.tier === 'gold';
+      
+      const booking = await storage.createBookingWithPriority(result.data, isGoldBusiness);
+      
+      if (business) {
+        const businessOwner = await storage.getUser(business.ownerId);
+        if (businessOwner) {
+          const priorityLabel = isGoldBusiness ? " ⭐ Priority Booking" : "";
+          await storage.createNotification({
+            userId: business.ownerId,
+            bookingId: booking.id,
+            type: 'booking_request',
+            title: `New${priorityLabel} Request`,
+            message: isGoldBusiness 
+              ? `Priority booking request for ${booking.serviceName} on ${new Date(booking.date).toLocaleDateString()}`
+              : `New booking request for ${booking.serviceName} on ${new Date(booking.date).toLocaleDateString()}`,
+          });
+        }
+      }
+      
       res.json(booking);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/clients/:clientId/loyalty/:businessId", requireAuth, async (req, res, next) => {
+    try {
+      const { clientId, businessId } = req.params;
+      
+      // Authorization: user must be the client OR own the business
+      const business = await storage.getBusiness(businessId);
+      const isClient = req.user!.id === clientId;
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+      
+      if (!isClient && !isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden - you can only check your own loyalty status or your business's clients" });
+      }
+      
+      const isLoyal = await storage.getLoyalClientStatus(clientId, businessId);
+      res.json({ isLoyal });
     } catch (error) {
       next(error);
     }

@@ -100,6 +100,8 @@ export interface IStorage {
   getClientsWithBirthdaysSoon(businessId: string): Promise<{ id: string; firstName: string | null; lastName: string | null; birthDate: Date | null }[]>;
   updateUserBirthDate(userId: string, birthDate: Date): Promise<User | undefined>;
   hasUserBookedWithBusiness(userId: string, businessId: string): Promise<boolean>;
+  getLoyalClientStatus(clientId: string, businessId: string): Promise<boolean>;
+  createBookingWithPriority(booking: InsertBooking, priority: boolean): Promise<Booking>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -708,6 +710,22 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(bookings.clientId, userId), eq(bookings.businessId, businessId)))
       .limit(1);
     return result.length > 0;
+  }
+
+  async getLoyalClientStatus(clientId: string, businessId: string): Promise<boolean> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(bookings)
+      .where(and(
+        eq(bookings.clientId, clientId),
+        eq(bookings.businessId, businessId),
+        eq(bookings.status, 'completed')
+      ));
+    return Number(result[0]?.count || 0) >= 3;
+  }
+
+  async createBookingWithPriority(booking: InsertBooking, priority: boolean): Promise<Booking> {
+    const result = await db.insert(bookings).values({ ...booking, priority }).returning();
+    return result[0];
   }
 }
 

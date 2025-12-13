@@ -6,7 +6,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle } from "lucide-react";
+import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle, Crown, Zap } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -97,6 +97,7 @@ export default function Profile() {
   const socialFeaturesEnabled = currentPlan.socialFeatures;
   const photoLimit = currentPlan.photoLimit;
   const portfolioItems = business.portfolio ? business.portfolio.slice(0, photoLimit) : [];
+  const isGoldBusiness = business.tier === 'gold';
 
   return (
     <div className="min-h-screen bg-background">
@@ -397,9 +398,23 @@ export default function Profile() {
           {/* Sidebar Booking */}
           <div className="lg:col-span-1 space-y-6">
             <div className="sticky top-24 space-y-6">
-              <Card className="border-none shadow-xl shadow-pink-100/50">
+              <Card className={`border-none shadow-xl ${isGoldBusiness ? 'shadow-amber-100/50 border-amber-200' : 'shadow-pink-100/50'}`}>
                 <CardHeader>
-                  <CardTitle className="font-serif">Book Appointment</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="font-serif">Book Appointment</CardTitle>
+                    {isGoldBusiness && (
+                      <Badge className="bg-gradient-to-r from-amber-400 to-amber-500 text-white border-none" data-testid="priority-booking-badge">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Priority Booking
+                      </Badge>
+                    )}
+                  </div>
+                  {isGoldBusiness && (
+                    <p className="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                      <Zap className="w-3 h-3" />
+                      Express checkout available - Gold business
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div>
@@ -429,17 +444,31 @@ export default function Profile() {
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button 
-                        className="w-full h-12 text-lg shadow-lg shadow-primary/20" 
+                        className={`w-full h-12 text-lg shadow-lg ${isGoldBusiness ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-amber-200' : 'shadow-primary/20'}`}
                         disabled={!selectedService || !date}
+                        data-testid="button-request-booking"
                       >
-                        Request Booking
+                        {isGoldBusiness && <Crown className="w-5 h-5 mr-2" />}
+                        {isGoldBusiness ? 'Priority Booking' : 'Request Booking'}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Confirm Booking Request</DialogTitle>
+                        <DialogTitle className="flex items-center gap-2">
+                          {isGoldBusiness && <Crown className="w-5 h-5 text-amber-500" />}
+                          Confirm {isGoldBusiness ? 'Priority ' : ''}Booking Request
+                        </DialogTitle>
                       </DialogHeader>
                       <div className="py-4 space-y-4">
+                        {isGoldBusiness && (
+                          <div className="bg-gradient-to-r from-amber-50 to-amber-100 p-3 rounded-lg border border-amber-200 flex items-center gap-2">
+                            <Crown className="w-5 h-5 text-amber-600" />
+                            <div>
+                              <p className="font-medium text-amber-800 text-sm">Priority Booking</p>
+                              <p className="text-xs text-amber-600">Your booking will be prioritized by this Gold business</p>
+                            </div>
+                          </div>
+                        )}
                         <div className="flex justify-between border-b pb-2">
                           <span className="text-muted-foreground">Service</span>
                           <span className="font-medium">{selectedService}</span>
@@ -452,12 +481,20 @@ export default function Profile() {
                           <span className="text-muted-foreground">Location</span>
                           <span className="font-medium">{business.location}</span>
                         </div>
-                        <div className="bg-yellow-50 p-3 rounded-md text-sm text-yellow-800">
-                          Note: This is a request. The business will confirm the exact time with you shortly.
+                        <div className={`p-3 rounded-md text-sm ${isGoldBusiness ? 'bg-amber-50 text-amber-800' : 'bg-yellow-50 text-yellow-800'}`}>
+                          {isGoldBusiness 
+                            ? 'Priority bookings are processed faster. The business will confirm your appointment shortly.'
+                            : 'Note: This is a request. The business will confirm the exact time with you shortly.'}
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button onClick={handleBooking}>Send Request</Button>
+                        <Button 
+                          onClick={handleBooking}
+                          className={isGoldBusiness ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700' : ''}
+                        >
+                          {isGoldBusiness && <Crown className="w-4 h-4 mr-2" />}
+                          {isGoldBusiness ? 'Confirm Priority Booking' : 'Send Request'}
+                        </Button>
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>

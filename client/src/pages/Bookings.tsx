@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Calendar, DollarSign, Star, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Calendar, DollarSign, Star, CheckCircle, Clock, XCircle, Crown } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
@@ -31,6 +31,7 @@ interface Booking {
   completedByBusiness: boolean;
   depositPaid: boolean;
   depositAmount: string | null;
+  priority: boolean;
 }
 
 interface Business {
@@ -240,7 +241,11 @@ function BookingCard({
   return (
     <>
       <Card 
-        className="border-rose-100 shadow-sm hover:shadow-md transition-shadow"
+        className={`shadow-sm hover:shadow-md transition-shadow ${
+          booking.priority 
+            ? "border-amber-200 bg-gradient-to-r from-amber-50/30 to-white" 
+            : "border-rose-100"
+        }`}
         data-testid={`booking-card-${booking.id}`}
       >
         <CardContent className="p-4">
@@ -300,6 +305,16 @@ function BookingCard({
                   >
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Completed
+                  </Badge>
+                )}
+                {booking.priority && (
+                  <Badge 
+                    variant="outline" 
+                    className="bg-amber-50 text-amber-700 border-amber-200"
+                    data-testid={`priority-badge-${booking.id}`}
+                  >
+                    <Crown className="h-3 w-3 mr-1 fill-amber-500" />
+                    Priority
                   </Badge>
                 )}
               </div>

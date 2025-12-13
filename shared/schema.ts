@@ -49,6 +49,7 @@ export const bookings = pgTable("bookings", {
   depositPaid: boolean("deposit_paid").notNull().default(false),
   depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
+  priority: boolean("priority").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -181,6 +182,7 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
   completedByBusiness: true,
   depositPaid: true,
   stripePaymentIntentId: true,
+  priority: true,
 });
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({
