@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   profilePhoto: text("profile_photo"),
   role: text("role").notNull().default("client"),
   stripeCustomerId: text("stripe_customer_id"),
+  usernameChanged: boolean("username_changed").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -782,5 +782,94 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/users/password", requireAuth, async (req, res, next) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: "Current password and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "New password must be at least 6 characters" });
+      }
+
+      const user = await storage.getUser(req.user!.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const isValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isValid) {
+        return res.status(400).json({ message: "Current password is incorrect" });
+      }
+
+      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+      await storage.updateUserPassword(req.user!.id, hashedNewPassword);
+
+      res.json({ message: "Password updated successfully" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/users/username", requireAuth, async (req, res, next) => {
+    try {
+      const { newUsername } = req.body;
+      
+      if (!newUsername || newUsername.trim().length < 3) {
+        return res.status(400).json({ message: "Username must be at least 3 characters" });
+      }
+
+      const user = await storage.getUser(req.user!.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      if (user.usernameChanged) {
+        return res.status(400).json({ message: "Username can only be changed once" });
+      }
+
+      const existingUser = await storage.getUserByUsername(newUsername.trim());
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already taken" });
+      }
+
+      const updated = await storage.changeUsername(req.user!.id, newUsername.trim());
+      if (!updated) {
+        return res.status(400).json({ message: "Failed to update username" });
+      }
+
+      res.json({ 
+        message: "Username updated successfully",
+        username: updated.username,
+        usernameChanged: updated.usernameChanged
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/users/me/full", requireAuth, async (req, res, next) => {
+    try {
+      const user = await storage.getUser(req.user!.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        profilePhoto: user.profilePhoto,
+        role: user.role,
+        usernameChanged: user.usernameChanged,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }

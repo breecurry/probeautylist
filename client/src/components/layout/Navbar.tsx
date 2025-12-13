@@ -150,6 +150,10 @@ export function Navbar() {
                     Admin Panel
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={() => setLocation('/settings')} data-testid="dropdown-settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-rose-500 focus:text-rose-600">
                   <LogOut className="mr-2 h-4 w-4" />
@@ -210,6 +214,17 @@ export function Navbar() {
                 >
                   <Shield className="h-4 w-4" />
                   Admin Panel
+                </button>
+              )}
+              
+              {isAuthenticated && (
+                <button 
+                  onClick={() => handleNavigation('/settings')}
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                  data-testid="mobile-settings"
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings
                 </button>
               )}
 

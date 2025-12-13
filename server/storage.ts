@@ -71,6 +71,8 @@ export interface IStorage {
   hasReminderBeenSent(bookingId: string, userId: string, reminderType: string): Promise<boolean>;
   getClientProfile(clientId: string): Promise<{ user: { id: string; firstName: string | null; lastName: string | null; profilePhoto: string | null; username: string } | undefined; reviews: ClientReview[] }>;
   updateUserProfile(userId: string, data: { firstName?: string; lastName?: string; profilePhoto?: string }): Promise<User | undefined>;
+  updateUserPassword(userId: string, hashedNewPassword: string): Promise<User | undefined>;
+  changeUsername(userId: string, newUsername: string): Promise<User | null>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -369,6 +371,24 @@ export class DatabaseStorage implements IStorage {
   async updateUserProfile(userId: string, data: { firstName?: string; lastName?: string; profilePhoto?: string }): Promise<User | undefined> {
     const result = await db.update(users).set(data).where(eq(users.id, userId)).returning();
     return result[0];
+  }
+
+  async updateUserPassword(userId: string, hashedNewPassword: string): Promise<User | undefined> {
+    const result = await db.update(users).set({ password: hashedNewPassword }).where(eq(users.id, userId)).returning();
+    return result[0];
+  }
+
+  async changeUsername(userId: string, newUsername: string): Promise<User | null> {
+    const user = await this.getUser(userId);
+    if (!user || user.usernameChanged) {
+      return null;
+    }
+    const existingUser = await this.getUserByUsername(newUsername);
+    if (existingUser) {
+      return null;
+    }
+    const result = await db.update(users).set({ username: newUsername, usernameChanged: true }).where(eq(users.id, userId)).returning();
+    return result[0] || null;
   }
 }
 

@@ -14,6 +14,7 @@ import Admin from "@/pages/Admin";
 import MyBusinesses from "@/pages/MyBusinesses";
 import Bookings from "@/pages/Bookings";
 import CustomerProfile from "@/pages/CustomerProfile";
+import AccountSettings from "@/pages/AccountSettings";
 
 function Router() {
   return (
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/my-businesses" component={MyBusinesses} />
       <Route path="/bookings" component={Bookings} />
       <Route path="/customer/:id" component={CustomerProfile} />
+      <Route path="/settings" component={AccountSettings} />
       <Route component={NotFound} />
     </Switch>
   );
