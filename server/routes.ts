@@ -9,7 +9,7 @@ import { pool } from "../db";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema } from "@shared/schema";
+import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema, insertInspirationBoardItemSchema } from "@shared/schema";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -1735,6 +1735,66 @@ export async function registerRoutes(
 
       const groupBookings = await storage.getGroupBookingsForBusiness(req.params.id);
       res.json(groupBookings);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/inspiration-board", requireAuth, async (req, res, next) => {
+    try {
+      const { portfolioItemId, businessId, note } = req.body;
+      
+      if (!portfolioItemId || !businessId) {
+        return res.status(400).json({ message: "portfolioItemId and businessId are required" });
+      }
+
+      const item = await storage.addToInspirationBoard(req.user!.id, portfolioItemId, businessId, note);
+      res.json(item);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/inspiration-board", requireAuth, async (req, res, next) => {
+    try {
+      const items = await storage.getInspirationBoard(req.user!.id);
+      res.json(items);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/inspiration-board/:id", requireAuth, async (req, res, next) => {
+    try {
+      await storage.removeFromInspirationBoard(req.params.id, req.user!.id);
+      res.json({ message: "Removed from inspiration board" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/inspiration-board/:id", requireAuth, async (req, res, next) => {
+    try {
+      const { note } = req.body;
+      
+      if (note === undefined) {
+        return res.status(400).json({ message: "note is required" });
+      }
+
+      const updated = await storage.updateInspirationBoardNote(req.params.id, req.user!.id, note);
+      if (!updated) {
+        return res.status(404).json({ message: "Item not found or not authorized" });
+      }
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/inspiration-board/check/:portfolioItemId", requireAuth, async (req, res, next) => {
+    try {
+      const isSaved = await storage.isItemOnInspirationBoard(req.user!.id, req.params.portfolioItemId);
+      res.json({ isSaved });
     } catch (error) {
       next(error);
     }

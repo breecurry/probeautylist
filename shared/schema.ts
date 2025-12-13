@@ -229,6 +229,15 @@ export const groupBookingGuests = pgTable("group_booking_guests", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const inspirationBoardItems = pgTable("inspiration_board_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  portfolioItemId: varchar("portfolio_item_id").notNull().references(() => portfolioItems.id),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  note: text("note"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -344,6 +353,11 @@ export const insertGroupBookingGuestSchema = createInsertSchema(groupBookingGues
   createdAt: true,
 });
 
+export const insertInspirationBoardItemSchema = createInsertSchema(inspirationBoardItems).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -403,3 +417,6 @@ export type GroupBooking = typeof groupBookings.$inferSelect;
 
 export type InsertGroupBookingGuest = z.infer<typeof insertGroupBookingGuestSchema>;
 export type GroupBookingGuest = typeof groupBookingGuests.$inferSelect;
+
+export type InsertInspirationBoardItem = z.infer<typeof insertInspirationBoardItemSchema>;
+export type InspirationBoardItem = typeof inspirationBoardItems.$inferSelect;

@@ -6,8 +6,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle, Crown, Zap, Users, Bell } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle, Crown, Zap, Users, Bell, Bookmark } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useState, useEffect, useRef } from "react";
@@ -39,7 +40,56 @@ export default function Profile() {
   const [waitlistService, setWaitlistService] = useState<string>("");
   const [waitlistPreferredDate, setWaitlistPreferredDate] = useState<Date | undefined>(undefined);
   const [isGroupBookingOpen, setIsGroupBookingOpen] = useState(false);
+  const [savedPortfolioItems, setSavedPortfolioItems] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  const saveToInspirationMutation = useMutation({
+    mutationFn: async ({ portfolioItemId, businessId }: { portfolioItemId: string; businessId: string }) => {
+      const res = await fetch("/api/inspiration-board", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ portfolioItemId, businessId }),
+      });
+      if (!res.ok) throw new Error("Failed to save");
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      setSavedPortfolioItems(prev => new Set([...prev, variables.portfolioItemId]));
+      queryClient.invalidateQueries({ queryKey: ["/api/inspiration-board"] });
+      toast({
+        title: "Saved to Inspiration Board",
+        description: "This look has been added to your inspiration board!",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSaveToBoard = (portfolioItemId: string) => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save items to your inspiration board.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (savedPortfolioItems.has(portfolioItemId)) {
+      toast({
+        title: "Already saved",
+        description: "This look is already on your inspiration board.",
+      });
+      return;
+    }
+    saveToInspirationMutation.mutate({ portfolioItemId, businessId: String(id) });
+  };
 
   // Simulate "Pending" state if accessed from onboarding or via query param
   const isPending = location.includes("pending") || id === 1; 
@@ -342,14 +392,25 @@ export default function Profile() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {portfolioItems.map((item) => (
-                  <Card key={item.id} className="border-none shadow-md overflow-hidden bg-white">
+                  <Card key={item.id} className="border-none shadow-md overflow-hidden bg-white" data-testid={`portfolio-item-${item.id}`}>
                     <div className="aspect-square relative group">
                         <img 
                             src={item.url} 
                             alt="Portfolio Work" 
                             className="w-full h-full object-cover"
                         />
-                        {/* Overlay Gradient for Text readability if needed, though clean style prefers white space below */}
+                        <button
+                          onClick={() => handleSaveToBoard(String(item.id))}
+                          className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${
+                            savedPortfolioItems.has(String(item.id))
+                              ? 'bg-rose-500 text-white'
+                              : 'bg-white/90 text-rose-500 hover:bg-rose-500 hover:text-white'
+                          }`}
+                          data-testid={`button-save-${item.id}`}
+                          title={savedPortfolioItems.has(String(item.id)) ? "Saved to board" : "Save to inspiration board"}
+                        >
+                          <Bookmark className={`w-5 h-5 ${savedPortfolioItems.has(String(item.id)) ? 'fill-current' : ''}`} />
+                        </button>
                     </div>
                     {socialFeaturesEnabled && (
                         <CardFooter className="p-3 border-t bg-pink-50/20 flex justify-between items-center">

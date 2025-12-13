@@ -22,6 +22,7 @@ import { format } from "date-fns";
 import { RebookingWidget } from "@/components/RebookingWidget";
 import { WaitlistWidget } from "@/components/WaitlistWidget";
 import { GroupBookingsWidget } from "@/components/GroupBookingsWidget";
+import { InspirationBoard } from "@/components/InspirationBoard";
 
 interface Booking {
   id: string;
@@ -478,6 +479,7 @@ export default function Bookings() {
 
         {!isBusinessOwner && (
           <>
+            <InspirationBoard />
             <RebookingWidget />
             <WaitlistWidget />
             <GroupBookingsWidget />

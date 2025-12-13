@@ -19,9 +19,10 @@ import {
   type WaitlistEntry, type InsertWaitlistEntry,
   type GroupBooking, type InsertGroupBooking,
   type GroupBookingGuest, type InsertGroupBookingGuest,
+  type InspirationBoardItem, type InsertInspirationBoardItem,
   users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
   loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders, waitlistEntries,
-  groupBookings, groupBookingGuests
+  groupBookings, groupBookingGuests, inspirationBoardItems
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
@@ -141,6 +142,12 @@ export interface IStorage {
   getGroupBookingsForBusiness(businessId: string): Promise<(GroupBooking & { guests: GroupBookingGuest[] })[]>;
   updateGroupBookingStatus(id: string, status: string): Promise<GroupBooking | undefined>;
   updateGroupBookingDeposit(id: string, depositPaid: boolean, stripePaymentIntentId?: string): Promise<GroupBooking | undefined>;
+  
+  addToInspirationBoard(clientId: string, portfolioItemId: string, businessId: string, note?: string): Promise<InspirationBoardItem>;
+  getInspirationBoard(clientId: string): Promise<InspirationBoardItem[]>;
+  removeFromInspirationBoard(id: string, clientId: string): Promise<boolean>;
+  updateInspirationBoardNote(id: string, clientId: string, note: string): Promise<InspirationBoardItem | undefined>;
+  isItemOnInspirationBoard(clientId: string, portfolioItemId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1159,6 +1166,63 @@ export class DatabaseStorage implements IStorage {
       .where(eq(groupBookings.id, id))
       .returning();
     return result[0];
+  }
+
+  async addToInspirationBoard(clientId: string, portfolioItemId: string, businessId: string, note?: string): Promise<InspirationBoardItem> {
+    const existing = await db.select().from(inspirationBoardItems)
+      .where(and(
+        eq(inspirationBoardItems.clientId, clientId),
+        eq(inspirationBoardItems.portfolioItemId, portfolioItemId)
+      ))
+      .limit(1);
+    
+    if (existing.length > 0) {
+      return existing[0];
+    }
+    
+    const result = await db.insert(inspirationBoardItems).values({
+      clientId,
+      portfolioItemId,
+      businessId,
+      note,
+    }).returning();
+    return result[0];
+  }
+
+  async getInspirationBoard(clientId: string): Promise<InspirationBoardItem[]> {
+    return db.select().from(inspirationBoardItems)
+      .where(eq(inspirationBoardItems.clientId, clientId))
+      .orderBy(desc(inspirationBoardItems.createdAt));
+  }
+
+  async removeFromInspirationBoard(id: string, clientId: string): Promise<boolean> {
+    const result = await db.delete(inspirationBoardItems)
+      .where(and(
+        eq(inspirationBoardItems.id, id),
+        eq(inspirationBoardItems.clientId, clientId)
+      ));
+    return true;
+  }
+
+  async updateInspirationBoardNote(id: string, clientId: string, note: string): Promise<InspirationBoardItem | undefined> {
+    const result = await db.update(inspirationBoardItems)
+      .set({ note })
+      .where(and(
+        eq(inspirationBoardItems.id, id),
+        eq(inspirationBoardItems.clientId, clientId)
+      ))
+      .returning();
+    return result[0];
+  }
+
+  async isItemOnInspirationBoard(clientId: string, portfolioItemId: string): Promise<boolean> {
+    const result = await db.select().from(inspirationBoardItems)
+      .where(and(
+        eq(inspirationBoardItems.clientId, clientId),
+        eq(inspirationBoardItems.portfolioItemId, portfolioItemId)
+      ))
+      .limit(1);
+    return result.length > 0;
   }
 }
 
