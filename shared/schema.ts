@@ -201,6 +201,34 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const groupBookings = pgTable("group_bookings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  organizerId: varchar("organizer_id").notNull().references(() => users.id),
+  scheduledAt: timestamp("scheduled_at").notNull(),
+  locationNote: text("location_note"),
+  specialRequests: text("special_requests"),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }).notNull(),
+  depositRequired: boolean("deposit_required").notNull().default(false),
+  depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
+  depositPaid: boolean("deposit_paid").notNull().default(false),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const groupBookingGuests = pgTable("group_booking_guests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  groupBookingId: varchar("group_booking_id").notNull().references(() => groupBookings.id),
+  clientUserId: varchar("client_user_id").references(() => users.id),
+  name: text("name").notNull(),
+  email: text("email"),
+  serviceName: text("service_name").notNull(),
+  servicePrice: text("service_price").notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -303,6 +331,19 @@ export const insertWaitlistEntrySchema = createInsertSchema(waitlistEntries).omi
   bookedBookingId: true,
 });
 
+export const insertGroupBookingSchema = createInsertSchema(groupBookings).omit({
+  id: true,
+  createdAt: true,
+  depositPaid: true,
+  stripePaymentIntentId: true,
+  status: true,
+});
+
+export const insertGroupBookingGuestSchema = createInsertSchema(groupBookingGuests).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -356,3 +397,9 @@ export type RebookingReminder = typeof rebookingReminders.$inferSelect;
 
 export type InsertWaitlistEntry = z.infer<typeof insertWaitlistEntrySchema>;
 export type WaitlistEntry = typeof waitlistEntries.$inferSelect;
+
+export type InsertGroupBooking = z.infer<typeof insertGroupBookingSchema>;
+export type GroupBooking = typeof groupBookings.$inferSelect;
+
+export type InsertGroupBookingGuest = z.infer<typeof insertGroupBookingGuestSchema>;
+export type GroupBookingGuest = typeof groupBookingGuests.$inferSelect;

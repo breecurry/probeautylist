@@ -21,6 +21,7 @@ import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { RebookingWidget } from "@/components/RebookingWidget";
 import { WaitlistWidget } from "@/components/WaitlistWidget";
+import { GroupBookingsWidget } from "@/components/GroupBookingsWidget";
 
 interface Booking {
   id: string;
@@ -479,6 +480,7 @@ export default function Bookings() {
           <>
             <RebookingWidget />
             <WaitlistWidget />
+            <GroupBookingsWidget />
           </>
         )}
 

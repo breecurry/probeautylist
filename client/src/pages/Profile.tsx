@@ -19,6 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { BeforeAfterGallery } from "@/components/BeforeAfterGallery";
+import { GroupBookingDialog } from "@/components/GroupBookingDialog";
 
 export default function Profile() {
   const params = useParams();
@@ -37,6 +38,7 @@ export default function Profile() {
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
   const [waitlistService, setWaitlistService] = useState<string>("");
   const [waitlistPreferredDate, setWaitlistPreferredDate] = useState<Date | undefined>(undefined);
+  const [isGroupBookingOpen, setIsGroupBookingOpen] = useState(false);
   const queryClient = useQueryClient();
 
   // Simulate "Pending" state if accessed from onboarding or via query param
@@ -668,6 +670,25 @@ export default function Profile() {
                       </DialogFooter>
                     </DialogContent>
                   </Dialog>
+
+                  {/* Book for Group Button */}
+                  <Button 
+                    variant="outline"
+                    className="w-full h-10 gap-2 border-purple-200 text-purple-600 hover:bg-purple-50 hover:text-purple-700"
+                    onClick={() => setIsGroupBookingOpen(true)}
+                    data-testid="button-book-group"
+                  >
+                    <Users className="w-4 h-4" />
+                    Book for Group
+                  </Button>
+
+                  <GroupBookingDialog
+                    businessId={String(id)}
+                    businessName={business.name}
+                    services={services}
+                    open={isGroupBookingOpen}
+                    onOpenChange={setIsGroupBookingOpen}
+                  />
                 </CardContent>
               </Card>
 

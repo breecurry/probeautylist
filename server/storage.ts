@@ -17,8 +17,11 @@ import {
   type BeforeAfterPhoto, type InsertBeforeAfterPhoto,
   type RebookingReminder, type InsertRebookingReminder,
   type WaitlistEntry, type InsertWaitlistEntry,
+  type GroupBooking, type InsertGroupBooking,
+  type GroupBookingGuest, type InsertGroupBookingGuest,
   users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
-  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders, waitlistEntries
+  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders, waitlistEntries,
+  groupBookings, groupBookingGuests
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
@@ -131,6 +134,13 @@ export interface IStorage {
   removeFromWaitlist(id: string): Promise<boolean>;
   notifyWaitlistOnCancellation(businessId: string, cancelledDate: Date): Promise<void>;
   getWaitlistEntry(id: string): Promise<WaitlistEntry | undefined>;
+  
+  createGroupBooking(data: InsertGroupBooking, guests: InsertGroupBookingGuest[]): Promise<GroupBooking & { guests: GroupBookingGuest[] }>;
+  getGroupBookingById(id: string): Promise<(GroupBooking & { guests: GroupBookingGuest[] }) | undefined>;
+  getGroupBookingsForOrganizer(userId: string): Promise<(GroupBooking & { guests: GroupBookingGuest[] })[]>;
+  getGroupBookingsForBusiness(businessId: string): Promise<(GroupBooking & { guests: GroupBookingGuest[] })[]>;
+  updateGroupBookingStatus(id: string, status: string): Promise<GroupBooking | undefined>;
+  updateGroupBookingDeposit(id: string, depositPaid: boolean, stripePaymentIntentId?: string): Promise<GroupBooking | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1068,6 +1078,86 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(waitlistEntries)
       .where(eq(waitlistEntries.id, id))
       .limit(1);
+    return result[0];
+  }
+
+  async createGroupBooking(data: InsertGroupBooking, guests: InsertGroupBookingGuest[]): Promise<GroupBooking & { guests: GroupBookingGuest[] }> {
+    return await db.transaction(async (tx) => {
+      const groupBookingResult = await tx.insert(groupBookings).values(data).returning();
+      const groupBooking = groupBookingResult[0];
+      
+      const createdGuests: GroupBookingGuest[] = [];
+      for (const guest of guests) {
+        const guestResult = await tx.insert(groupBookingGuests).values({
+          ...guest,
+          groupBookingId: groupBooking.id,
+        }).returning();
+        createdGuests.push(guestResult[0]);
+      }
+      
+      return { ...groupBooking, guests: createdGuests };
+    });
+  }
+
+  async getGroupBookingById(id: string): Promise<(GroupBooking & { guests: GroupBookingGuest[] }) | undefined> {
+    const bookingResult = await db.select().from(groupBookings)
+      .where(eq(groupBookings.id, id))
+      .limit(1);
+    
+    if (!bookingResult[0]) return undefined;
+    
+    const guests = await db.select().from(groupBookingGuests)
+      .where(eq(groupBookingGuests.groupBookingId, id))
+      .orderBy(groupBookingGuests.createdAt);
+    
+    return { ...bookingResult[0], guests };
+  }
+
+  async getGroupBookingsForOrganizer(userId: string): Promise<(GroupBooking & { guests: GroupBookingGuest[] })[]> {
+    const bookingsResult = await db.select().from(groupBookings)
+      .where(eq(groupBookings.organizerId, userId))
+      .orderBy(desc(groupBookings.createdAt));
+    
+    const result = await Promise.all(bookingsResult.map(async (booking) => {
+      const guests = await db.select().from(groupBookingGuests)
+        .where(eq(groupBookingGuests.groupBookingId, booking.id));
+      return { ...booking, guests };
+    }));
+    
+    return result;
+  }
+
+  async getGroupBookingsForBusiness(businessId: string): Promise<(GroupBooking & { guests: GroupBookingGuest[] })[]> {
+    const bookingsResult = await db.select().from(groupBookings)
+      .where(eq(groupBookings.businessId, businessId))
+      .orderBy(desc(groupBookings.createdAt));
+    
+    const result = await Promise.all(bookingsResult.map(async (booking) => {
+      const guests = await db.select().from(groupBookingGuests)
+        .where(eq(groupBookingGuests.groupBookingId, booking.id));
+      return { ...booking, guests };
+    }));
+    
+    return result;
+  }
+
+  async updateGroupBookingStatus(id: string, status: string): Promise<GroupBooking | undefined> {
+    const result = await db.update(groupBookings)
+      .set({ status })
+      .where(eq(groupBookings.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async updateGroupBookingDeposit(id: string, depositPaid: boolean, stripePaymentIntentId?: string): Promise<GroupBooking | undefined> {
+    const updateData: any = { depositPaid };
+    if (stripePaymentIntentId) {
+      updateData.stripePaymentIntentId = stripePaymentIntentId;
+    }
+    const result = await db.update(groupBookings)
+      .set(updateData)
+      .where(eq(groupBookings.id, id))
+      .returning();
     return result[0];
   }
 }

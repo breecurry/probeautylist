@@ -9,7 +9,7 @@ import { pool } from "../db";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema } from "@shared/schema";
+import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema } from "@shared/schema";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -1595,6 +1595,146 @@ export async function registerRoutes(
 
       await storage.removeFromWaitlist(req.params.id);
       res.json({ message: "Removed from waitlist" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/group-bookings", requireAuth, async (req, res, next) => {
+    try {
+      const { businessId, scheduledAt, locationNote, specialRequests, depositRequired, depositAmount, guests } = req.body;
+      
+      if (!businessId || !scheduledAt || !guests || !Array.isArray(guests) || guests.length === 0) {
+        return res.status(400).json({ message: "Business ID, scheduled date, and at least one guest are required" });
+      }
+
+      const parsedDate = new Date(scheduledAt);
+      if (isNaN(parsedDate.getTime())) {
+        return res.status(400).json({ message: "Invalid scheduled date" });
+      }
+
+      const business = await storage.getBusiness(businessId);
+      if (!business || !business.approved) {
+        return res.status(404).json({ message: "Business not found or not approved" });
+      }
+
+      let totalPrice = 0;
+      const validatedGuests = [];
+      for (const guest of guests) {
+        if (!guest.name || !guest.serviceName || !guest.servicePrice) {
+          return res.status(400).json({ message: "Each guest must have a name, service name, and service price" });
+        }
+        const price = parseFloat(guest.servicePrice.replace(/[^0-9.]/g, '')) || 0;
+        totalPrice += price;
+        validatedGuests.push({
+          name: guest.name,
+          email: guest.email || null,
+          serviceName: guest.serviceName,
+          servicePrice: guest.servicePrice,
+          notes: guest.notes || null,
+          clientUserId: guest.clientUserId || null,
+        });
+      }
+
+      const groupBookingData = {
+        businessId,
+        organizerId: req.user!.id,
+        scheduledAt: new Date(scheduledAt),
+        locationNote: locationNote || null,
+        specialRequests: specialRequests || null,
+        totalPrice: totalPrice.toFixed(2),
+        depositRequired: depositRequired || false,
+        depositAmount: depositAmount ? parseFloat(depositAmount).toFixed(2) : null,
+      };
+
+      const groupBooking = await storage.createGroupBooking(groupBookingData, validatedGuests);
+
+      await storage.createNotification({
+        userId: business.ownerId,
+        type: 'group_booking_request',
+        title: 'New Group Booking Request',
+        message: `Group booking for ${guests.length} guests on ${new Date(scheduledAt).toLocaleDateString()}`,
+      });
+
+      res.json(groupBooking);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/group-bookings", requireAuth, async (req, res, next) => {
+    try {
+      const groupBookings = await storage.getGroupBookingsForOrganizer(req.user!.id);
+      res.json(groupBookings);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/group-bookings/:id", requireAuth, async (req, res, next) => {
+    try {
+      const groupBooking = await storage.getGroupBookingById(req.params.id);
+      if (!groupBooking) {
+        return res.status(404).json({ message: "Group booking not found" });
+      }
+
+      const business = await storage.getBusiness(groupBooking.businessId);
+      const isOrganizer = groupBooking.organizerId === req.user!.id;
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+
+      if (!isOrganizer && !isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      res.json(groupBooking);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/group-bookings/:id", requireAuth, async (req, res, next) => {
+    try {
+      const groupBooking = await storage.getGroupBookingById(req.params.id);
+      if (!groupBooking) {
+        return res.status(404).json({ message: "Group booking not found" });
+      }
+
+      const business = await storage.getBusiness(groupBooking.businessId);
+      const isOrganizer = groupBooking.organizerId === req.user!.id;
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+
+      if (!isOrganizer && !isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { status } = req.body;
+      const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const updated = await storage.updateGroupBookingStatus(req.params.id, status);
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/group-bookings", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+
+      const groupBookings = await storage.getGroupBookingsForBusiness(req.params.id);
+      res.json(groupBookings);
     } catch (error) {
       next(error);
     }
