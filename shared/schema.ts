@@ -443,6 +443,7 @@ export const insertGroupBookingSchema = createInsertSchema(groupBookings).omit({
 export const insertGroupBookingGuestSchema = createInsertSchema(groupBookingGuests).omit({
   id: true,
   createdAt: true,
+  groupBookingId: true,
 });
 
 export const insertInspirationBoardItemSchema = createInsertSchema(inspirationBoardItems).omit({

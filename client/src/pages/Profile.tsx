@@ -56,7 +56,7 @@ export default function Profile() {
       return res.json();
     },
     onSuccess: (_, variables) => {
-      setSavedPortfolioItems(prev => new Set([...prev, variables.portfolioItemId]));
+      setSavedPortfolioItems(prev => new Set(Array.from(prev).concat(variables.portfolioItemId)));
       queryClient.invalidateQueries({ queryKey: ["/api/inspiration-board"] });
       toast({
         title: "Saved to Inspiration Board",
