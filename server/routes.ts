@@ -273,6 +273,11 @@ export async function registerRoutes(
         return res.status(400).json({ message: fromZodError(result.error).message });
       }
 
+      const isBlocked = await storage.isClientBlockedForBusiness(req.user!.id, result.data.businessId);
+      if (isBlocked) {
+        return res.status(403).json({ message: "You are unable to book with this business due to too many missed appointments. Please contact the business directly." });
+      }
+
       const business = await storage.getBusiness(result.data.businessId);
       const isGoldBusiness = business?.tier === 'gold';
       
@@ -344,6 +349,88 @@ export async function registerRoutes(
       }
       
       res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/bookings/:id/no-show", requireAuth, async (req, res, next) => {
+    try {
+      const booking = await storage.getBooking(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const business = await storage.getBusiness(booking.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const updated = await storage.markBookingAsNoShow(req.params.id);
+      
+      await storage.createNotification({
+        userId: booking.clientId,
+        bookingId: booking.id,
+        type: 'no_show',
+        title: 'Missed Appointment',
+        message: `You were marked as a no-show for your ${booking.serviceName} appointment. Repeated no-shows may result in booking restrictions.`,
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/no-shows", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const noShowBookings = await storage.getNoShowBookingsForBusiness(req.params.id);
+      res.json(noShowBookings);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/clients/:id/no-show-status", requireAuth, async (req, res, next) => {
+    try {
+      const clientId = req.params.id;
+      const isOwnProfile = req.user!.id === clientId;
+      const isAdmin = req.user!.role === 'admin';
+      
+      if (!isOwnProfile && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden - you can only view your own no-show status" });
+      }
+      
+      const noShowCount = await storage.getClientNoShowCount(clientId);
+      res.json({ noShowCount });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/clients/:clientId/blocked/:businessId", requireAuth, async (req, res, next) => {
+    try {
+      const { clientId, businessId } = req.params;
+      const isOwnProfile = req.user!.id === clientId;
+      const business = await storage.getBusiness(businessId);
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+      
+      if (!isOwnProfile && !isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden - you can only check your own block status or your business's clients" });
+      }
+      
+      const isBlocked = await storage.isClientBlockedForBusiness(clientId, businessId);
+      res.json({ isBlocked });
     } catch (error) {
       next(error);
     }

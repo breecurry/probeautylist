@@ -36,6 +36,7 @@ interface Booking {
   depositPaid: boolean;
   depositAmount: string | null;
   priority: boolean;
+  noShow: boolean;
 }
 
 interface Business {
@@ -68,6 +69,10 @@ function StatusBadge({ status }: { status: string }) {
     },
     cancelled: { 
       className: "bg-red-100 text-red-700 border-red-200", 
+      icon: <XCircle className="h-3 w-3 mr-1" /> 
+    },
+    no_show: { 
+      className: "bg-orange-100 text-orange-700 border-orange-200", 
       icon: <XCircle className="h-3 w-3 mr-1" /> 
     },
   };

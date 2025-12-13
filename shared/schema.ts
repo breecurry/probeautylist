@@ -15,6 +15,7 @@ export const users = pgTable("users", {
   stripeCustomerId: text("stripe_customer_id"),
   usernameChanged: boolean("username_changed").notNull().default(false),
   birthDate: timestamp("birth_date"),
+  noShowCount: integer("no_show_count").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -36,6 +37,7 @@ export const businesses = pgTable("businesses", {
   advanceNoticeHours: integer("advance_notice_hours").notNull().default(24),
   rebookingEnabled: boolean("rebooking_enabled").notNull().default(true),
   defaultRebookingDays: integer("default_rebooking_days").notNull().default(42),
+  noShowThreshold: integer("no_show_threshold").notNull().default(3),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -52,6 +54,7 @@ export const bookings = pgTable("bookings", {
   depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   priority: boolean("priority").notNull().default(false),
+  noShow: boolean("no_show").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -148,6 +148,11 @@ export interface IStorage {
   removeFromInspirationBoard(id: string, clientId: string): Promise<boolean>;
   updateInspirationBoardNote(id: string, clientId: string, note: string): Promise<InspirationBoardItem | undefined>;
   isItemOnInspirationBoard(clientId: string, portfolioItemId: string): Promise<boolean>;
+  
+  markBookingAsNoShow(id: string): Promise<Booking | undefined>;
+  getClientNoShowCount(clientId: string): Promise<number>;
+  isClientBlockedForBusiness(clientId: string, businessId: string): Promise<boolean>;
+  getNoShowBookingsForBusiness(businessId: string): Promise<Booking[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1223,6 +1228,47 @@ export class DatabaseStorage implements IStorage {
       ))
       .limit(1);
     return result.length > 0;
+  }
+
+  async markBookingAsNoShow(id: string): Promise<Booking | undefined> {
+    const booking = await this.getBooking(id);
+    if (!booking || booking.noShow) {
+      return booking;
+    }
+    
+    await db.update(users)
+      .set({ noShowCount: sql`${users.noShowCount} + 1` })
+      .where(eq(users.id, booking.clientId));
+    
+    const result = await db.update(bookings)
+      .set({ noShow: true, status: 'no_show' })
+      .where(eq(bookings.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getClientNoShowCount(clientId: string): Promise<number> {
+    const user = await this.getUser(clientId);
+    return user?.noShowCount ?? 0;
+  }
+
+  async isClientBlockedForBusiness(clientId: string, businessId: string): Promise<boolean> {
+    const user = await this.getUser(clientId);
+    if (!user) return false;
+    
+    const business = await this.getBusiness(businessId);
+    if (!business) return false;
+    
+    return user.noShowCount >= business.noShowThreshold;
+  }
+
+  async getNoShowBookingsForBusiness(businessId: string): Promise<Booking[]> {
+    return db.select().from(bookings)
+      .where(and(
+        eq(bookings.businessId, businessId),
+        eq(bookings.noShow, true)
+      ))
+      .orderBy(desc(bookings.createdAt));
   }
 }
 
