@@ -9,7 +9,6 @@ packages = ["xorg.libxcb", "xorg.libX11", "xorg.libXext", "xorg.libXrandr", "xor
 [deployment]
 deploymentTarget = "autoscale"
 build = ["npm", "run", "build"]
-publicDir = "dist/public"
 run = ["npm", "run", "start"]
 
 [[ports]]
