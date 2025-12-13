@@ -16,6 +16,7 @@ import Bookings from "@/pages/Bookings";
 import CustomerProfile from "@/pages/CustomerProfile";
 import AccountSettings from "@/pages/AccountSettings";
 import BusinessAnalytics from "@/pages/BusinessAnalytics";
+import AdminSetup from "@/pages/AdminSetup";
 
 function Router() {
   return (
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/customer/:id" component={CustomerProfile} />
       <Route path="/settings" component={AccountSettings} />
       <Route path="/analytics" component={BusinessAnalytics} />
+      <Route path="/admin-setup" component={AdminSetup} />
       <Route component={NotFound} />
     </Switch>
   );
