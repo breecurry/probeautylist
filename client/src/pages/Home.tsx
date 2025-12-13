@@ -1,9 +1,10 @@
+import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PLANS, MOCK_BUSINESSES } from "@/lib/mock-data";
-import { Check, Star, MapPin, Calendar, MessageCircle, TrendingUp, Users, Sparkles, Heart, Clock, Shield, Crown } from "lucide-react";
+import { PLANS, MOCK_BUSINESSES, FEATURE_COMPARISON } from "@/lib/mock-data";
+import { Check, Star, MapPin, Calendar, MessageCircle, TrendingUp, Users, Sparkles, Heart, Clock, Shield, Crown, X } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import heroImage from "@assets/generated_images/elegant_beauty_salon_interior_with_soft_pink_and_white_tones..png";
 
@@ -464,6 +465,90 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+
+          {/* Feature Comparison Table */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="mt-20"
+          >
+            <h3 className="text-2xl font-bold text-center mb-8 font-serif">Complete Feature Comparison</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse" data-testid="feature-comparison-table">
+                <thead>
+                  <tr className="border-b-2 border-rose-200">
+                    <th className="text-left py-4 px-4 font-semibold text-gray-700">Feature</th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Starter<br/><span className="text-sm font-normal text-muted-foreground">Free</span></th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Bronze<br/><span className="text-sm font-normal text-muted-foreground">$0.99/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Silver<br/><span className="text-sm font-normal text-muted-foreground">$5/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-t-lg">Gold<br/><span className="text-sm font-normal text-amber-600">$20/mo</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {FEATURE_COMPARISON.map((category, catIndex) => (
+                    <React.Fragment key={`cat-${catIndex}`}>
+                      <tr className="bg-rose-50/50">
+                        <td colSpan={5} className="py-3 px-4 font-semibold text-rose-600 text-sm uppercase tracking-wider">
+                          {category.category}
+                        </td>
+                      </tr>
+                      {category.features.map((feature, featIndex) => (
+                        <tr key={`feat-${catIndex}-${featIndex}`} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4 text-gray-700">{feature.name}</td>
+                          <td className="text-center py-3 px-4">
+                            {typeof feature.free === 'boolean' ? (
+                              feature.free ? (
+                                <Check className="w-5 h-5 text-green-500 mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-gray-300 mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-gray-600 font-medium">{feature.free}</span>
+                            )}
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            {typeof feature.bronze === 'boolean' ? (
+                              feature.bronze ? (
+                                <Check className="w-5 h-5 text-green-500 mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-gray-300 mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-gray-600 font-medium">{feature.bronze}</span>
+                            )}
+                          </td>
+                          <td className="text-center py-3 px-4">
+                            {typeof feature.silver === 'boolean' ? (
+                              feature.silver ? (
+                                <Check className="w-5 h-5 text-green-500 mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-gray-300 mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-gray-600 font-medium">{feature.silver}</span>
+                            )}
+                          </td>
+                          <td className="text-center py-3 px-4 bg-gradient-to-r from-amber-50/50 to-yellow-50/50">
+                            {typeof feature.gold === 'boolean' ? (
+                              feature.gold ? (
+                                <Check className="w-5 h-5 text-amber-500 mx-auto" />
+                              ) : (
+                                <X className="w-5 h-5 text-gray-300 mx-auto" />
+                              )
+                            ) : (
+                              <span className="text-amber-600 font-medium">{feature.gold}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </motion.div>
         </div>
       </section>
 
