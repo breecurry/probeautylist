@@ -73,6 +73,14 @@ export interface IStorage {
   updateUserProfile(userId: string, data: { firstName?: string; lastName?: string; profilePhoto?: string }): Promise<User | undefined>;
   updateUserPassword(userId: string, hashedNewPassword: string): Promise<User | undefined>;
   changeUsername(userId: string, newUsername: string): Promise<User | null>;
+  getBusinessAnalytics(businessId: string): Promise<{
+    monthlyRevenue: { month: string; revenue: number }[];
+    churnAlerts: { days30: number; days60: number; days90: number };
+    peakHours: { hour: number; count: number }[];
+    peakDays: { day: number; dayName: string; count: number }[];
+    topServices: { serviceName: string; revenue: number; count: number }[];
+    conversionRate: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -389,6 +397,151 @@ export class DatabaseStorage implements IStorage {
     }
     const result = await db.update(users).set({ username: newUsername, usernameChanged: true }).where(eq(users.id, userId)).returning();
     return result[0] || null;
+  }
+
+  async getBusinessAnalytics(businessId: string): Promise<{
+    monthlyRevenue: { month: string; revenue: number }[];
+    churnAlerts: { days30: number; days60: number; days90: number };
+    peakHours: { hour: number; count: number }[];
+    peakDays: { day: number; dayName: string; count: number }[];
+    topServices: { serviceName: string; revenue: number; count: number }[];
+    conversionRate: number;
+  }> {
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const monthlyRevenueResult = await db.execute(sql`
+      SELECT 
+        TO_CHAR(date, 'YYYY-MM') as month,
+        SUM(CAST(NULLIF(service_price, '') AS NUMERIC)) as revenue
+      FROM bookings 
+      WHERE business_id = ${businessId} 
+        AND status IN ('confirmed', 'completed')
+        AND date >= ${sixMonthsAgo}
+      GROUP BY TO_CHAR(date, 'YYYY-MM')
+      ORDER BY month
+    `);
+
+    const monthlyRevenue = (monthlyRevenueResult.rows as any[]).map(row => ({
+      month: row.month,
+      revenue: parseFloat(row.revenue) || 0
+    }));
+
+    const now = new Date();
+    const days30Ago = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const days60Ago = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    const days90Ago = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+
+    const churn30Result = await db.execute(sql`
+      SELECT COUNT(DISTINCT client_id) as count FROM bookings 
+      WHERE business_id = ${businessId}
+      AND client_id NOT IN (
+        SELECT DISTINCT client_id FROM bookings 
+        WHERE business_id = ${businessId} AND date >= ${days30Ago}
+      )
+      AND client_id IN (
+        SELECT DISTINCT client_id FROM bookings 
+        WHERE business_id = ${businessId} AND date >= ${days60Ago} AND date < ${days30Ago}
+      )
+    `);
+
+    const churn60Result = await db.execute(sql`
+      SELECT COUNT(DISTINCT client_id) as count FROM bookings 
+      WHERE business_id = ${businessId}
+      AND client_id NOT IN (
+        SELECT DISTINCT client_id FROM bookings 
+        WHERE business_id = ${businessId} AND date >= ${days60Ago}
+      )
+      AND client_id IN (
+        SELECT DISTINCT client_id FROM bookings 
+        WHERE business_id = ${businessId} AND date >= ${days90Ago} AND date < ${days60Ago}
+      )
+    `);
+
+    const churn90Result = await db.execute(sql`
+      SELECT COUNT(DISTINCT client_id) as count FROM bookings 
+      WHERE business_id = ${businessId}
+      AND client_id NOT IN (
+        SELECT DISTINCT client_id FROM bookings 
+        WHERE business_id = ${businessId} AND date >= ${days90Ago}
+      )
+      AND client_id IN (
+        SELECT DISTINCT client_id FROM bookings WHERE business_id = ${businessId}
+      )
+    `);
+
+    const churnAlerts = {
+      days30: parseInt((churn30Result.rows[0] as any)?.count || '0'),
+      days60: parseInt((churn60Result.rows[0] as any)?.count || '0'),
+      days90: parseInt((churn90Result.rows[0] as any)?.count || '0'),
+    };
+
+    const peakHoursResult = await db.execute(sql`
+      SELECT EXTRACT(HOUR FROM date) as hour, COUNT(*) as count
+      FROM bookings 
+      WHERE business_id = ${businessId}
+      GROUP BY EXTRACT(HOUR FROM date)
+      ORDER BY hour
+    `);
+
+    const peakHours = (peakHoursResult.rows as any[]).map(row => ({
+      hour: parseInt(row.hour),
+      count: parseInt(row.count)
+    }));
+
+    const peakDaysResult = await db.execute(sql`
+      SELECT EXTRACT(DOW FROM date) as day, COUNT(*) as count
+      FROM bookings 
+      WHERE business_id = ${businessId}
+      GROUP BY EXTRACT(DOW FROM date)
+      ORDER BY day
+    `);
+
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const peakDays = (peakDaysResult.rows as any[]).map(row => ({
+      day: parseInt(row.day),
+      dayName: dayNames[parseInt(row.day)],
+      count: parseInt(row.count)
+    }));
+
+    const topServicesResult = await db.execute(sql`
+      SELECT 
+        service_name as "serviceName",
+        SUM(CAST(NULLIF(service_price, '') AS NUMERIC)) as revenue,
+        COUNT(*) as count
+      FROM bookings 
+      WHERE business_id = ${businessId} AND status IN ('confirmed', 'completed')
+      GROUP BY service_name
+      ORDER BY revenue DESC
+      LIMIT 5
+    `);
+
+    const topServices = (topServicesResult.rows as any[]).map(row => ({
+      serviceName: row.serviceName,
+      revenue: parseFloat(row.revenue) || 0,
+      count: parseInt(row.count)
+    }));
+
+    const conversionResult = await db.execute(sql`
+      SELECT 
+        COUNT(*) FILTER (WHERE status = 'completed') as completed,
+        COUNT(*) as total
+      FROM bookings 
+      WHERE business_id = ${businessId}
+    `);
+
+    const completed = parseInt((conversionResult.rows[0] as any)?.completed || '0');
+    const total = parseInt((conversionResult.rows[0] as any)?.total || '0');
+    const conversionRate = total > 0 ? (completed / total) * 100 : 0;
+
+    return {
+      monthlyRevenue,
+      churnAlerts,
+      peakHours,
+      peakDays,
+      topServices,
+      conversionRate,
+    };
   }
 }
 

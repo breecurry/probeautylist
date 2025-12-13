@@ -871,5 +871,27 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/businesses/:id/analytics", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "Analytics is only available for Gold tier businesses" });
+      }
+
+      const analytics = await storage.getBusinessAnalytics(req.params.id);
+      res.json(analytics);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }

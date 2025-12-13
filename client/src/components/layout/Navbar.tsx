@@ -1,9 +1,10 @@
 import { Link, useLocation } from "wouter";
-import { Scissors, Menu, LogOut, Calendar, Search, Settings, Shield, LucideIcon, Home, Store } from "lucide-react";
+import { Scissors, Menu, LogOut, Calendar, Search, Settings, Shield, LucideIcon, Home, Store, BarChart3 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,10 +21,28 @@ interface NavLink {
   icon?: LucideIcon;
 }
 
+interface Business {
+  id: string;
+  tier: string;
+  ownerId: string;
+}
+
 export function Navbar() {
   const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
+
+  const { data: businesses } = useQuery<Business[]>({
+    queryKey: ["/api/businesses"],
+    queryFn: async () => {
+      const res = await fetch("/api/businesses");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: isAuthenticated && user?.role === 'business_owner',
+  });
+
+  const hasGoldBusiness = businesses?.some(b => b.ownerId === user?.id && b.tier === 'gold') ?? false;
 
   const handleNavigation = (href: string) => {
     if (!isAuthenticated && href !== '/') {
@@ -138,6 +157,12 @@ export function Navbar() {
                       <Store className="mr-2 h-4 w-4" />
                       My Businesses
                     </DropdownMenuItem>
+                    {hasGoldBusiness && (
+                      <DropdownMenuItem onClick={() => setLocation('/analytics')} data-testid="dropdown-analytics">
+                        <BarChart3 className="mr-2 h-4 w-4" />
+                        Analytics
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => setLocation('/onboarding?type=business')} data-testid="dropdown-add-business">
                       <Settings className="mr-2 h-4 w-4" />
                       Add Business
@@ -214,6 +239,17 @@ export function Navbar() {
                 >
                   <Shield className="h-4 w-4" />
                   Admin Panel
+                </button>
+              )}
+
+              {hasGoldBusiness && (
+                <button 
+                  onClick={() => handleNavigation('/analytics')}
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                  data-testid="mobile-analytics"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Analytics
                 </button>
               )}
               
