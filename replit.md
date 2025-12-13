@@ -73,6 +73,44 @@ Preferred communication style: Simple, everyday language.
 - Protected routes check authentication state via `/api/auth/me`
 - Stripe customer ID linked to user accounts for payments
 
+### Gold Tier Premium Features ($20/month)
+Gold tier business owners have access to 5 exclusive premium features:
+
+1. **VIP Spotlight Placement**
+   - Gold badge with crown icon on business cards
+   - Priority sorting in search results (Gold businesses appear first)
+   - Featured section on homepage showing only Gold businesses
+
+2. **Business Intelligence Dashboard** (`/analytics`)
+   - Revenue trends chart (monthly)
+   - Client churn alerts (30/60/90 days inactive)
+   - Peak hours and days analysis
+   - Top services by revenue
+   - Booking conversion rate
+   - Uses Recharts for visualizations
+
+3. **Loyalty & Referral Engine**
+   - Configurable loyalty programs (visit threshold, discount %)
+   - Auto-tracking of client visits on booking completion
+   - Referral code generation and tracking
+   - Birthday offers for clients (within 7 days)
+   - Tables: `loyaltyPrograms`, `clientLoyaltyProgress`, `referralCodes`, `referrals`
+
+4. **Priority Booking Experience**
+   - "Priority Booking" label on Gold business profiles
+   - Express checkout with amber/gold styling
+   - Enhanced confirmation notifications
+   - Priority badge on booking cards
+
+5. **AI Growth Autopilot**
+   - Client reactivation suggestions (inactive 30+ days)
+   - AI-generated growth insights and recommendations
+   - Booking pattern analysis
+   - Personalized tips based on business data
+   - Uses OpenAI via Replit AI Integrations
+   - 6-hour cache to optimize cost/latency
+   - Service: `server/services/aiGrowth.ts`
+
 ### Build & Deployment
 - Development: Vite dev server with HMR, tsx for server
 - Production: esbuild bundles server code, Vite builds client to `dist/public`
