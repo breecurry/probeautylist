@@ -87,12 +87,53 @@ export async function checkAndCreateReminders(): Promise<void> {
   }
 }
 
+async function checkAndCreateRebookingReminders(): Promise<void> {
+  try {
+    const completedBookings = await storage.getCompletedBookingsForRebooking();
+    
+    for (const { booking, business } of completedBookings) {
+      const bookingDate = new Date(booking.date);
+      const suggestedRebookDate = new Date(bookingDate.getTime() + (business.defaultRebookingDays * 24 * 60 * 60 * 1000));
+      
+      const hasReminder = await storage.hasRebookingReminderForBooking(booking.id);
+      if (hasReminder) continue;
+      
+      await storage.createRebookingReminder({
+        clientId: booking.clientId,
+        businessId: booking.businessId,
+        lastBookingId: booking.id,
+        serviceName: booking.serviceName,
+        suggestedRebookDate,
+        rebookingLink: null,
+      });
+      
+      const client = await storage.getUser(booking.clientId);
+      if (client) {
+        const weeksSince = Math.floor((Date.now() - bookingDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        await storage.createNotification({
+          userId: booking.clientId,
+          bookingId: booking.id,
+          type: 'rebooking_reminder',
+          title: 'Time to Rebook?',
+          message: `It's been ${weeksSince} weeks since your ${booking.serviceName} at ${business.name}. Ready to book again?`,
+          reminderType: 'rebooking',
+        });
+        log(`Created rebooking reminder for client ${client.username} for ${booking.serviceName} at ${business.name}`, 'scheduler');
+      }
+    }
+  } catch (error) {
+    log(`Error in checkAndCreateRebookingReminders: ${error}`, 'scheduler');
+  }
+}
+
 export function startNotificationScheduler(): void {
   log('Starting notification scheduler (runs every hour)', 'scheduler');
   
   checkAndCreateReminders();
+  checkAndCreateRebookingReminders();
   
   setInterval(() => {
     checkAndCreateReminders();
+    checkAndCreateRebookingReminders();
   }, 60 * 60 * 1000);
 }

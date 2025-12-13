@@ -19,6 +19,7 @@ import { Calendar, DollarSign, Star, CheckCircle, Clock, XCircle, Crown } from "
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
+import { RebookingWidget } from "@/components/RebookingWidget";
 
 interface Booking {
   id: string;
@@ -472,6 +473,8 @@ export default function Bookings() {
               : "View your upcoming and past appointments"}
           </p>
         </div>
+
+        {!isBusinessOwner && <RebookingWidget />}
 
         {isLoading ? (
           <div className="space-y-4" data-testid="loading-skeleton">

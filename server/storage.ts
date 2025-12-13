@@ -15,8 +15,9 @@ import {
   type ReferralCode, type InsertReferralCode,
   type Referral, type InsertReferral,
   type BeforeAfterPhoto, type InsertBeforeAfterPhoto,
+  type RebookingReminder, type InsertRebookingReminder,
   users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
-  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos
+  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
@@ -115,6 +116,13 @@ export interface IStorage {
   approveBeforeAfterPhoto(id: string): Promise<BeforeAfterPhoto | undefined>;
   deleteBeforeAfterPhoto(id: string): Promise<boolean>;
   getBeforeAfterPhoto(id: string): Promise<BeforeAfterPhoto | undefined>;
+  
+  createRebookingReminder(data: InsertRebookingReminder): Promise<RebookingReminder>;
+  getPendingRebookingReminders(): Promise<RebookingReminder[]>;
+  markRebookingReminderSent(id: string): Promise<RebookingReminder | undefined>;
+  getClientRebookingSuggestions(clientId: string): Promise<(RebookingReminder & { businessName: string; daysSinceBooking: number })[]>;
+  getCompletedBookingsForRebooking(): Promise<{ booking: Booking; business: Business }[]>;
+  hasRebookingReminderForBooking(bookingId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -869,6 +877,127 @@ export class DatabaseStorage implements IStorage {
   async getBeforeAfterPhoto(id: string): Promise<BeforeAfterPhoto | undefined> {
     const result = await db.select().from(beforeAfterPhotos).where(eq(beforeAfterPhotos.id, id)).limit(1);
     return result[0];
+  }
+
+  async createRebookingReminder(data: InsertRebookingReminder): Promise<RebookingReminder> {
+    const result = await db.insert(rebookingReminders).values(data).returning();
+    return result[0];
+  }
+
+  async getPendingRebookingReminders(): Promise<RebookingReminder[]> {
+    return db.select().from(rebookingReminders)
+      .where(eq(rebookingReminders.reminderSent, false))
+      .orderBy(desc(rebookingReminders.createdAt));
+  }
+
+  async markRebookingReminderSent(id: string): Promise<RebookingReminder | undefined> {
+    const result = await db.update(rebookingReminders)
+      .set({ reminderSent: true })
+      .where(eq(rebookingReminders.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getClientRebookingSuggestions(clientId: string): Promise<(RebookingReminder & { businessName: string; daysSinceBooking: number })[]> {
+    const result = await db.execute(sql`
+      SELECT 
+        rr.*,
+        b.name as "businessName",
+        EXTRACT(DAY FROM NOW() - bk.date)::integer as "daysSinceBooking"
+      FROM rebooking_reminders rr
+      INNER JOIN businesses b ON b.id = rr.business_id
+      INNER JOIN bookings bk ON bk.id = rr.last_booking_id
+      WHERE rr.client_id = ${clientId}
+        AND b.rebooking_enabled = true
+        AND NOW() >= rr.suggested_rebook_date
+      ORDER BY rr.suggested_rebook_date DESC
+      LIMIT 10
+    `);
+    
+    return (result.rows as any[]).map(row => ({
+      id: row.id,
+      clientId: row.client_id,
+      businessId: row.business_id,
+      lastBookingId: row.last_booking_id,
+      serviceName: row.service_name,
+      suggestedRebookDate: new Date(row.suggested_rebook_date),
+      reminderSent: row.reminder_sent,
+      rebookingLink: row.rebooking_link,
+      createdAt: new Date(row.created_at),
+      businessName: row.businessName,
+      daysSinceBooking: row.daysSinceBooking || 0,
+    }));
+  }
+
+  async getCompletedBookingsForRebooking(): Promise<{ booking: Booking; business: Business }[]> {
+    const result = await db.execute(sql`
+      SELECT 
+        bk.*,
+        b.id as b_id, b.owner_id as b_owner_id, b.name as b_name, b.service_type as b_service_type,
+        b.description as b_description, b.location as b_location, b.address as b_address,
+        b.phone as b_phone, b.image as b_image, b.tier as b_tier, b.approved as b_approved,
+        b.fun_facts as b_fun_facts, b.deposit_required as b_deposit_required, 
+        b.deposit_amount as b_deposit_amount, b.advance_notice_hours as b_advance_notice_hours,
+        b.rebooking_enabled as b_rebooking_enabled, b.default_rebooking_days as b_default_rebooking_days,
+        b.created_at as b_created_at
+      FROM bookings bk
+      INNER JOIN businesses b ON b.id = bk.business_id
+      WHERE bk.status = 'completed'
+        AND bk.completed_by_business = true
+        AND b.rebooking_enabled = true
+        AND bk.date < NOW() - (b.default_rebooking_days || ' days')::interval
+        AND NOT EXISTS (
+          SELECT 1 FROM rebooking_reminders rr 
+          WHERE rr.last_booking_id = bk.id
+        )
+      ORDER BY bk.date DESC
+      LIMIT 100
+    `);
+    
+    return (result.rows as any[]).map(row => ({
+      booking: {
+        id: row.id,
+        clientId: row.client_id,
+        businessId: row.business_id,
+        serviceName: row.service_name,
+        servicePrice: row.service_price,
+        date: new Date(row.date),
+        status: row.status,
+        completedByBusiness: row.completed_by_business,
+        depositPaid: row.deposit_paid,
+        depositAmount: row.deposit_amount,
+        stripePaymentIntentId: row.stripe_payment_intent_id,
+        priority: row.priority,
+        createdAt: new Date(row.created_at),
+      },
+      business: {
+        id: row.b_id,
+        ownerId: row.b_owner_id,
+        name: row.b_name,
+        serviceType: row.b_service_type,
+        description: row.b_description,
+        location: row.b_location,
+        address: row.b_address,
+        phone: row.b_phone,
+        image: row.b_image,
+        tier: row.b_tier,
+        approved: row.b_approved,
+        funFacts: row.b_fun_facts,
+        depositRequired: row.b_deposit_required,
+        depositAmount: row.b_deposit_amount,
+        advanceNoticeHours: row.b_advance_notice_hours,
+        rebookingEnabled: row.b_rebooking_enabled,
+        defaultRebookingDays: row.b_default_rebooking_days,
+        createdAt: new Date(row.b_created_at),
+      },
+    }));
+  }
+
+  async hasRebookingReminderForBooking(bookingId: string): Promise<boolean> {
+    const result = await db.select().from(rebookingReminders)
+      .where(eq(rebookingReminders.lastBookingId, bookingId))
+      .limit(1);
+    return result.length > 0;
   }
 }
 

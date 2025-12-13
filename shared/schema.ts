@@ -34,6 +34,8 @@ export const businesses = pgTable("businesses", {
   depositRequired: boolean("deposit_required").notNull().default(false),
   depositAmount: decimal("deposit_amount", { precision: 10, scale: 2 }),
   advanceNoticeHours: integer("advance_notice_hours").notNull().default(24),
+  rebookingEnabled: boolean("rebooking_enabled").notNull().default(true),
+  defaultRebookingDays: integer("default_rebooking_days").notNull().default(42),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -176,6 +178,18 @@ export const beforeAfterPhotos = pgTable("before_after_photos", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const rebookingReminders = pgTable("rebooking_reminders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  lastBookingId: varchar("last_booking_id").notNull().references(() => bookings.id),
+  serviceName: text("service_name").notNull(),
+  suggestedRebookDate: timestamp("suggested_rebook_date").notNull(),
+  reminderSent: boolean("reminder_sent").notNull().default(false),
+  rebookingLink: text("rebooking_link"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -265,6 +279,12 @@ export const insertBeforeAfterPhotoSchema = createInsertSchema(beforeAfterPhotos
   approved: true,
 });
 
+export const insertRebookingReminderSchema = createInsertSchema(rebookingReminders).omit({
+  id: true,
+  createdAt: true,
+  reminderSent: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -312,3 +332,6 @@ export type Referral = typeof referrals.$inferSelect;
 
 export type InsertBeforeAfterPhoto = z.infer<typeof insertBeforeAfterPhotoSchema>;
 export type BeforeAfterPhoto = typeof beforeAfterPhotos.$inferSelect;
+
+export type InsertRebookingReminder = z.infer<typeof insertRebookingReminderSchema>;
+export type RebookingReminder = typeof rebookingReminders.$inferSelect;

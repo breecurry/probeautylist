@@ -1399,5 +1399,97 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/clients/rebooking-suggestions", requireAuth, async (req, res, next) => {
+    try {
+      const suggestions = await storage.getClientRebookingSuggestions(req.user!.id);
+      res.json(suggestions);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/bookings/quick-rebook/:bookingId", requireAuth, async (req, res, next) => {
+    try {
+      const originalBooking = await storage.getBooking(req.params.bookingId);
+      if (!originalBooking) {
+        return res.status(404).json({ message: "Original booking not found" });
+      }
+
+      if (originalBooking.clientId !== req.user!.id) {
+        return res.status(403).json({ message: "You can only rebook your own appointments" });
+      }
+
+      const business = await storage.getBusiness(originalBooking.businessId);
+      if (!business || !business.approved) {
+        return res.status(400).json({ message: "Business is not available for booking" });
+      }
+
+      const { date } = req.body;
+      if (!date) {
+        return res.status(400).json({ message: "Please provide a date for the new booking" });
+      }
+
+      const bookingDate = new Date(date);
+      const now = new Date();
+      const hoursUntilBooking = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+      
+      if (hoursUntilBooking < business.advanceNoticeHours) {
+        return res.status(400).json({ 
+          message: `Bookings require at least ${business.advanceNoticeHours} hours advance notice` 
+        });
+      }
+
+      const isGoldBusiness = business.tier === 'gold';
+      const newBooking = await storage.createBookingWithPriority({
+        clientId: req.user!.id,
+        businessId: originalBooking.businessId,
+        serviceName: originalBooking.serviceName,
+        servicePrice: originalBooking.servicePrice,
+        date: bookingDate,
+        depositAmount: business.depositRequired ? business.depositAmount : null,
+      }, isGoldBusiness);
+
+      await storage.createNotification({
+        userId: business.ownerId,
+        bookingId: newBooking.id,
+        type: 'booking_request',
+        title: 'Rebooking Request',
+        message: `${req.user!.username} has rebooked ${newBooking.serviceName} for ${bookingDate.toLocaleDateString()}`,
+      });
+
+      res.json(newBooking);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/businesses/:id/rebooking-settings", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const rebookingSettingsSchema = z.object({
+        rebookingEnabled: z.boolean().optional(),
+        defaultRebookingDays: z.number().int().min(7, "Minimum 7 days").max(365, "Maximum 365 days").optional(),
+      });
+
+      const validationResult = rebookingSettingsSchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({ message: fromZodError(validationResult.error).message });
+      }
+
+      const updated = await storage.updateBusiness(req.params.id, validationResult.data);
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }
