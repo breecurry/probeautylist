@@ -102,6 +102,10 @@ export interface IStorage {
   hasUserBookedWithBusiness(userId: string, businessId: string): Promise<boolean>;
   getLoyalClientStatus(clientId: string, businessId: string): Promise<boolean>;
   createBookingWithPriority(booking: InsertBooking, priority: boolean): Promise<Booking>;
+  getInactiveClients(businessId: string, days: number): Promise<{ clientId: string; clientName: string; lastVisit: Date; daysSinceVisit: number }[]>;
+  getBookingsByWeekday(businessId: string): Promise<{ day: number; dayName: string; count: number }[]>;
+  getBookingsByHour(businessId: string): Promise<{ hour: number; count: number }[]>;
+  getServiceRevenueMix(businessId: string): Promise<{ serviceName: string; revenue: number; percentage: number; count: number }[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -726,6 +730,95 @@ export class DatabaseStorage implements IStorage {
   async createBookingWithPriority(booking: InsertBooking, priority: boolean): Promise<Booking> {
     const result = await db.insert(bookings).values({ ...booking, priority }).returning();
     return result[0];
+  }
+
+  async getInactiveClients(businessId: string, days: number): Promise<{ clientId: string; clientName: string; lastVisit: Date; daysSinceVisit: number }[]> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - days);
+    
+    const result = await db.execute(sql`
+      SELECT 
+        b.client_id as "clientId",
+        COALESCE(u.first_name || ' ' || u.last_name, u.username) as "clientName",
+        MAX(b.date) as "lastVisit"
+      FROM bookings b
+      INNER JOIN users u ON u.id = b.client_id
+      WHERE b.business_id = ${businessId}
+        AND b.status IN ('confirmed', 'completed')
+      GROUP BY b.client_id, u.first_name, u.last_name, u.username
+      HAVING MAX(b.date) < ${cutoffDate}
+      ORDER BY MAX(b.date) DESC
+      LIMIT 10
+    `);
+    
+    return (result.rows as any[]).map(row => ({
+      clientId: row.clientId,
+      clientName: row.clientName || 'Unknown',
+      lastVisit: new Date(row.lastVisit),
+      daysSinceVisit: Math.floor((Date.now() - new Date(row.lastVisit).getTime()) / (1000 * 60 * 60 * 24))
+    }));
+  }
+
+  async getBookingsByWeekday(businessId: string): Promise<{ day: number; dayName: string; count: number }[]> {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    const result = await db.execute(sql`
+      SELECT EXTRACT(DOW FROM date) as day, COUNT(*) as count
+      FROM bookings 
+      WHERE business_id = ${businessId}
+        AND status IN ('confirmed', 'completed')
+      GROUP BY EXTRACT(DOW FROM date)
+      ORDER BY day
+    `);
+    
+    return (result.rows as any[]).map(row => ({
+      day: parseInt(row.day),
+      dayName: dayNames[parseInt(row.day)],
+      count: parseInt(row.count)
+    }));
+  }
+
+  async getBookingsByHour(businessId: string): Promise<{ hour: number; count: number }[]> {
+    const result = await db.execute(sql`
+      SELECT EXTRACT(HOUR FROM date) as hour, COUNT(*) as count
+      FROM bookings 
+      WHERE business_id = ${businessId}
+        AND status IN ('confirmed', 'completed')
+      GROUP BY EXTRACT(HOUR FROM date)
+      ORDER BY hour
+    `);
+    
+    return (result.rows as any[]).map(row => ({
+      hour: parseInt(row.hour),
+      count: parseInt(row.count)
+    }));
+  }
+
+  async getServiceRevenueMix(businessId: string): Promise<{ serviceName: string; revenue: number; percentage: number; count: number }[]> {
+    const result = await db.execute(sql`
+      SELECT 
+        service_name as "serviceName",
+        SUM(CAST(NULLIF(service_price, '') AS NUMERIC)) as revenue,
+        COUNT(*) as count
+      FROM bookings 
+      WHERE business_id = ${businessId} 
+        AND status IN ('confirmed', 'completed')
+      GROUP BY service_name
+      ORDER BY revenue DESC
+    `);
+    
+    const services = (result.rows as any[]).map(row => ({
+      serviceName: row.serviceName,
+      revenue: parseFloat(row.revenue) || 0,
+      count: parseInt(row.count)
+    }));
+    
+    const totalRevenue = services.reduce((sum, s) => sum + s.revenue, 0);
+    
+    return services.map(s => ({
+      ...s,
+      percentage: totalRevenue > 0 ? (s.revenue / totalRevenue) * 100 : 0
+    }));
   }
 }
 

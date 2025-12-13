@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from "recharts";
-import { TrendingUp, Users, Clock, Calendar, Award, ArrowUpRight, Crown } from "lucide-react";
+import { TrendingUp, Users, Clock, Calendar, Award, ArrowUpRight, Crown, Sparkles, Brain, RefreshCw, Lightbulb, UserMinus } from "lucide-react";
 
 interface Business {
   id: string;
@@ -27,12 +27,22 @@ interface Analytics {
   conversionRate: number;
 }
 
+interface AIGrowthInsights {
+  reactivationCandidates: { clientName: string; lastVisit: string; daysSinceVisit: number }[];
+  growthInsights: { insight: string; recommendation: string }[];
+  bookingPatterns: { pattern: string; analysis: string }[];
+  personalizedTips: string[];
+  generatedAt: string;
+}
+
 const COLORS = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#fff1f2'];
+const AI_COLORS = ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'];
 
 export default function BusinessAnalytics() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
+  const queryClient = useQueryClient();
 
   const { data: businesses, isLoading: businessesLoading } = useQuery<Business[]>({
     queryKey: ["/api/businesses/owner"],
@@ -66,6 +76,36 @@ export default function BusinessAnalytics() {
       return res.json();
     },
     enabled: !!selectedBusinessId && selectedBusiness?.tier === 'gold',
+  });
+
+  const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery<AIGrowthInsights | null>({
+    queryKey: ["/api/businesses", selectedBusinessId, "ai-growth"],
+    queryFn: async () => {
+      const res = await fetch(`/api/businesses/${selectedBusinessId}/ai-growth`);
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to fetch AI insights");
+      }
+      return res.json();
+    },
+    enabled: !!selectedBusinessId && selectedBusiness?.tier === 'gold',
+  });
+
+  const generateInsightsMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/businesses/${selectedBusinessId}/ai-growth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to generate AI insights");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/businesses", selectedBusinessId, "ai-growth"] });
+    },
   });
 
   if (authLoading || businessesLoading) {
@@ -386,6 +426,146 @@ export default function BusinessAnalytics() {
                   ) : (
                     <div className="flex items-center justify-center h-[300px] text-muted-foreground">
                       No booking day data available
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="mt-8">
+              <Card className="border-violet-200 bg-gradient-to-br from-violet-50 to-purple-50" data-testid="card-ai-growth">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600">
+                      <Sparkles className="h-5 w-5 text-white" />
+                    </div>
+                    <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                      AI Growth Autopilot
+                    </span>
+                  </CardTitle>
+                  <Button
+                    onClick={() => generateInsightsMutation.mutate()}
+                    disabled={generateInsightsMutation.isPending}
+                    className="bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700"
+                    data-testid="button-refresh-insights"
+                  >
+                    {generateInsightsMutation.isPending ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        {aiInsights ? 'Refresh Insights' : 'Generate Insights'}
+                      </>
+                    )}
+                  </Button>
+                </CardHeader>
+                <CardContent>
+                  {generateInsightsMutation.isPending || aiInsightsLoading ? (
+                    <div className="flex flex-col items-center justify-center py-12">
+                      <Brain className="h-12 w-12 text-violet-500 animate-pulse mb-4" />
+                      <p className="text-violet-600 font-medium">AI is analyzing your business data...</p>
+                      <p className="text-sm text-muted-foreground mt-1">This may take a few moments</p>
+                    </div>
+                  ) : aiInsights ? (
+                    <div className="grid gap-6">
+                      {aiInsights.generatedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          Last generated: {new Date(aiInsights.generatedAt).toLocaleString()}
+                        </p>
+                      )}
+
+                      {aiInsights.growthInsights.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold text-violet-800 mb-3 flex items-center gap-2">
+                            <Lightbulb className="h-4 w-4" />
+                            Growth Insights
+                          </h3>
+                          <div className="grid gap-3">
+                            {aiInsights.growthInsights.map((insight, index) => (
+                              <Card key={index} className="border-violet-100 bg-white/80" data-testid={`card-insight-${index}`}>
+                                <CardContent className="pt-4">
+                                  <p className="font-medium text-violet-900">{insight.insight}</p>
+                                  <p className="text-sm text-muted-foreground mt-1">{insight.recommendation}</p>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {aiInsights.reactivationCandidates.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold text-violet-800 mb-3 flex items-center gap-2">
+                            <UserMinus className="h-4 w-4" />
+                            Reactivation Candidates
+                          </h3>
+                          <Card className="border-violet-100 bg-white/80" data-testid="card-reactivation">
+                            <CardContent className="pt-4">
+                              <div className="space-y-2">
+                                {aiInsights.reactivationCandidates.slice(0, 5).map((client, index) => (
+                                  <div key={index} className="flex justify-between items-center py-2 border-b border-violet-50 last:border-0" data-testid={`row-client-${index}`}>
+                                    <span className="font-medium">{client.clientName}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                      Last visit: {client.lastVisit} ({client.daysSinceVisit} days ago)
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )}
+
+                      {aiInsights.bookingPatterns.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold text-violet-800 mb-3 flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            Booking Patterns
+                          </h3>
+                          <div className="grid gap-3">
+                            {aiInsights.bookingPatterns.map((pattern, index) => (
+                              <Card key={index} className="border-violet-100 bg-white/80" data-testid={`card-pattern-${index}`}>
+                                <CardContent className="pt-4">
+                                  <p className="font-medium text-violet-900">{pattern.pattern}</p>
+                                  <p className="text-sm text-muted-foreground mt-1">{pattern.analysis}</p>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {aiInsights.personalizedTips.length > 0 && (
+                        <div>
+                          <h3 className="font-semibold text-violet-800 mb-3 flex items-center gap-2">
+                            <Sparkles className="h-4 w-4" />
+                            Personalized Tips
+                          </h3>
+                          <Card className="border-violet-100 bg-white/80" data-testid="card-tips">
+                            <CardContent className="pt-4">
+                              <ul className="space-y-2">
+                                {aiInsights.personalizedTips.map((tip, index) => (
+                                  <li key={index} className="flex items-start gap-2" data-testid={`tip-${index}`}>
+                                    <span className="text-violet-500 mt-1">•</span>
+                                    <span className="text-sm">{tip}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Brain className="h-12 w-12 text-violet-300 mb-4" />
+                      <h3 className="font-semibold text-violet-800 mb-2">No AI Insights Generated Yet</h3>
+                      <p className="text-sm text-muted-foreground max-w-md">
+                        Click "Generate Insights" to let AI analyze your business data and provide personalized growth recommendations.
+                      </p>
                     </div>
                   )}
                 </CardContent>

@@ -1243,5 +1243,57 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/businesses/:id/ai-growth", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "AI Growth Autopilot is only available for Gold tier businesses" });
+      }
+
+      const { getCachedInsights } = await import("./services/aiGrowth");
+      const cached = getCachedInsights(req.params.id);
+      
+      if (cached) {
+        res.json(cached);
+      } else {
+        res.json(null);
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/ai-growth", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      if (business.tier !== 'gold') {
+        return res.status(403).json({ message: "AI Growth Autopilot is only available for Gold tier businesses" });
+      }
+
+      const { generateGrowthInsights } = await import("./services/aiGrowth");
+      const insights = await generateGrowthInsights(req.params.id);
+      
+      res.json(insights);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }
