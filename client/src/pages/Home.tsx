@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PLANS, MOCK_BUSINESSES } from "@/lib/mock-data";
-import { Check, Star, MapPin, Calendar, MessageCircle, TrendingUp, Users, Sparkles, Heart, Clock, Shield } from "lucide-react";
+import { Check, Star, MapPin, Calendar, MessageCircle, TrendingUp, Users, Sparkles, Heart, Clock, Shield, Crown } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import heroImage from "@assets/generated_images/elegant_beauty_salon_interior_with_soft_pink_and_white_tones..png";
 
@@ -216,6 +216,86 @@ export default function Home() {
                 </Card>
               ))}
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Gold Professionals - VIP Spotlight Section */}
+      <section className="py-20 bg-gradient-to-br from-amber-50/50 via-yellow-50/30 to-orange-50/20">
+        <div className="container px-4 md:px-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-white px-4 py-2 rounded-full text-sm font-bold mb-4 shadow-lg">
+              <Crown className="w-4 h-4" />
+              <span>VIP SPOTLIGHT</span>
+            </div>
+            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2">Featured Professionals</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto mt-4">
+              Our top-rated Gold tier professionals offering exceptional service and premium experiences.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {MOCK_BUSINESSES.filter(b => b.tier === 'gold').map((business, index) => (
+              <motion.div
+                key={business.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                viewport={{ once: true }}
+              >
+                <Link href={`/profile/${business.id}`}>
+                  <Card className="h-full border-2 border-amber-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group bg-white ring-2 ring-amber-100/50" data-testid={`card-featured-${business.id}`}>
+                    <div className="aspect-[4/3] overflow-hidden relative">
+                      <img 
+                        src={business.image} 
+                        alt={business.name} 
+                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                        <Crown className="w-3.5 h-3.5" />
+                        <span>GOLD</span>
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </div>
+                    <CardHeader className="p-5 pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-xl font-serif">{business.name}</CardTitle>
+                        <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <span className="text-sm font-bold text-amber-600">{business.rating}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">{business.type}</p>
+                    </CardHeader>
+                    <CardContent className="p-5 pt-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                        <MapPin className="w-4 h-4 text-amber-500" />
+                        {business.location}
+                      </div>
+                      <p className="text-sm text-muted-foreground/80 line-clamp-2">{business.description}</p>
+                      <div className="mt-4 pt-3 border-t border-amber-100">
+                        <span className="text-xs text-amber-600 font-medium">{business.reviews} verified reviews</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Button className="rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-600 text-white shadow-lg shadow-amber-200/50 px-8" asChild>
+              <Link href="/search">
+                <Crown className="w-4 h-4 mr-2" />
+                View All Featured Professionals
+              </Link>
+            </Button>
           </div>
         </div>
       </section>

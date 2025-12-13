@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Search as SearchIcon, Star, Filter, Loader2, Navigation } from "lucide-react";
+import { MapPin, Search as SearchIcon, Star, Filter, Loader2, Navigation, Crown } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { useToast } from "@/hooks/use-toast";
 
@@ -107,8 +107,9 @@ export default function Search() {
                     className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                   />
                   {business.tier === 'gold' && (
-                    <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md">
-                      FEATURED
+                    <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5" data-testid={`badge-gold-${business.id}`}>
+                      <Crown className="w-3.5 h-3.5" />
+                      <span>GOLD</span>
                     </div>
                   )}
                 </div>
