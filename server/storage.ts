@@ -16,8 +16,9 @@ import {
   type Referral, type InsertReferral,
   type BeforeAfterPhoto, type InsertBeforeAfterPhoto,
   type RebookingReminder, type InsertRebookingReminder,
+  type WaitlistEntry, type InsertWaitlistEntry,
   users, businesses, bookings, reviews, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
-  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders
+  loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders, waitlistEntries
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
@@ -123,6 +124,13 @@ export interface IStorage {
   getClientRebookingSuggestions(clientId: string): Promise<(RebookingReminder & { businessName: string; daysSinceBooking: number })[]>;
   getCompletedBookingsForRebooking(): Promise<{ booking: Booking; business: Business }[]>;
   hasRebookingReminderForBooking(bookingId: string): Promise<boolean>;
+  
+  addToWaitlist(data: InsertWaitlistEntry): Promise<WaitlistEntry>;
+  getWaitlistForBusiness(businessId: string): Promise<WaitlistEntry[]>;
+  getClientWaitlistEntries(clientId: string): Promise<WaitlistEntry[]>;
+  removeFromWaitlist(id: string): Promise<boolean>;
+  notifyWaitlistOnCancellation(businessId: string, cancelledDate: Date): Promise<void>;
+  getWaitlistEntry(id: string): Promise<WaitlistEntry | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -998,6 +1006,69 @@ export class DatabaseStorage implements IStorage {
       .where(eq(rebookingReminders.lastBookingId, bookingId))
       .limit(1);
     return result.length > 0;
+  }
+
+  async addToWaitlist(data: InsertWaitlistEntry): Promise<WaitlistEntry> {
+    const result = await db.insert(waitlistEntries).values(data).returning();
+    return result[0];
+  }
+
+  async getWaitlistForBusiness(businessId: string): Promise<WaitlistEntry[]> {
+    return db.select().from(waitlistEntries)
+      .where(eq(waitlistEntries.businessId, businessId))
+      .orderBy(desc(waitlistEntries.createdAt));
+  }
+
+  async getClientWaitlistEntries(clientId: string): Promise<WaitlistEntry[]> {
+    return db.select().from(waitlistEntries)
+      .where(eq(waitlistEntries.clientId, clientId))
+      .orderBy(desc(waitlistEntries.createdAt));
+  }
+
+  async removeFromWaitlist(id: string): Promise<boolean> {
+    await db.delete(waitlistEntries).where(eq(waitlistEntries.id, id));
+    return true;
+  }
+
+  async notifyWaitlistOnCancellation(businessId: string, cancelledDate: Date): Promise<void> {
+    const startOfDay = new Date(cancelledDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(cancelledDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const entries = await db.select().from(waitlistEntries)
+      .where(and(
+        eq(waitlistEntries.businessId, businessId),
+        eq(waitlistEntries.notified, false),
+      ));
+
+    const matchingEntries = entries.filter(entry => {
+      if (!entry.preferredDate) return true;
+      const entryDate = new Date(entry.preferredDate);
+      return entryDate >= startOfDay && entryDate <= endOfDay;
+    });
+
+    const business = await this.getBusiness(businessId);
+
+    for (const entry of matchingEntries) {
+      await db.update(waitlistEntries)
+        .set({ notified: true })
+        .where(eq(waitlistEntries.id, entry.id));
+
+      await this.createNotification({
+        userId: entry.clientId,
+        type: 'waitlist_opening',
+        title: 'Appointment Opening Available!',
+        message: `Good news! ${business?.name || 'A business'} has an opening for ${entry.serviceName}. Book now before it's gone!`,
+      });
+    }
+  }
+
+  async getWaitlistEntry(id: string): Promise<WaitlistEntry | undefined> {
+    const result = await db.select().from(waitlistEntries)
+      .where(eq(waitlistEntries.id, id))
+      .limit(1);
+    return result[0];
   }
 }
 

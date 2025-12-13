@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Store, DollarSign, Clock, Save, Crown } from "lucide-react";
+import { Store, DollarSign, Clock, Save, Crown, Users, Bell, Trash2, Calendar as CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { LoyaltySettings } from "@/components/LoyaltySettings";
@@ -183,6 +184,192 @@ function BusinessCard({ business }: { business: Business }) {
   );
 }
 
+interface WaitlistEntry {
+  id: string;
+  clientId: string;
+  businessId: string;
+  serviceName: string;
+  preferredDate: string | null;
+  notified: boolean;
+  bookedBookingId: string | null;
+  createdAt: string;
+  client?: {
+    id: string;
+    username: string;
+    email: string;
+  };
+}
+
+function BusinessWaitlistSection({ businessId, businessName }: { businessId: string; businessName: string }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: waitlistEntries, isLoading, error } = useQuery<WaitlistEntry[]>({
+    queryKey: [`/api/businesses/${businessId}/waitlist`],
+    queryFn: async () => {
+      const res = await fetch(`/api/businesses/${businessId}/waitlist`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch waitlist");
+      return res.json();
+    },
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/waitlist/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to remove from waitlist");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/businesses/${businessId}/waitlist`] });
+      toast({
+        title: "Entry Removed",
+        description: "The waitlist entry has been removed.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to remove waitlist entry. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <Card 
+        className="border-blue-100 bg-gradient-to-r from-blue-50/30 to-indigo-50/30"
+        data-testid={`waitlist-section-loading-${businessId}`}
+      >
+        <CardHeader className="pb-3">
+          <Skeleton className="h-6 w-40" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-24" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error || !waitlistEntries || waitlistEntries.length === 0) {
+    return (
+      <Card 
+        className="border-blue-100 bg-gradient-to-r from-blue-50/30 to-indigo-50/30"
+        data-testid={`waitlist-section-empty-${businessId}`}
+      >
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-blue-700 text-lg">
+            <Users className="h-5 w-5 text-blue-500" />
+            Waitlist - {businessName}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No clients on the waitlist yet.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card 
+      className="border-blue-200 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 shadow-sm"
+      data-testid={`waitlist-section-${businessId}`}
+    >
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-blue-700 text-lg">
+          <Users className="h-5 w-5 text-blue-500" />
+          Waitlist - {businessName}
+          <Badge 
+            variant="secondary" 
+            className="bg-blue-100 text-blue-700 ml-2"
+            data-testid={`waitlist-count-${businessId}`}
+          >
+            {waitlistEntries.length} {waitlistEntries.length === 1 ? 'client' : 'clients'}
+          </Badge>
+        </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Clients waiting for availability at your business.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {waitlistEntries.map((entry) => (
+          <div 
+            key={entry.id}
+            className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 rounded-lg border border-blue-100"
+            data-testid={`business-waitlist-entry-${entry.id}`}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-100 rounded-full">
+                <Bell className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p 
+                  className="font-medium text-blue-700"
+                  data-testid={`waitlist-entry-service-${entry.id}`}
+                >
+                  {entry.serviceName}
+                </p>
+                {entry.client && (
+                  <p className="text-sm text-muted-foreground" data-testid={`waitlist-entry-client-${entry.id}`}>
+                    Client: <span className="font-medium">{entry.client.username}</span>
+                    {entry.client.email && (
+                      <span className="text-xs ml-1">({entry.client.email})</span>
+                    )}
+                  </p>
+                )}
+                {entry.preferredDate && (
+                  <p 
+                    className="text-sm text-blue-600 mt-1 flex items-center gap-1"
+                    data-testid={`waitlist-entry-date-${entry.id}`}
+                  >
+                    <CalendarIcon className="h-3 w-3" />
+                    Preferred: {format(new Date(entry.preferredDate), "PPP")}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Joined: {format(new Date(entry.createdAt), "PPP")}
+                </p>
+                {entry.notified ? (
+                  <Badge 
+                    className="mt-2 bg-green-100 text-green-700 hover:bg-green-100"
+                    data-testid={`waitlist-entry-notified-${entry.id}`}
+                  >
+                    <Bell className="h-3 w-3 mr-1" />
+                    Notified
+                  </Badge>
+                ) : (
+                  <Badge 
+                    variant="secondary" 
+                    className="mt-2 bg-blue-100 text-blue-700"
+                    data-testid={`waitlist-entry-pending-${entry.id}`}
+                  >
+                    Waiting
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => removeMutation.mutate(entry.id)}
+              disabled={removeMutation.isPending}
+              data-testid={`button-remove-business-waitlist-${entry.id}`}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function MyBusinesses() {
   const { user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
@@ -265,6 +452,10 @@ export default function MyBusinesses() {
                 <div className="grid gap-6 md:grid-cols-2">
                   <BusinessCard business={business} />
                 </div>
+                
+                {/* Waitlist Section */}
+                <BusinessWaitlistSection businessId={business.id} businessName={business.name} />
+
                 {business.tier === 'gold' && (
                   <div data-testid={`loyalty-section-${business.id}`}>
                     <h2 className="text-xl font-semibold text-rose-700 mb-4 flex items-center gap-2">

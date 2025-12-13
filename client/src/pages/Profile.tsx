@@ -6,7 +6,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle, Crown, Zap } from "lucide-react";
+import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle, Crown, Zap, Users, Bell } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +34,10 @@ export default function Profile() {
   const [isTipOpen, setIsTipOpen] = useState(false);
   const [tipAmount, setTipAmount] = useState("");
   const [hasCompletedService, setHasCompletedService] = useState(false); // Mock state for review permission
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const [waitlistService, setWaitlistService] = useState<string>("");
+  const [waitlistPreferredDate, setWaitlistPreferredDate] = useState<Date | undefined>(undefined);
+  const queryClient = useQueryClient();
 
   // Simulate "Pending" state if accessed from onboarding or via query param
   const isPending = location.includes("pending") || id === 1; 
@@ -93,6 +100,54 @@ export default function Profile() {
       description: `You sent a $${tipAmount || "0"} tip to ${business.owner}.`,
     });
     setTipAmount("");
+  };
+
+  const joinWaitlistMutation = useMutation({
+    mutationFn: async (data: { serviceName: string; preferredDate?: string }) => {
+      const res = await fetch(`/api/businesses/${id}/waitlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to join waitlist");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/clients/waitlist"] });
+      toast({
+        title: "Joined Waitlist",
+        description: `You've been added to the waitlist for ${waitlistService}. We'll notify you when a spot opens up!`,
+      });
+      setIsWaitlistOpen(false);
+      setWaitlistService("");
+      setWaitlistPreferredDate(undefined);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleJoinWaitlist = () => {
+    if (!waitlistService) {
+      toast({
+        title: "Service Required",
+        description: "Please select a service to join the waitlist.",
+        variant: "destructive",
+      });
+      return;
+    }
+    joinWaitlistMutation.mutate({
+      serviceName: waitlistService,
+      preferredDate: waitlistPreferredDate?.toISOString(),
+    });
   };
 
   const socialFeaturesEnabled = currentPlan.socialFeatures;
@@ -502,6 +557,113 @@ export default function Profile() {
                         >
                           {isGoldBusiness && <Crown className="w-4 h-4 mr-2" />}
                           {isGoldBusiness ? 'Confirm Priority Booking' : 'Send Request'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Join Waitlist Button and Dialog */}
+                  <Dialog open={isWaitlistOpen} onOpenChange={setIsWaitlistOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="outline"
+                        className="w-full h-10 gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                        data-testid="button-join-waitlist"
+                      >
+                        <Users className="w-4 h-4" />
+                        Join Waitlist
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-blue-700">
+                          <Bell className="w-5 h-5 text-blue-500" />
+                          Join Waitlist
+                        </DialogTitle>
+                        <DialogDescription>
+                          Get notified when a spot opens up at {business.name}. We'll let you know as soon as there's availability.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="waitlist-service" className="text-sm font-medium">
+                            Select Service *
+                          </Label>
+                          <Select 
+                            value={waitlistService} 
+                            onValueChange={setWaitlistService}
+                          >
+                            <SelectTrigger 
+                              id="waitlist-service"
+                              data-testid="select-waitlist-service"
+                              className="border-blue-200 focus:border-blue-400 focus:ring-blue-400"
+                            >
+                              <SelectValue placeholder="Choose a service..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {services.map((service) => (
+                                <SelectItem 
+                                  key={service.name} 
+                                  value={service.name}
+                                  data-testid={`waitlist-service-option-${service.name.replace(/\s+/g, '-').toLowerCase()}`}
+                                >
+                                  {service.name} - {service.price}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm font-medium">
+                            Preferred Date (Optional)
+                          </Label>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Let us know if you have a specific date in mind
+                          </p>
+                          <div className="border rounded-md p-2 bg-white flex justify-center border-blue-200">
+                            <Calendar
+                              mode="single"
+                              selected={waitlistPreferredDate}
+                              onSelect={setWaitlistPreferredDate}
+                              className="rounded-md"
+                              data-testid="calendar-waitlist-date"
+                              disabled={(date) => date < new Date()}
+                            />
+                          </div>
+                          {waitlistPreferredDate && (
+                            <div className="flex items-center justify-between bg-blue-50 p-2 rounded-md">
+                              <span className="text-sm text-blue-700">
+                                Preferred: {waitlistPreferredDate.toLocaleDateString()}
+                              </span>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setWaitlistPreferredDate(undefined)}
+                                className="text-blue-500 hover:text-blue-700 h-6 px-2"
+                                data-testid="button-clear-waitlist-date"
+                              >
+                                Clear
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="bg-blue-50 p-3 rounded-md text-sm text-blue-800 border border-blue-100">
+                          <p className="flex items-center gap-2">
+                            <Bell className="w-4 h-4" />
+                            You'll receive a notification when a spot opens up.
+                          </p>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button 
+                          onClick={handleJoinWaitlist}
+                          disabled={joinWaitlistMutation.isPending || !waitlistService}
+                          className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white"
+                          data-testid="button-submit-waitlist"
+                        >
+                          {joinWaitlistMutation.isPending ? "Joining..." : "Join Waitlist"}
                         </Button>
                       </DialogFooter>
                     </DialogContent>

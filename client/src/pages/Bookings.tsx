@@ -20,6 +20,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { format } from "date-fns";
 import { RebookingWidget } from "@/components/RebookingWidget";
+import { WaitlistWidget } from "@/components/WaitlistWidget";
 
 interface Booking {
   id: string;
@@ -474,7 +475,12 @@ export default function Bookings() {
           </p>
         </div>
 
-        {!isBusinessOwner && <RebookingWidget />}
+        {!isBusinessOwner && (
+          <>
+            <RebookingWidget />
+            <WaitlistWidget />
+          </>
+        )}
 
         {isLoading ? (
           <div className="space-y-4" data-testid="loading-skeleton">

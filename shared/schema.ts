@@ -190,6 +190,17 @@ export const rebookingReminders = pgTable("rebooking_reminders", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const waitlistEntries = pgTable("waitlist_entries", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  clientId: varchar("client_id").notNull().references(() => users.id),
+  businessId: varchar("business_id").notNull().references(() => businesses.id),
+  serviceName: text("service_name").notNull(),
+  preferredDate: timestamp("preferred_date"),
+  notified: boolean("notified").notNull().default(false),
+  bookedBookingId: varchar("booked_booking_id").references(() => bookings.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
@@ -285,6 +296,13 @@ export const insertRebookingReminderSchema = createInsertSchema(rebookingReminde
   reminderSent: true,
 });
 
+export const insertWaitlistEntrySchema = createInsertSchema(waitlistEntries).omit({
+  id: true,
+  createdAt: true,
+  notified: true,
+  bookedBookingId: true,
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
@@ -335,3 +353,6 @@ export type BeforeAfterPhoto = typeof beforeAfterPhotos.$inferSelect;
 
 export type InsertRebookingReminder = z.infer<typeof insertRebookingReminderSchema>;
 export type RebookingReminder = typeof rebookingReminders.$inferSelect;
+
+export type InsertWaitlistEntry = z.infer<typeof insertWaitlistEntrySchema>;
+export type WaitlistEntry = typeof waitlistEntries.$inferSelect;

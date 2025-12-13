@@ -9,7 +9,7 @@ import { pool } from "../db";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
-import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema } from "@shared/schema";
+import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema } from "@shared/schema";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -1486,6 +1486,115 @@ export async function registerRoutes(
 
       const updated = await storage.updateBusiness(req.params.id, validationResult.data);
       res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/bookings/:id/status", requireAuth, async (req, res, next) => {
+    try {
+      const booking = await storage.getBooking(req.params.id);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const business = await storage.getBusiness(booking.businessId);
+      const isClient = booking.clientId === req.user!.id;
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+
+      if (!isClient && !isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const { status } = req.body;
+      const validStatuses = ['pending', 'confirmed', 'cancelled', 'completed'];
+      if (!status || !validStatuses.includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const updated = await storage.updateBookingStatus(req.params.id, status);
+
+      if (status === 'cancelled' && business) {
+        await storage.notifyWaitlistOnCancellation(booking.businessId, new Date(booking.date));
+      }
+
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/waitlist", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business || !business.approved) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      const result = insertWaitlistEntrySchema.safeParse({
+        clientId: req.user!.id,
+        businessId: req.params.id,
+        serviceName: req.body.serviceName,
+        preferredDate: req.body.preferredDate ? new Date(req.body.preferredDate) : undefined,
+      });
+
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const entry = await storage.addToWaitlist(result.data);
+      res.json(entry);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/businesses/:id/waitlist", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const entries = await storage.getWaitlistForBusiness(req.params.id);
+      res.json(entries);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/clients/waitlist", requireAuth, async (req, res, next) => {
+    try {
+      const entries = await storage.getClientWaitlistEntries(req.user!.id);
+      res.json(entries);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/waitlist/:id", requireAuth, async (req, res, next) => {
+    try {
+      const entry = await storage.getWaitlistEntry(req.params.id);
+      if (!entry) {
+        return res.status(404).json({ message: "Waitlist entry not found" });
+      }
+
+      const business = await storage.getBusiness(entry.businessId);
+      const isClient = entry.clientId === req.user!.id;
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
+
+      if (!isClient && !isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.removeFromWaitlist(req.params.id);
+      res.json({ message: "Removed from waitlist" });
     } catch (error) {
       next(error);
     }
