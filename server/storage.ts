@@ -29,10 +29,11 @@ import {
   type SocialMediaSettings, type InsertSocialMediaSettings,
   type Expense, type InsertExpense,
   type SocialPost, type InsertSocialPost,
+  type PasswordResetToken, type InsertPasswordResetToken,
   users, businesses, bookings, reviews, reviewPhotos, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
   loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders, waitlistEntries,
   groupBookings, groupBookingGuests, inspirationBoardItems, staffMembers, followUpSettings, followUpMessages, clientNotes, giftCards,
-  socialMediaSettings, expenses, socialPosts
+  socialMediaSettings, expenses, socialPosts, passwordResetTokens
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte, or } from "drizzle-orm";
@@ -223,6 +224,12 @@ export interface IStorage {
   updateUserRole(userId: string, role: string): Promise<User | undefined>;
   deleteUser(userId: string): Promise<void>;
   deleteBusiness(businessId: string): Promise<void>;
+  
+  // Password reset methods
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenUsed(token: string): Promise<void>;
+  updateUserPassword(userId: string, hashedPassword: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1832,6 +1839,42 @@ export class DatabaseStorage implements IStorage {
     await db.delete(socialPosts).where(eq(socialPosts.businessId, businessId));
     // Finally delete the business
     await db.delete(businesses).where(eq(businesses.id, businessId));
+  }
+
+  // Password reset methods
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken> {
+    const result = await db.insert(passwordResetTokens).values({
+      userId,
+      token,
+      expiresAt,
+      used: false,
+    }).returning();
+    return result[0];
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const result = await db.select().from(passwordResetTokens)
+      .where(and(
+        eq(passwordResetTokens.token, token),
+        eq(passwordResetTokens.used, false),
+        gt(passwordResetTokens.expiresAt, new Date())
+      ))
+      .limit(1);
+    return result[0];
+  }
+
+  async markPasswordResetTokenUsed(token: string): Promise<void> {
+    await db.update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.token, token));
+  }
+
+  async updateUserPassword(userId: string, hashedPassword: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
   }
 }
 
