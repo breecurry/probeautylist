@@ -17,6 +17,7 @@ import CustomerProfile from "@/pages/CustomerProfile";
 import AccountSettings from "@/pages/AccountSettings";
 import BusinessAnalytics from "@/pages/BusinessAnalytics";
 import AdminSetup from "@/pages/AdminSetup";
+import SocialSharing from "@/pages/SocialSharing";
 
 function Router() {
   return (
@@ -33,6 +34,7 @@ function Router() {
       <Route path="/settings" component={AccountSettings} />
       <Route path="/analytics" component={BusinessAnalytics} />
       <Route path="/admin-setup" component={AdminSetup} />
+      <Route path="/social-sharing" component={SocialSharing} />
       <Route component={NotFound} />
     </Switch>
   );

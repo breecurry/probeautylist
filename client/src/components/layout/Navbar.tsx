@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Scissors, Menu, LogOut, Calendar, Search, Settings, Shield, LucideIcon, Home, Store, BarChart3 } from "lucide-react";
+import { Scissors, Menu, LogOut, Calendar, Search, Settings, Shield, LucideIcon, Home, Store, BarChart3, Share2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -158,10 +158,16 @@ export function Navbar() {
                       My Businesses
                     </DropdownMenuItem>
                     {hasGoldBusiness && (
-                      <DropdownMenuItem onClick={() => setLocation('/analytics')} data-testid="dropdown-analytics">
-                        <BarChart3 className="mr-2 h-4 w-4" />
-                        Analytics
-                      </DropdownMenuItem>
+                      <>
+                        <DropdownMenuItem onClick={() => setLocation('/analytics')} data-testid="dropdown-analytics">
+                          <BarChart3 className="mr-2 h-4 w-4" />
+                          Analytics
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setLocation('/social-sharing')} data-testid="dropdown-social-sharing">
+                          <Share2 className="mr-2 h-4 w-4" />
+                          Social Sharing
+                        </DropdownMenuItem>
+                      </>
                     )}
                     <DropdownMenuItem onClick={() => setLocation('/onboarding?type=business')} data-testid="dropdown-add-business">
                       <Settings className="mr-2 h-4 w-4" />
@@ -243,14 +249,24 @@ export function Navbar() {
               )}
 
               {hasGoldBusiness && (
-                <button 
-                  onClick={() => handleNavigation('/analytics')}
-                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
-                  data-testid="mobile-analytics"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Analytics
-                </button>
+                <>
+                  <button 
+                    onClick={() => handleNavigation('/analytics')}
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                    data-testid="mobile-analytics"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Analytics
+                  </button>
+                  <button 
+                    onClick={() => handleNavigation('/social-sharing')}
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                    data-testid="mobile-social-sharing"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Social Sharing
+                  </button>
+                </>
               )}
               
               {isAuthenticated && (
