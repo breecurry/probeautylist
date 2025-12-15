@@ -205,7 +205,7 @@ export async function registerRoutes(
       const emailSent = await sendPasswordResetEmail(user.email, resetToken, user.username);
       
       if (!emailSent) {
-        return res.status(503).json({ message: "Email service is temporarily unavailable. Please try again later or contact support." });
+        return res.status(500).json({ message: "Unable to send reset email. Please check the email address is valid." });
       }
 
       res.json({ message: "If an account with that email exists, we've sent a password reset link." });

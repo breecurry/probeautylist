@@ -57,8 +57,9 @@ export async function sendPasswordResetEmail(
   
   try {
     const { client, fromEmail } = await getUncachableResendClient();
+    console.log(`[email] Using from address: ${fromEmail || 'noreply@resend.dev (default)'}`);
     
-    await client.emails.send({
+    const result = await client.emails.send({
       from: fromEmail || 'BeautyConnect <noreply@resend.dev>',
       to: toEmail,
       subject: 'Reset Your BeautyConnect Password',
@@ -94,10 +95,15 @@ export async function sendPasswordResetEmail(
       `,
     });
     
-    console.log(`[email] Password reset email sent successfully to ${toEmail}`);
+    if (result.error) {
+      console.error('[email] Resend API error:', result.error.message);
+      throw new Error(result.error.message);
+    }
+    
+    console.log(`[email] Password reset email sent successfully to ${toEmail}`, result.data);
     return true;
-  } catch (error) {
-    console.error('Failed to send password reset email via Resend:', error);
+  } catch (error: any) {
+    console.error('[email] Failed to send password reset email via Resend:', error?.message || error);
     console.log(`[email] FALLBACK - Password reset link for ${toEmail} (user: ${username}):`);
     console.log(`[email] ${resetLink}`);
     console.log(`[email] Note: Email service not configured. Copy this link to test password reset.`);
