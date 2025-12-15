@@ -28,10 +28,11 @@ import {
   type GiftCard, type InsertGiftCard,
   type SocialMediaSettings, type InsertSocialMediaSettings,
   type Expense, type InsertExpense,
+  type SocialPost, type InsertSocialPost,
   users, businesses, bookings, reviews, reviewPhotos, clientReviews, portfolioItems, portfolioLikes, portfolioComments, messages, tips, notifications,
   loyaltyPrograms, clientLoyaltyProgress, referralCodes, referrals, beforeAfterPhotos, rebookingReminders, waitlistEntries,
   groupBookings, groupBookingGuests, inspirationBoardItems, staffMembers, followUpSettings, followUpMessages, clientNotes, giftCards,
-  socialMediaSettings, expenses
+  socialMediaSettings, expenses, socialPosts
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
@@ -208,6 +209,12 @@ export interface IStorage {
   deleteExpense(id: string): Promise<boolean>;
   getExpense(id: string): Promise<Expense | undefined>;
   getProfitSummary(businessId: string): Promise<{ totalRevenue: number; totalExpenses: number; profit: number }>;
+  
+  createSocialPost(data: InsertSocialPost): Promise<SocialPost>;
+  getSocialPostsByBusiness(businessId: string): Promise<SocialPost[]>;
+  getSocialPost(id: string): Promise<SocialPost | undefined>;
+  updateSocialPostSharedTo(id: string, sharedTo: string[]): Promise<SocialPost | undefined>;
+  deleteSocialPost(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1614,6 +1621,37 @@ export class DatabaseStorage implements IStorage {
       totalExpenses,
       profit: totalRevenue - totalExpenses
     };
+  }
+
+  async createSocialPost(data: InsertSocialPost): Promise<SocialPost> {
+    const result = await db.insert(socialPosts).values(data).returning();
+    return result[0];
+  }
+
+  async getSocialPostsByBusiness(businessId: string): Promise<SocialPost[]> {
+    return db.select().from(socialPosts)
+      .where(eq(socialPosts.businessId, businessId))
+      .orderBy(desc(socialPosts.createdAt));
+  }
+
+  async getSocialPost(id: string): Promise<SocialPost | undefined> {
+    const result = await db.select().from(socialPosts)
+      .where(eq(socialPosts.id, id))
+      .limit(1);
+    return result[0];
+  }
+
+  async updateSocialPostSharedTo(id: string, sharedTo: string[]): Promise<SocialPost | undefined> {
+    const result = await db.update(socialPosts)
+      .set({ sharedTo })
+      .where(eq(socialPosts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteSocialPost(id: string): Promise<boolean> {
+    await db.delete(socialPosts).where(eq(socialPosts.id, id));
+    return true;
   }
 }
 
