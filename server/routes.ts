@@ -2571,5 +2571,84 @@ export async function registerRoutes(
     }
   });
 
+  // Social Posts routes (for sharing to social media)
+  app.get("/api/businesses/:id/social-posts", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const posts = await storage.getSocialPostsByBusiness(req.params.id);
+      res.json(posts);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post("/api/businesses/:id/social-posts", requireAuth, async (req, res, next) => {
+    try {
+      const business = await storage.getBusiness(req.params.id);
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const post = await storage.createSocialPost({
+        businessId: req.params.id,
+        content: req.body.content,
+        imageUrl: req.body.imageUrl || null,
+      });
+      res.json(post);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/social-posts/:id/shared", requireAuth, async (req, res, next) => {
+    try {
+      const post = await storage.getSocialPost(req.params.id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      const business = await storage.getBusiness(post.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const updated = await storage.updateSocialPostSharedTo(req.params.id, req.body.sharedTo);
+      res.json(updated);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/social-posts/:id", requireAuth, async (req, res, next) => {
+    try {
+      const post = await storage.getSocialPost(req.params.id);
+      if (!post) {
+        return res.status(404).json({ message: "Post not found" });
+      }
+
+      const business = await storage.getBusiness(post.businessId);
+      if (!business || (business.ownerId !== req.user!.id && req.user!.role !== 'admin')) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      await storage.deleteSocialPost(req.params.id);
+      res.json({ message: "Post deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }
