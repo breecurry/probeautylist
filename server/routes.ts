@@ -10,6 +10,8 @@ import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertReviewPhotoSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema, insertInspirationBoardItemSchema, insertStaffMemberSchema, insertFollowUpSettingsSchema, insertClientNoteSchema, insertGiftCardSchema, insertSocialMediaSettingsSchema, insertExpenseSchema } from "@shared/schema";
+import { sendPasswordResetEmail } from "./services/emailService";
+import crypto from "crypto";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -180,6 +182,82 @@ export async function registerRoutes(
 
   app.get("/api/auth/me", requireAuth, (req, res) => {
     res.json(req.user);
+  });
+
+  // Password reset - request reset email
+  app.post("/api/auth/forgot-password", async (req, res, next) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.json({ message: "If an account with that email exists, we've sent a password reset link." });
+      }
+
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      await storage.createPasswordResetToken(user.id, resetToken, expiresAt);
+      
+      const emailSent = await sendPasswordResetEmail(user.email, resetToken, user.username);
+      
+      if (!emailSent) {
+        return res.status(500).json({ message: "Failed to send reset email. Please try again later." });
+      }
+
+      res.json({ message: "If an account with that email exists, we've sent a password reset link." });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Password reset - verify token
+  app.get("/api/auth/verify-reset-token", async (req, res, next) => {
+    try {
+      const { token } = req.query;
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ valid: false, message: "Token is required" });
+      }
+
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.json({ valid: false, message: "Invalid or expired reset link" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Password reset - reset password
+  app.post("/api/auth/reset-password", async (req, res, next) => {
+    try {
+      const { token, password } = req.body;
+      if (!token || !password) {
+        return res.status(400).json({ message: "Token and password are required" });
+      }
+
+      if (password.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters" });
+      }
+
+      const resetToken = await storage.getPasswordResetToken(token);
+      if (!resetToken) {
+        return res.status(400).json({ message: "Invalid or expired reset link. Please request a new password reset." });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await storage.updateUserPassword(resetToken.userId, hashedPassword);
+      await storage.markPasswordResetTokenUsed(token);
+
+      res.json({ message: "Password has been reset successfully. You can now log in with your new password." });
+    } catch (error) {
+      next(error);
+    }
   });
 
   // One-time admin setup endpoint - creates admin if none exists
