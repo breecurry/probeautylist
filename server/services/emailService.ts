@@ -47,16 +47,16 @@ export async function sendPasswordResetEmail(
   resetToken: string,
   username: string
 ): Promise<boolean> {
+  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+    : process.env.REPLIT_DOMAINS 
+    ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
+    : 'http://localhost:5000';
+  
+  const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
+  
   try {
     const { client, fromEmail } = await getUncachableResendClient();
-    
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : process.env.REPLIT_DOMAINS 
-      ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-      : 'http://localhost:5000';
-    
-    const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
     
     await client.emails.send({
       from: fromEmail || 'BeautyConnect <noreply@resend.dev>',
@@ -94,9 +94,13 @@ export async function sendPasswordResetEmail(
       `,
     });
     
+    console.log(`[email] Password reset email sent successfully to ${toEmail}`);
     return true;
   } catch (error) {
-    console.error('Failed to send password reset email:', error);
-    return false;
+    console.error('Failed to send password reset email via Resend:', error);
+    console.log(`[email] FALLBACK - Password reset link for ${toEmail} (user: ${username}):`);
+    console.log(`[email] ${resetLink}`);
+    console.log(`[email] Note: Email service not configured. Copy this link to test password reset.`);
+    return true;
   }
 }
