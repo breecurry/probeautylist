@@ -2650,5 +2650,70 @@ export async function registerRoutes(
     }
   });
 
+  // Admin routes
+  app.get("/api/admin/stats", requireRole("admin"), async (req, res, next) => {
+    try {
+      const stats = await storage.getAdminStats();
+      res.json(stats);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/admin/users", requireRole("admin"), async (req, res, next) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/admin/businesses", requireRole("admin"), async (req, res, next) => {
+    try {
+      const businesses = await storage.getAllBusinessesWithOwners();
+      res.json(businesses);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/admin/users/:id/role", requireRole("admin"), async (req, res, next) => {
+    try {
+      const { role } = req.body;
+      if (!['client', 'business_owner', 'admin'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      const user = await storage.updateUserRole(req.params.id, role);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/admin/users/:id", requireRole("admin"), async (req, res, next) => {
+    try {
+      if (req.params.id === req.user!.id) {
+        return res.status(400).json({ message: "Cannot delete your own account" });
+      }
+      await storage.deleteUser(req.params.id);
+      res.json({ message: "User deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete("/api/admin/businesses/:id", requireRole("admin"), async (req, res, next) => {
+    try {
+      await storage.deleteBusiness(req.params.id);
+      res.json({ message: "Business deleted" });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return httpServer;
 }

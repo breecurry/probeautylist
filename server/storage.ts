@@ -35,7 +35,7 @@ import {
   socialMediaSettings, expenses, socialPosts
 } from "@shared/schema";
 import { db } from "../db";
-import { eq, and, desc, sql, gt, gte, lte } from "drizzle-orm";
+import { eq, and, desc, sql, gt, gte, lte, or } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -215,6 +215,14 @@ export interface IStorage {
   getSocialPost(id: string): Promise<SocialPost | undefined>;
   updateSocialPostSharedTo(id: string, sharedTo: string[]): Promise<SocialPost | undefined>;
   deleteSocialPost(id: string): Promise<boolean>;
+  
+  // Admin methods
+  getAdminStats(): Promise<{ totalUsers: number; totalBusinesses: number; totalBookings: number; totalReviews: number; usersByRole: { role: string; count: number }[]; businessesByTier: { tier: string; count: number }[] }>;
+  getAllUsers(): Promise<Omit<User, 'password'>[]>;
+  getAllBusinessesWithOwners(): Promise<(Business & { ownerUsername: string; ownerEmail: string })[]>;
+  updateUserRole(userId: string, role: string): Promise<User | undefined>;
+  deleteUser(userId: string): Promise<void>;
+  deleteBusiness(businessId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1652,6 +1660,178 @@ export class DatabaseStorage implements IStorage {
   async deleteSocialPost(id: string): Promise<boolean> {
     await db.delete(socialPosts).where(eq(socialPosts.id, id));
     return true;
+  }
+
+  // Admin methods
+  async getAdminStats(): Promise<{ totalUsers: number; totalBusinesses: number; totalBookings: number; totalReviews: number; usersByRole: { role: string; count: number }[]; businessesByTier: { tier: string; count: number }[] }> {
+    const userCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM users`);
+    const businessCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM businesses`);
+    const bookingCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM bookings`);
+    const reviewCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM reviews`);
+    
+    const usersByRoleResult = await db.execute(sql`
+      SELECT role, COUNT(*) as count FROM users GROUP BY role ORDER BY count DESC
+    `);
+    const businessesByTierResult = await db.execute(sql`
+      SELECT tier, COUNT(*) as count FROM businesses GROUP BY tier ORDER BY count DESC
+    `);
+
+    return {
+      totalUsers: parseInt((userCountResult.rows[0] as any)?.count) || 0,
+      totalBusinesses: parseInt((businessCountResult.rows[0] as any)?.count) || 0,
+      totalBookings: parseInt((bookingCountResult.rows[0] as any)?.count) || 0,
+      totalReviews: parseInt((reviewCountResult.rows[0] as any)?.count) || 0,
+      usersByRole: (usersByRoleResult.rows as any[]).map(row => ({ role: row.role, count: parseInt(row.count) })),
+      businessesByTier: (businessesByTierResult.rows as any[]).map(row => ({ tier: row.tier, count: parseInt(row.count) }))
+    };
+  }
+
+  async getAllUsers(): Promise<Omit<User, 'password'>[]> {
+    const result = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      profilePhoto: users.profilePhoto,
+      role: users.role,
+      stripeCustomerId: users.stripeCustomerId,
+      usernameChanged: users.usernameChanged,
+      birthDate: users.birthDate,
+      noShowCount: users.noShowCount,
+      createdAt: users.createdAt
+    }).from(users).orderBy(desc(users.createdAt));
+    return result;
+  }
+
+  async getAllBusinessesWithOwners(): Promise<(Business & { ownerUsername: string; ownerEmail: string })[]> {
+    const result = await db.select({
+      id: businesses.id,
+      ownerId: businesses.ownerId,
+      name: businesses.name,
+      serviceType: businesses.serviceType,
+      description: businesses.description,
+      location: businesses.location,
+      address: businesses.address,
+      phone: businesses.phone,
+      image: businesses.image,
+      tier: businesses.tier,
+      approved: businesses.approved,
+      funFacts: businesses.funFacts,
+      depositRequired: businesses.depositRequired,
+      depositAmount: businesses.depositAmount,
+      advanceNoticeHours: businesses.advanceNoticeHours,
+      rebookingEnabled: businesses.rebookingEnabled,
+      defaultRebookingDays: businesses.defaultRebookingDays,
+      noShowThreshold: businesses.noShowThreshold,
+      createdAt: businesses.createdAt,
+      ownerUsername: users.username,
+      ownerEmail: users.email
+    })
+    .from(businesses)
+    .leftJoin(users, eq(businesses.ownerId, users.id))
+    .orderBy(desc(businesses.createdAt));
+    return result as (Business & { ownerUsername: string; ownerEmail: string })[];
+  }
+
+  async updateUserRole(userId: string, role: string): Promise<User | undefined> {
+    const result = await db.update(users)
+      .set({ role })
+      .where(eq(users.id, userId))
+      .returning();
+    return result[0];
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    // Delete all related data in proper order (respecting foreign keys)
+    // First delete notifications for user (both direct and via bookings)
+    await db.delete(notifications).where(eq(notifications.userId, userId));
+    // Delete user's bookings
+    await db.delete(bookings).where(eq(bookings.clientId, userId));
+    // Delete messages
+    await db.delete(messages).where(or(eq(messages.senderId, userId), eq(messages.receiverId, userId)));
+    // Delete tips
+    await db.delete(tips).where(eq(tips.clientId, userId));
+    // Delete reviews they created
+    await db.delete(reviews).where(eq(reviews.clientId, userId));
+    // Delete any businesses they own (cascade)
+    const userBusinesses = await db.select({ id: businesses.id }).from(businesses).where(eq(businesses.ownerId, userId));
+    for (const biz of userBusinesses) {
+      await this.deleteBusiness(biz.id);
+    }
+    // Finally delete the user
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  async deleteBusiness(businessId: string): Promise<void> {
+    // Delete all related data in proper order (comprehensive cascade)
+    // First, get all booking IDs for this business and delete related notifications
+    const businessBookingIds = await db.select({ id: bookings.id }).from(bookings).where(eq(bookings.businessId, businessId));
+    for (const booking of businessBookingIds) {
+      await db.delete(notifications).where(eq(notifications.bookingId, booking.id));
+    }
+    // Delete bookings for this business
+    await db.delete(bookings).where(eq(bookings.businessId, businessId));
+    // Delete review photos first, then reviews
+    const reviewIds = await db.select({ id: reviews.id }).from(reviews).where(eq(reviews.businessId, businessId));
+    for (const review of reviewIds) {
+      await db.delete(reviewPhotos).where(eq(reviewPhotos.reviewId, review.id));
+    }
+    await db.delete(reviews).where(eq(reviews.businessId, businessId));
+    // Delete client reviews for this business
+    await db.delete(clientReviews).where(eq(clientReviews.businessId, businessId));
+    // Delete portfolio items (first delete related likes/comments/inspiration board refs)
+    const portfolioIds = await db.select({ id: portfolioItems.id }).from(portfolioItems).where(eq(portfolioItems.businessId, businessId));
+    for (const item of portfolioIds) {
+      await db.delete(portfolioLikes).where(eq(portfolioLikes.portfolioItemId, item.id));
+      await db.delete(portfolioComments).where(eq(portfolioComments.portfolioItemId, item.id));
+      await db.delete(inspirationBoardItems).where(eq(inspirationBoardItems.portfolioItemId, item.id));
+    }
+    await db.delete(portfolioItems).where(eq(portfolioItems.businessId, businessId));
+    // Delete messages related to business
+    await db.delete(messages).where(eq(messages.businessId, businessId));
+    // Delete tips for this business
+    await db.delete(tips).where(eq(tips.businessId, businessId));
+    // Delete loyalty programs and progress
+    await db.delete(clientLoyaltyProgress).where(eq(clientLoyaltyProgress.businessId, businessId));
+    await db.delete(loyaltyPrograms).where(eq(loyaltyPrograms.businessId, businessId));
+    // Delete referral codes (first delete referrals linked to codes)
+    const refCodeIds = await db.select({ id: referralCodes.id }).from(referralCodes).where(eq(referralCodes.businessId, businessId));
+    for (const code of refCodeIds) {
+      await db.delete(referrals).where(eq(referrals.referralCodeId, code.id));
+    }
+    await db.delete(referralCodes).where(eq(referralCodes.businessId, businessId));
+    // Delete before/after photos
+    await db.delete(beforeAfterPhotos).where(eq(beforeAfterPhotos.businessId, businessId));
+    // Delete rebooking reminders
+    await db.delete(rebookingReminders).where(eq(rebookingReminders.businessId, businessId));
+    // Delete waitlist entries
+    await db.delete(waitlistEntries).where(eq(waitlistEntries.businessId, businessId));
+    // Delete group bookings (first delete guests)
+    const groupBookingIds = await db.select({ id: groupBookings.id }).from(groupBookings).where(eq(groupBookings.businessId, businessId));
+    for (const gb of groupBookingIds) {
+      await db.delete(groupBookingGuests).where(eq(groupBookingGuests.groupBookingId, gb.id));
+    }
+    await db.delete(groupBookings).where(eq(groupBookings.businessId, businessId));
+    // Delete inspiration board items for this business
+    await db.delete(inspirationBoardItems).where(eq(inspirationBoardItems.businessId, businessId));
+    // Delete staff members
+    await db.delete(staffMembers).where(eq(staffMembers.businessId, businessId));
+    // Delete follow up settings and messages
+    await db.delete(followUpMessages).where(eq(followUpMessages.businessId, businessId));
+    await db.delete(followUpSettings).where(eq(followUpSettings.businessId, businessId));
+    // Delete client notes
+    await db.delete(clientNotes).where(eq(clientNotes.businessId, businessId));
+    // Delete gift cards
+    await db.delete(giftCards).where(eq(giftCards.businessId, businessId));
+    // Delete social media settings
+    await db.delete(socialMediaSettings).where(eq(socialMediaSettings.businessId, businessId));
+    // Delete expenses
+    await db.delete(expenses).where(eq(expenses.businessId, businessId));
+    // Delete social posts
+    await db.delete(socialPosts).where(eq(socialPosts.businessId, businessId));
+    // Finally delete the business
+    await db.delete(businesses).where(eq(businesses.id, businessId));
   }
 }
 
