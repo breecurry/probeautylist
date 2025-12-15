@@ -205,29 +205,10 @@ export async function registerRoutes(
       const emailSent = await sendPasswordResetEmail(user.email, resetToken, user.username);
       
       if (!emailSent) {
-        return res.status(500).json({ message: "Failed to send reset email. Please try again later." });
+        return res.status(503).json({ message: "Email service is temporarily unavailable. Please try again later or contact support." });
       }
 
       res.json({ message: "If an account with that email exists, we've sent a password reset link." });
-    } catch (error) {
-      next(error);
-    }
-  });
-
-  // Password reset - verify token
-  app.get("/api/auth/verify-reset-token", async (req, res, next) => {
-    try {
-      const { token } = req.query;
-      if (!token || typeof token !== 'string') {
-        return res.status(400).json({ valid: false, message: "Token is required" });
-      }
-
-      const resetToken = await storage.getPasswordResetToken(token);
-      if (!resetToken) {
-        return res.json({ valid: false, message: "Invalid or expired reset link" });
-      }
-
-      res.json({ valid: true });
     } catch (error) {
       next(error);
     }
