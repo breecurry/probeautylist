@@ -6,6 +6,7 @@ export const ALL_FEATURES = [
   { id: 'reviews', name: 'Client Reviews', category: 'core' },
   { id: 'client_notes', name: 'Client Notes', category: 'core' },
   { id: 'portfolio_5', name: 'Portfolio (5 Photos)', category: 'portfolio' },
+  { id: 'portfolio_15', name: 'Portfolio (15 Photos)', category: 'portfolio' },
   { id: 'portfolio_30', name: 'Portfolio (30 Photos)', category: 'portfolio' },
   { id: 'portfolio_unlimited', name: 'Unlimited Portfolio', category: 'portfolio' },
   { id: 'social', name: 'Social Features (Likes/Comments)', category: 'engagement' },
@@ -28,12 +29,16 @@ export const ALL_FEATURES = [
   { id: 'ai_growth', name: 'AI Growth Insights', category: 'analytics' },
 ];
 
+// Yearly discount percentage
+export const YEARLY_DISCOUNT = 0.15; // 15% discount
+
 export const PLANS = [
   {
     id: 'free',
     name: 'Starter',
     price: 'Free',
     priceValue: 0,
+    yearlyPriceValue: 0,
     description: 'Perfect for getting started',
     features: [
       'Business Profile',
@@ -53,19 +58,41 @@ export const PLANS = [
     name: 'Sm-Med Business',
     price: '$0.99',
     priceValue: 0.99,
+    yearlyPriceValue: 10.09, // $0.99 * 12 * 0.85 = $10.09/year ($0.84/mo)
     description: 'Great for growing businesses',
     features: [
       'Everything in Starter',
-      'Portfolio (30 Photos)',
+      'Portfolio (15 Photos)',
       'Social Features',
       'Before & After Gallery',
       'Reviews with Photos',
-      'Waitlist Management',
       'Group Bookings',
       'No-Show Protection',
+      'Online Gift Cards',
+    ],
+    includedFeatures: [
+      'profile', 'search', 'bookings', 'reviews', 'client_notes', 'portfolio_15',
+      'social', 'before_after', 'review_photos', 'group_booking',
+      'no_show', 'gift_cards'
+    ],
+    highlight: false,
+    photoLimit: 15,
+    socialFeatures: true
+  },
+  {
+    id: 'silver',
+    name: 'Pro',
+    price: '$5.00',
+    priceValue: 5.00,
+    yearlyPriceValue: 51.00, // $5.00 * 12 * 0.85 = $51.00/year ($4.25/mo)
+    description: 'For established professionals',
+    features: [
+      'Everything in Sm-Med Business',
+      'Portfolio (30 Photos)',
+      'Waitlist Management',
       'Style Inspiration Board',
       'Staff Management',
-      'Online Gift Cards',
+      'Top of Search Results',
     ],
     includedFeatures: [
       'profile', 'search', 'bookings', 'reviews', 'client_notes', 'portfolio_30',
@@ -77,30 +104,11 @@ export const PLANS = [
     socialFeatures: true
   },
   {
-    id: 'silver',
-    name: 'Pro',
-    price: '$5.00',
-    priceValue: 5.00,
-    description: 'For established professionals',
-    features: [
-      'Everything in Sm-Med Business',
-      'Unlimited Portfolio',
-      'Top of Search Results',
-    ],
-    includedFeatures: [
-      'profile', 'search', 'bookings', 'reviews', 'client_notes', 'portfolio_unlimited',
-      'social', 'before_after', 'review_photos', 'waitlist', 'group_booking',
-      'no_show', 'inspiration_board', 'staff_mgmt', 'gift_cards'
-    ],
-    highlight: false,
-    photoLimit: 9999,
-    socialFeatures: true
-  },
-  {
     id: 'gold',
     name: 'Pro Premier 👑',
     price: '$20.00',
     priceValue: 20.00,
+    yearlyPriceValue: 204.00, // $20.00 * 12 * 0.85 = $204.00/year ($17.00/mo)
     description: 'Premium features for top performers',
     features: [
       'Everything in Pro',
@@ -136,19 +144,19 @@ export const FEATURE_COMPARISON = [
     { name: 'Client Notes', free: true, bronze: true, silver: true, gold: true },
   ]},
   { category: 'Portfolio', features: [
-    { name: 'Portfolio Photos', free: '5', bronze: '30', silver: 'Unlimited', gold: 'Unlimited' },
+    { name: 'Portfolio Photos', free: '5', bronze: '15', silver: '30', gold: 'Unlimited' },
     { name: 'Social Features (Likes/Comments)', free: false, bronze: true, silver: true, gold: true },
   ]},
   { category: 'Booking Features', features: [
     { name: 'Before & After Gallery', free: false, bronze: true, silver: true, gold: true },
-    { name: 'Waitlist Management', free: false, bronze: true, silver: true, gold: true },
+    { name: 'Waitlist Management', free: false, bronze: false, silver: true, gold: true },
     { name: 'Group Bookings', free: false, bronze: true, silver: true, gold: true },
     { name: 'No-Show Protection', free: false, bronze: true, silver: true, gold: true },
-    { name: 'Style Inspiration Board', free: false, bronze: true, silver: true, gold: true },
+    { name: 'Style Inspiration Board', free: false, bronze: false, silver: true, gold: true },
     { name: 'Reviews with Photos', free: false, bronze: true, silver: true, gold: true },
   ]},
   { category: 'Business Tools', features: [
-    { name: 'Staff Management', free: false, bronze: true, silver: true, gold: true },
+    { name: 'Staff Management', free: false, bronze: false, silver: true, gold: true },
     { name: 'Online Gift Cards', free: false, bronze: true, silver: true, gold: true },
   ]},
   { category: 'Automation (Pro Premier Only)', features: [

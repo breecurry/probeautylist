@@ -1,14 +1,33 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PLANS, MOCK_BUSINESSES, FEATURE_COMPARISON } from "@/lib/mock-data";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { PLANS, MOCK_BUSINESSES, FEATURE_COMPARISON, YEARLY_DISCOUNT } from "@/lib/mock-data";
 import { Check, Star, MapPin, Calendar, MessageCircle, TrendingUp, Users, Sparkles, Heart, Clock, Shield, Crown, X } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import heroImage from "@assets/generated_images/elegant_beauty_salon_interior_with_soft_pink_and_white_tones..png";
 
 export default function Home() {
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  
+  const getDisplayPrice = (plan: typeof PLANS[0]) => {
+    if (plan.priceValue === 0) return 'Free';
+    if (billingPeriod === 'yearly') {
+      const monthlyEquivalent = plan.yearlyPriceValue / 12;
+      return `$${monthlyEquivalent.toFixed(2)}`;
+    }
+    return `$${plan.priceValue.toFixed(2)}`;
+  };
+
+  const getYearlySavings = (plan: typeof PLANS[0]) => {
+    if (plan.priceValue === 0) return 0;
+    const yearlyWithoutDiscount = plan.priceValue * 12;
+    return yearlyWithoutDiscount - plan.yearlyPriceValue;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -419,6 +438,34 @@ export default function Home() {
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Start free. Upgrade when you're ready to unlock your full potential.
             </p>
+            
+            {/* Billing Period Toggle */}
+            <div className="flex items-center justify-center gap-4 mt-8" data-testid="billing-toggle-container">
+              <Label 
+                htmlFor="billing-toggle" 
+                className={`text-sm font-medium cursor-pointer transition-colors ${billingPeriod === 'monthly' ? 'text-teal-600' : 'text-muted-foreground'}`}
+              >
+                Monthly
+              </Label>
+              <Switch 
+                id="billing-toggle"
+                data-testid="billing-toggle"
+                checked={billingPeriod === 'yearly'}
+                onCheckedChange={(checked) => setBillingPeriod(checked ? 'yearly' : 'monthly')}
+                className="data-[state=checked]:bg-teal-500"
+              />
+              <div className="flex items-center gap-2">
+                <Label 
+                  htmlFor="billing-toggle" 
+                  className={`text-sm font-medium cursor-pointer transition-colors ${billingPeriod === 'yearly' ? 'text-teal-600' : 'text-muted-foreground'}`}
+                >
+                  Yearly
+                </Label>
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                  Save 15%
+                </span>
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {PLANS.map((plan, index) => (
@@ -433,16 +480,28 @@ export default function Home() {
                   plan.highlight 
                     ? 'border-stone-300 shadow-xl scale-105 z-10' 
                     : 'border-border/50 shadow-md hover:shadow-lg'
-                }`}>
+                }`} data-testid={`pricing-card-${plan.id}`}>
                   {plan.highlight && (
                     <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-400 via-teal-500 to-teal-400" />
                   )}
                   <CardHeader>
                     <h3 className="text-xl font-bold font-serif">{plan.name}</h3>
                     <div className="flex items-baseline gap-1 mt-2">
-                      <span className="text-3xl font-bold">{plan.price}</span>
-                      <span className="text-muted-foreground text-sm">/mo</span>
+                      <span className="text-3xl font-bold" data-testid={`price-${plan.id}`}>{getDisplayPrice(plan)}</span>
+                      {plan.priceValue > 0 && (
+                        <span className="text-muted-foreground text-sm">/mo</span>
+                      )}
                     </div>
+                    {billingPeriod === 'yearly' && plan.priceValue > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-muted-foreground">
+                          Billed annually at ${plan.yearlyPriceValue.toFixed(2)}/year
+                        </p>
+                        <p className="text-xs text-green-600 font-medium">
+                          Save ${getYearlySavings(plan).toFixed(2)} per year
+                        </p>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="flex-1">
                     <ul className="space-y-3">
@@ -456,7 +515,7 @@ export default function Home() {
                   </CardContent>
                   <CardFooter>
                     <Button className={`w-full rounded-full ${plan.highlight ? 'bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
-                      <Link href={`/auth?plan=${plan.id}&type=business`}>
+                      <Link href={`/auth?plan=${plan.id}&billing=${billingPeriod}&type=business`}>
                         Choose {plan.name}
                       </Link>
                     </Button>
@@ -481,9 +540,9 @@ export default function Home() {
                   <tr className="border-b-2 border-stone-200">
                     <th className="text-left py-4 px-4 font-semibold text-gray-700">Feature</th>
                     <th className="text-center py-4 px-4 font-semibold text-gray-700">Starter<br/><span className="text-sm font-normal text-muted-foreground">Free</span></th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Sm-Med Business<br/><span className="text-sm font-normal text-muted-foreground">$0.99/mo</span></th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Pro<br/><span className="text-sm font-normal text-muted-foreground">$5/mo</span></th>
-                    <th className="text-center py-4 px-4 font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-t-lg">Pro Premier 👑<br/><span className="text-sm font-normal text-amber-600">$20/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Sm-Med Business<br/><span className="text-sm font-normal text-muted-foreground">{getDisplayPrice(PLANS[1])}/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Pro<br/><span className="text-sm font-normal text-muted-foreground">{getDisplayPrice(PLANS[2])}/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-t-lg">Pro Premier 👑<br/><span className="text-sm font-normal text-amber-600">{getDisplayPrice(PLANS[3])}/mo</span></th>
                   </tr>
                 </thead>
                 <tbody>
