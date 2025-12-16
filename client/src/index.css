@@ -41,72 +41,73 @@
   --color-ring: hsl(var(--ring));
 }
 
-/* Elegant Pink & White Theme */
+/* Sage Green & Taupe Theme */
 :root {
-  /* Soft White/Cream Background */
-  --background: 330 20% 98%; 
-  --foreground: 330 10% 20%; 
+  /* Warm Cream Background */
+  --background: 40 20% 97%; 
+  --foreground: 30 15% 20%; 
 
-  /* Elegant Pink Primary */
-  --primary: 330 60% 70%; 
-  --primary-foreground: 330 20% 98%;
+  /* Muted Sage Green Primary */
+  --primary: 155 12% 63%; 
+  --primary-foreground: 0 0% 100%;
 
-  /* Soft Rose Secondary */
-  --secondary: 330 30% 94%;
-  --secondary-foreground: 330 40% 30%;
+  /* Light Sage Secondary */
+  --secondary: 155 10% 92%;
+  --secondary-foreground: 155 15% 30%;
 
   /* Clean White Cards */
   --card: 0 0% 100%;
-  --card-foreground: 330 10% 20%;
+  --card-foreground: 30 15% 20%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 330 10% 20%;
+  --popover-foreground: 30 15% 20%;
 
-  --muted: 330 10% 96%;
-  --muted-foreground: 330 5% 50%;
+  --muted: 40 10% 95%;
+  --muted-foreground: 30 10% 50%;
 
-  --accent: 330 40% 96%;
-  --accent-foreground: 330 60% 40%;
+  /* Medium Dark Taupe Accent */
+  --accent: 30 20% 88%;
+  --accent-foreground: 30 25% 35%;
 
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 330 20% 90%;
-  --input: 330 20% 90%;
-  --ring: 330 60% 80%;
+  --border: 30 15% 88%;
+  --input: 30 15% 88%;
+  --ring: 155 12% 55%;
 
   --radius: 1rem;
 }
 
 .dark {
-  /* Dark mode isn't the primary focus for "Pink and White", but providing reasonable fallbacks */
-  --background: 330 10% 10%;
-  --foreground: 330 10% 90%;
+  /* Dark mode with sage and taupe tones */
+  --background: 30 10% 10%;
+  --foreground: 40 10% 90%;
 
-  --primary: 330 50% 60%;
+  --primary: 155 15% 50%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 330 20% 20%;
-  --secondary-foreground: 330 10% 90%;
+  --secondary: 155 10% 18%;
+  --secondary-foreground: 155 10% 85%;
 
-  --card: 330 10% 12%;
-  --card-foreground: 330 10% 90%;
+  --card: 30 10% 12%;
+  --card-foreground: 40 10% 90%;
 
-  --popover: 330 10% 12%;
-  --popover-foreground: 330 10% 90%;
+  --popover: 30 10% 12%;
+  --popover-foreground: 40 10% 90%;
 
-  --muted: 330 10% 15%;
-  --muted-foreground: 330 5% 60%;
+  --muted: 30 10% 15%;
+  --muted-foreground: 30 5% 60%;
 
-  --accent: 330 20% 20%;
-  --accent-foreground: 330 10% 90%;
+  --accent: 30 15% 20%;
+  --accent-foreground: 30 10% 85%;
 
   --destructive: 0 62% 30%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 330 10% 20%;
-  --input: 330 10% 20%;
-  --ring: 330 50% 60%;
+  --border: 30 10% 20%;
+  --input: 30 10% 20%;
+  --ring: 155 15% 45%;
 }
 
 @layer base {
