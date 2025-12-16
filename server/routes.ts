@@ -118,6 +118,10 @@ export async function registerRoutes(
   // Trust proxy for secure cookies behind Replit's reverse proxy
   app.set('trust proxy', 1);
   
+  // Determine if we're in production based on environment or domain
+  const isProduction = process.env.NODE_ENV === "production" || 
+    (process.env.REPL_SLUG && !process.env.REPLIT_DEV_DOMAIN);
+  
   app.use(
     session({
       store: new PgSession({
@@ -129,8 +133,8 @@ export async function registerRoutes(
       saveUninitialized: false,
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        secure: true, // Always use secure cookies (HTTPS)
+        sameSite: "none", // Required for cross-site cookies with custom domains
         httpOnly: true,
       },
     }),
