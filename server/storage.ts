@@ -229,7 +229,6 @@ export interface IStorage {
   createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<PasswordResetToken>;
   getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
   markPasswordResetTokenUsed(token: string): Promise<void>;
-  updateUserPassword(userId: string, hashedPassword: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1869,13 +1868,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(passwordResetTokens.token, token));
   }
 
-  async updateUserPassword(userId: string, hashedPassword: string): Promise<User | undefined> {
-    const result = await db.update(users)
-      .set({ password: hashedPassword })
-      .where(eq(users.id, userId))
-      .returning();
-    return result[0];
-  }
 }
 
 export const storage = new DatabaseStorage();
