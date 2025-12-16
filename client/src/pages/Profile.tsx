@@ -1,12 +1,12 @@
 import { useParams, Link, useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
-import { MOCK_BUSINESSES, PLANS } from "@/lib/mock-data";
+import { PLANS } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle, Crown, Zap, Users, Bell, Bookmark } from "lucide-react";
+import { MapPin, Star, Clock, Calendar as CalendarIcon, Check, Edit, AlertCircle, Phone, Sparkles, MessageSquare, Send, Lock, X, DollarSign, ThumbsUp, Heart, MessageCircle, Crown, Zap, Users, Bell, Bookmark, Loader2, ArrowLeft } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,13 +22,43 @@ import { Textarea } from "@/components/ui/textarea";
 import { BeforeAfterGallery } from "@/components/BeforeAfterGallery";
 import { GroupBookingDialog } from "@/components/GroupBookingDialog";
 
+interface Business {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  address: string;
+  phone: string;
+  tier: string;
+  approved: boolean;
+  ownerId: string;
+  image?: string;
+  serviceType: string;
+  funFacts?: string[];
+}
+
 export default function Profile() {
   const params = useParams();
   const [location] = useLocation();
   const { toast } = useToast();
-  const id = parseInt(params.id || "1");
-  const business = MOCK_BUSINESSES.find(b => b.id === id) || MOCK_BUSINESSES[0];
-  const currentPlan = PLANS.find(p => p.id === business.tier) || PLANS[0];
+  const id = params.id || "";
+  
+  const { data: business, isLoading: isLoadingBusiness, error: businessError } = useQuery<Business>({
+    queryKey: ["/api/businesses", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/businesses/${id}`);
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error("Business not found");
+        }
+        throw new Error("Failed to fetch business");
+      }
+      return res.json();
+    },
+    enabled: !!id,
+  });
+  
+  const currentPlan = business ? (PLANS.find(p => p.id === business.tier) || PLANS[0]) : PLANS[0];
   
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -91,8 +121,49 @@ export default function Profile() {
     saveToInspirationMutation.mutate({ portfolioItemId, businessId: String(id) });
   };
 
+  // Loading state
+  if (isLoadingBusiness) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container px-4 md:px-6 py-8">
+          <div className="text-center py-16">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">Loading business profile...</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Error / Not found state
+  if (businessError || !business) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container px-4 md:px-6 py-8">
+          <div className="text-center py-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-stone-100 mb-4">
+              <AlertCircle className="w-8 h-8 text-stone-400" />
+            </div>
+            <h2 className="text-2xl font-serif font-semibold text-foreground mb-2">Business Not Found</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-6" data-testid="business-not-found-message">
+              Sorry, we couldn't find the business you're looking for. It may have been removed or the link may be incorrect.
+            </p>
+            <Button asChild>
+              <Link href="/search">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Search
+              </Link>
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   // Simulate "Pending" state if accessed from onboarding or via query param
-  const isPending = location.includes("pending") || id === 1; 
+  const isPending = location.includes("pending") || !business.approved; 
 
   const services = [
     { name: "Full Service Cut & Style", price: "$65", duration: "60 min" },
@@ -149,7 +220,7 @@ export default function Profile() {
     setIsTipOpen(false);
     toast({
       title: "Tip Sent!",
-      description: `You sent a $${tipAmount || "0"} tip to ${business.owner}.`,
+      description: `You sent a $${tipAmount || "0"} tip to ${businessOwnerName}.`,
     });
     setTipAmount("");
   };
@@ -204,8 +275,9 @@ export default function Profile() {
 
   const socialFeaturesEnabled = currentPlan.socialFeatures;
   const photoLimit = currentPlan.photoLimit;
-  const portfolioItems = business.portfolio ? business.portfolio.slice(0, photoLimit) : [];
+  const portfolioItems: Array<{ id: string; url: string; likes: number; comments: number; likedByMe: boolean }> = [];
   const isGoldBusiness = business.tier === 'gold';
+  const businessOwnerName = "Business Owner";
 
   return (
     <div className="min-h-screen bg-background">
@@ -257,15 +329,10 @@ export default function Profile() {
                     <MapPin className="w-4 h-4" />
                     <span>{business.location}</span>
                     <span className="mx-2">•</span>
-                    <span>{business.type}</span>
+                    <span>{business.serviceType}</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                   <div className="flex items-center gap-1 bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
-                    <Star className="w-5 h-5 fill-primary text-primary" />
-                    <span className="font-bold text-lg text-primary">{business.rating}</span>
-                    <span className="text-muted-foreground text-sm ml-1">({business.reviews})</span>
-                  </div>
                   
                   {/* Tip Button */}
                   <Dialog open={isTipOpen} onOpenChange={setIsTipOpen}>
@@ -279,7 +346,7 @@ export default function Profile() {
                       <DialogHeader>
                         <DialogTitle>Send a Tip</DialogTitle>
                         <DialogDescription>
-                          Show your appreciation for {business.owner}. 100% of the tip goes to them.
+                          Show your appreciation for the business owner. 100% of the tip goes to them.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
@@ -487,8 +554,8 @@ export default function Profile() {
               </div>
 
               <div className="grid gap-4">
-                {business.reviewList && business.reviewList.length > 0 ? (
-                  business.reviewList.map((review: any) => (
+                {false ? (
+                  [].map((review: any) => (
                     <Card key={review.id} className="border-none bg-stone-50/30">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-2">
@@ -763,7 +830,7 @@ export default function Profile() {
                     </Avatar>
                     <div>
                       <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">Meet your tech</p>
-                      <p className="font-serif font-bold text-xl">{business.owner}</p>
+                      <p className="font-serif font-bold text-xl">{businessOwnerName}</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -819,7 +886,7 @@ export default function Profile() {
 
 function MessagingSheet({ business }: { business: any }) {
   const [messages, setMessages] = useState<{role: 'user' | 'business', text: string, time: string}[]>([
-    { role: 'business', text: `Hi there! I'm ${business.owner}. Let me know if you have any questions about my services!`, time: '10:00 AM' }
+    { role: 'business', text: `Hi there! Let me know if you have any questions about my services!`, time: '10:00 AM' }
   ]);
   const [input, setInput] = useState("");
   const { toast } = useToast();
@@ -881,7 +948,7 @@ function MessagingSheet({ business }: { business: any }) {
       <SheetTrigger asChild>
         <Button variant="outline" className="w-full gap-2 border-primary/20 hover:bg-stone-50 text-primary">
           <MessageSquare className="w-4 h-4" />
-          Message {business.owner.split(' ')[0]}
+          Message Us
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:w-[400px] flex flex-col h-full">
@@ -891,7 +958,7 @@ function MessagingSheet({ business }: { business: any }) {
               <AvatarImage src={`https://i.pravatar.cc/150?u=${business.id}`} />
               <AvatarFallback>OW</AvatarFallback>
             </Avatar>
-            Chat with {business.owner}
+            Chat with {business.name}
           </SheetTitle>
           <SheetDescription>
             Ask about services, availability, or consultations.

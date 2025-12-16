@@ -5,13 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { PLANS, MOCK_BUSINESSES, FEATURE_COMPARISON, YEARLY_DISCOUNT } from "@/lib/mock-data";
+import { PLANS, FEATURE_COMPARISON, YEARLY_DISCOUNT } from "@/lib/mock-data";
 import { Check, Star, MapPin, Calendar, MessageCircle, TrendingUp, Users, Sparkles, Heart, Clock, Shield, Crown, X } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
+import { useQuery } from "@tanstack/react-query";
 import heroImage from "@assets/generated_images/elegant_beauty_salon_interior_with_soft_pink_and_white_tones..png";
+
+interface Business {
+  id: string;
+  name: string;
+  description: string;
+  location: string;
+  address: string;
+  phone: string;
+  tier: string;
+  approved: boolean;
+  ownerId: string;
+  image?: string;
+  serviceType: string;
+}
 
 export default function Home() {
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  
+  const { data: businesses = [], isLoading: isLoadingBusinesses } = useQuery<Business[]>({
+    queryKey: ["/api/businesses"],
+    queryFn: async () => {
+      const res = await fetch("/api/businesses");
+      if (!res.ok) throw new Error("Failed to fetch businesses");
+      return res.json();
+    },
+  });
+
+  const goldBusinesses = businesses.filter(b => b.tier === 'gold');
   
   const getDisplayPrice = (plan: typeof PLANS[0]) => {
     if (plan.priceValue === 0) return 'Free';
@@ -261,52 +287,73 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {MOCK_BUSINESSES.filter(b => b.tier === 'gold').map((business, index) => (
-              <motion.div
-                key={business.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <Link href={`/profile/${business.id}`}>
-                  <Card className="h-full border-2 border-amber-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group bg-white ring-2 ring-amber-100/50" data-testid={`card-featured-${business.id}`}>
-                    <div className="aspect-[4/3] overflow-hidden relative">
-                      <img 
-                        src={business.image} 
-                        alt={business.name} 
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
-                        <Crown className="w-3.5 h-3.5" />
-                        <span>PRO PREMIER</span>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    </div>
-                    <CardHeader className="p-5 pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl font-serif">{business.name}</CardTitle>
-                        <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          <span className="text-sm font-bold text-amber-600">{business.rating}</span>
+            {isLoadingBusinesses ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">Loading featured professionals...</p>
+              </div>
+            ) : goldBusinesses.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-amber-100 mb-4">
+                  <Crown className="w-8 h-8 text-amber-500" />
+                </div>
+                <h3 className="text-xl font-serif font-semibold text-foreground mb-2">Be the First!</h3>
+                <p className="text-muted-foreground max-w-md mx-auto mb-6" data-testid="empty-vip-message">
+                  Be the first Pro Premier professional to be featured here! Upgrade to our Gold tier to get VIP spotlight placement.
+                </p>
+                <Button className="rounded-full bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 hover:from-yellow-500 hover:via-amber-500 hover:to-yellow-600 text-white" asChild>
+                  <Link href="/auth?type=business">
+                    <Crown className="w-4 h-4 mr-2" />
+                    Join as Pro Premier
+                  </Link>
+                </Button>
+              </div>
+            ) : (
+              goldBusinesses.map((business, index) => (
+                <motion.div
+                  key={business.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <Link href={`/profile/${business.id}`}>
+                    <Card className="h-full border-2 border-amber-200/50 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 overflow-hidden group bg-white ring-2 ring-amber-100/50" data-testid={`card-featured-${business.id}`}>
+                      <div className="aspect-[4/3] overflow-hidden relative">
+                        {business.image ? (
+                          <img 
+                            src={business.image} 
+                            alt={business.name} 
+                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center">
+                            <Crown className="w-12 h-12 text-amber-400" />
+                          </div>
+                        )}
+                        <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
+                          <Crown className="w-3.5 h-3.5" />
+                          <span>PRO PREMIER</span>
                         </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">{business.type}</p>
-                    </CardHeader>
-                    <CardContent className="p-5 pt-2">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                        <MapPin className="w-4 h-4 text-amber-500" />
-                        {business.location}
-                      </div>
-                      <p className="text-sm text-muted-foreground/80 line-clamp-2">{business.description}</p>
-                      <div className="mt-4 pt-3 border-t border-amber-100">
-                        <span className="text-xs text-amber-600 font-medium">{business.reviews} verified reviews</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+                      <CardHeader className="p-5 pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-xl font-serif">{business.name}</CardTitle>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">{business.serviceType}</p>
+                      </CardHeader>
+                      <CardContent className="p-5 pt-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+                          <MapPin className="w-4 h-4 text-amber-500" />
+                          {business.location}
+                        </div>
+                        <p className="text-sm text-muted-foreground/80 line-clamp-2">{business.description}</p>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-10">
@@ -383,43 +430,57 @@ export default function Home() {
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {MOCK_BUSINESSES.map((business, index) => (
-              <motion.div
-                key={business.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                viewport={{ once: true }}
-              >
-                <Link href={`/profile/${business.id}`}>
-                  <Card className="h-full border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group bg-white">
-                    <div className="aspect-[4/3] overflow-hidden">
-                      <img 
-                        src={business.image} 
-                        alt={business.name} 
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg font-serif">{business.name}</CardTitle>
-                        <div className="flex items-center gap-1 bg-stone-50 px-2 py-0.5 rounded-full">
-                          <Star className="w-3 h-3 fill-primary text-primary" />
-                          <span className="text-xs font-medium text-primary">{business.rating}</span>
+            {isLoadingBusinesses ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground">Loading professionals...</p>
+              </div>
+            ) : businesses.length === 0 ? (
+              <div className="col-span-full text-center py-12">
+                <p className="text-muted-foreground" data-testid="empty-trending-message">
+                  No professionals found yet. Check back soon!
+                </p>
+              </div>
+            ) : (
+              businesses.slice(0, 8).map((business, index) => (
+                <motion.div
+                  key={business.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <Link href={`/profile/${business.id}`}>
+                    <Card className="h-full border-none shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group bg-white">
+                      <div className="aspect-[4/3] overflow-hidden">
+                        {business.image ? (
+                          <img 
+                            src={business.image} 
+                            alt={business.name} 
+                            className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-stone-100 to-stone-200 flex items-center justify-center">
+                            <Sparkles className="w-10 h-10 text-stone-400" />
+                          </div>
+                        )}
+                      </div>
+                      <CardHeader className="p-4 pb-2">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-lg font-serif">{business.name}</CardTitle>
                         </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{business.type}</p>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-2">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <MapPin className="w-3 h-3" />
-                        {business.location}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
+                        <p className="text-sm text-muted-foreground">{business.serviceType}</p>
+                      </CardHeader>
+                      <CardContent className="p-4 pt-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                          <MapPin className="w-3 h-3" />
+                          {business.location}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </motion.div>
+              ))
+            )}
           </div>
           <div className="text-center mt-10">
             <Button variant="outline" size="lg" className="rounded-full border-stone-200 text-amber-600 hover:bg-stone-50" asChild>
