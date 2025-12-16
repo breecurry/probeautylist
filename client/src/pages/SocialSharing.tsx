@@ -344,7 +344,7 @@ export default function SocialSharing() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 hover:from-purple-600 hover:to-pink-600"
+                          className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white border-0 hover:from-teal-600 hover:to-emerald-600"
                           onClick={() => handleShare('instagram', post)}
                           data-testid={`button-share-instagram-${post.id}`}
                         >
