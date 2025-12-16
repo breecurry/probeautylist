@@ -115,6 +115,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  // Trust proxy for secure cookies behind Replit's reverse proxy
+  app.set('trust proxy', 1);
+  
   app.use(
     session({
       store: new PgSession({
