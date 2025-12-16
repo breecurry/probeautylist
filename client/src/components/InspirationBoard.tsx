@@ -167,7 +167,7 @@ export function InspirationBoard() {
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-serif font-semibold flex items-center gap-2">
-          <Bookmark className="w-6 h-6 text-rose-500" />
+          <Bookmark className="w-6 h-6 text-teal-500" />
           Style Inspiration Board
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -189,13 +189,13 @@ export function InspirationBoard() {
     return (
       <div className="space-y-4">
         <h2 className="text-2xl font-serif font-semibold flex items-center gap-2">
-          <Bookmark className="w-6 h-6 text-rose-500" />
+          <Bookmark className="w-6 h-6 text-teal-500" />
           Style Inspiration Board
         </h2>
-        <Card className="border-dashed border-2 border-rose-200 bg-rose-50/30">
+        <Card className="border-dashed border-2 border-stone-200 bg-stone-50/30">
           <CardContent className="p-8 text-center">
-            <Bookmark className="w-12 h-12 text-rose-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-rose-700 mb-2">
+            <Bookmark className="w-12 h-12 text-teal-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-teal-700 mb-2">
               Your inspiration board is empty
             </h3>
             <p className="text-muted-foreground text-sm">
@@ -210,7 +210,7 @@ export function InspirationBoard() {
   return (
     <div className="space-y-4">
       <h2 className="text-2xl font-serif font-semibold flex items-center gap-2">
-        <Bookmark className="w-6 h-6 text-rose-500 fill-rose-500" />
+        <Bookmark className="w-6 h-6 text-teal-500 fill-teal-500" />
         Style Inspiration Board
         <span className="text-sm font-normal text-muted-foreground ml-2">
           ({boardItems.length} saved)
@@ -228,7 +228,7 @@ export function InspirationBoard() {
           return (
             <Card
               key={item.id}
-              className="overflow-hidden border-rose-100 hover:shadow-lg transition-shadow"
+              className="overflow-hidden border-stone-100 hover:shadow-lg transition-shadow"
               data-testid={`inspiration-item-${item.id}`}
             >
               <div className="aspect-square relative group bg-gray-100">
@@ -264,10 +264,10 @@ export function InspirationBoard() {
                   </Button>
                 </div>
               </div>
-              <CardContent className="p-3 bg-rose-50/30">
+              <CardContent className="p-3 bg-stone-50/30">
                 <div className="flex items-center justify-between mb-1">
                   <Link href={`/profile/${item.businessId}`}>
-                    <span className="text-sm font-medium text-rose-700 hover:underline cursor-pointer flex items-center gap-1">
+                    <span className="text-sm font-medium text-teal-700 hover:underline cursor-pointer flex items-center gap-1">
                       {business?.name || "Business"}
                       <ExternalLink className="w-3 h-3" />
                     </span>
@@ -281,7 +281,7 @@ export function InspirationBoard() {
                 {!item.note && (
                   <button
                     onClick={() => handleEditNote(item)}
-                    className="text-xs text-rose-400 hover:text-rose-600 flex items-center gap-1"
+                    className="text-xs text-teal-400 hover:text-teal-600 flex items-center gap-1"
                     data-testid={`button-add-note-${item.id}`}
                   >
                     <Edit2 className="w-3 h-3" />
@@ -297,7 +297,7 @@ export function InspirationBoard() {
       <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
         <DialogContent className="sm:max-w-[425px]" data-testid="edit-note-dialog">
           <DialogHeader>
-            <DialogTitle className="text-rose-700">Edit Note</DialogTitle>
+            <DialogTitle className="text-teal-700">Edit Note</DialogTitle>
             <DialogDescription>
               Add a note to remind yourself why you saved this look.
             </DialogDescription>
@@ -307,7 +307,7 @@ export function InspirationBoard() {
               placeholder="e.g., Love the balayage technique, want this for summer!"
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
-              className="min-h-[100px] border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+              className="min-h-[100px] border-stone-200 focus:border-teal-400 focus:ring-teal-400"
               data-testid="input-inspiration-note"
             />
           </div>
@@ -322,7 +322,7 @@ export function InspirationBoard() {
             <Button
               onClick={handleSaveNote}
               disabled={updateNoteMutation.isPending}
-              className="bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500"
+              className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
               data-testid="button-save-note"
             >
               {updateNoteMutation.isPending ? "Saving..." : "Save Note"}

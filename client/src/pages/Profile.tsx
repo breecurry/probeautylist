@@ -261,7 +261,7 @@ export default function Profile() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                   <div className="flex items-center gap-1 bg-pink-50 px-3 py-1 rounded-full border border-pink-100">
+                   <div className="flex items-center gap-1 bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
                     <Star className="w-5 h-5 fill-primary text-primary" />
                     <span className="font-bold text-lg text-primary">{business.rating}</span>
                     <span className="text-muted-foreground text-sm ml-1">({business.reviews})</span>
@@ -288,7 +288,7 @@ export default function Profile() {
                             <Button 
                               key={amt} 
                               variant="outline" 
-                              className={tipAmount === amt ? "border-primary bg-pink-50 text-primary" : ""}
+                              className={tipAmount === amt ? "border-primary bg-stone-50 text-primary" : ""}
                               onClick={() => setTipAmount(amt)}
                             >
                               ${amt}
@@ -348,8 +348,8 @@ export default function Profile() {
                     key={index} 
                     className={`flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
                       selectedService === service.name 
-                        ? 'border-primary bg-pink-50' 
-                        : 'border-border hover:border-pink-200'
+                        ? 'border-primary bg-stone-50' 
+                        : 'border-border hover:border-stone-200'
                     }`}
                     onClick={() => setSelectedService(service.name)}
                   >
@@ -403,8 +403,8 @@ export default function Profile() {
                           onClick={() => handleSaveToBoard(String(item.id))}
                           className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${
                             savedPortfolioItems.has(String(item.id))
-                              ? 'bg-rose-500 text-white'
-                              : 'bg-white/90 text-rose-500 hover:bg-rose-500 hover:text-white'
+                              ? 'bg-teal-600 text-white'
+                              : 'bg-white/90 text-teal-600 hover:bg-teal-600 hover:text-white'
                           }`}
                           data-testid={`button-save-${item.id}`}
                           title={savedPortfolioItems.has(String(item.id)) ? "Saved to board" : "Save to inspiration board"}
@@ -413,9 +413,9 @@ export default function Profile() {
                         </button>
                     </div>
                     {socialFeaturesEnabled && (
-                        <CardFooter className="p-3 border-t bg-pink-50/20 flex justify-between items-center">
+                        <CardFooter className="p-3 border-t bg-stone-50/20 flex justify-between items-center">
                             <div className="flex gap-4">
-                                <button className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${item.likedByMe ? 'text-pink-500' : 'text-muted-foreground hover:text-pink-500'}`}>
+                                <button className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${item.likedByMe ? 'text-teal-500' : 'text-muted-foreground hover:text-teal-500'}`}>
                                     <Heart className={`w-5 h-5 ${item.likedByMe ? 'fill-current' : ''}`} />
                                     <span>{item.likes}</span>
                                 </button>
@@ -489,7 +489,7 @@ export default function Profile() {
               <div className="grid gap-4">
                 {business.reviewList && business.reviewList.length > 0 ? (
                   business.reviewList.map((review: any) => (
-                    <Card key={review.id} className="border-none bg-pink-50/30">
+                    <Card key={review.id} className="border-none bg-stone-50/30">
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-2">
@@ -524,7 +524,7 @@ export default function Profile() {
           {/* Sidebar Booking */}
           <div className="lg:col-span-1 space-y-6">
             <div className="sticky top-24 space-y-6">
-              <Card className={`border-none shadow-xl ${isGoldBusiness ? 'shadow-amber-100/50 border-amber-200' : 'shadow-pink-100/50'}`}>
+              <Card className={`border-none shadow-xl ${isGoldBusiness ? 'shadow-amber-100/50 border-amber-200' : 'shadow-stone-100/50'}`}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="font-serif">Book Appointment</CardTitle>
@@ -558,7 +558,7 @@ export default function Profile() {
                   </div>
                   
                   {selectedService ? (
-                    <div className="bg-pink-50 p-3 rounded-lg text-sm">
+                    <div className="bg-stone-50 p-3 rounded-lg text-sm">
                       <span className="font-medium">Selected:</span> {selectedService}
                     </div>
                   ) : (
@@ -754,7 +754,7 @@ export default function Profile() {
               </Card>
 
               {/* Enhanced Owner Info Card */}
-              <Card className="border-none shadow-md bg-gradient-to-br from-white to-pink-50/30">
+              <Card className="border-none shadow-md bg-gradient-to-br from-white to-stone-50/30">
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
@@ -780,14 +780,14 @@ export default function Profile() {
                   </div>
 
                   {business.funFacts && business.funFacts.length > 0 && (
-                    <div className="bg-white/60 p-3 rounded-lg border border-pink-100/50">
+                    <div className="bg-white/60 p-3 rounded-lg border border-stone-100/50">
                       <div className="flex items-center gap-1.5 mb-2 text-primary font-medium text-xs uppercase tracking-wide">
                         <Sparkles className="w-3 h-3" /> Fun Facts
                       </div>
                       <ul className="space-y-1.5">
                         {business.funFacts.map((fact, i) => (
                           <li key={i} className="text-xs text-muted-foreground italic flex items-start gap-1.5">
-                            <span className="text-pink-300">•</span> {fact}
+                            <span className="text-teal-300">•</span> {fact}
                           </li>
                         ))}
                       </ul>
@@ -879,7 +879,7 @@ function MessagingSheet({ business }: { business: any }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="outline" className="w-full gap-2 border-primary/20 hover:bg-pink-50 text-primary">
+        <Button variant="outline" className="w-full gap-2 border-primary/20 hover:bg-stone-50 text-primary">
           <MessageSquare className="w-4 h-4" />
           Message {business.owner.split(' ')[0]}
         </Button>

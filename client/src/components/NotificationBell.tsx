@@ -78,13 +78,13 @@ export function NotificationBell() {
         <Button 
           variant="ghost" 
           size="sm" 
-          className="h-8 w-8 rounded-full p-0 hover:bg-rose-50 relative"
+          className="h-8 w-8 rounded-full p-0 hover:bg-stone-50 relative"
           data-testid="button-notification-bell"
         >
           <Bell className="h-4 w-4 text-gray-500" />
           {unreadCount > 0 && (
             <span 
-              className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-rose-500 text-white text-[10px] font-medium flex items-center justify-center"
+              className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-500 text-white text-[10px] font-medium flex items-center justify-center"
               data-testid="notification-unread-count"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -93,13 +93,13 @@ export function NotificationBell() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-rose-100">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-stone-200">
           <h3 className="font-semibold text-sm">Notifications</h3>
           {unreadCount > 0 && (
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-xs text-rose-500 hover:text-rose-600 h-auto p-0"
+              className="text-xs text-teal-500 hover:text-teal-600 h-auto p-0"
               onClick={() => markAllReadMutation.mutate()}
               data-testid="button-mark-all-read"
             >
@@ -114,19 +114,19 @@ export function NotificationBell() {
               <p className="text-sm">No notifications yet</p>
             </div>
           ) : (
-            <div className="divide-y divide-rose-50">
+            <div className="divide-y divide-stone-50">
               {notifications.map((notification) => (
                 <button
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
-                  className={`w-full text-left px-4 py-3 hover:bg-rose-50/50 transition-colors ${
-                    !notification.read ? "bg-rose-50/30" : ""
+                  className={`w-full text-left px-4 py-3 hover:bg-stone-50/50 transition-colors ${
+                    !notification.read ? "bg-stone-50/30" : ""
                   }`}
                   data-testid={`notification-item-${notification.id}`}
                 >
                   <div className="flex items-start gap-2">
                     {!notification.read && (
-                      <span className="h-2 w-2 rounded-full bg-rose-500 mt-1.5 flex-shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-teal-500 mt-1.5 flex-shrink-0" />
                     )}
                     <div className={!notification.read ? "" : "ml-4"}>
                       <p className="font-medium text-sm text-gray-800">

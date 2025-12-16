@@ -199,12 +199,12 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
 
   if (loadingLoyalty || loadingCodes) {
     return (
-      <Card className="border-rose-100">
+      <Card className="border-stone-100">
         <CardContent className="p-6">
           <div className="animate-pulse space-y-4">
-            <div className="h-6 bg-rose-100 rounded w-1/3"></div>
-            <div className="h-10 bg-rose-100 rounded"></div>
-            <div className="h-10 bg-rose-100 rounded"></div>
+            <div className="h-6 bg-stone-100 rounded w-1/3"></div>
+            <div className="h-10 bg-stone-100 rounded"></div>
+            <div className="h-10 bg-stone-100 rounded"></div>
           </div>
         </CardContent>
       </Card>
@@ -213,9 +213,9 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
 
   return (
     <div className="space-y-6">
-      <Card className="border-rose-100 shadow-md" data-testid={`loyalty-card-${businessId}`}>
-        <CardHeader className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-t-lg">
-          <CardTitle className="flex items-center gap-2 text-rose-700">
+      <Card className="border-stone-100 shadow-md" data-testid={`loyalty-card-${businessId}`}>
+        <CardHeader className="bg-gradient-to-r from-stone-50 to-stone-100 rounded-t-lg">
+          <CardTitle className="flex items-center gap-2 text-teal-700">
             <Gift className="h-5 w-5" />
             Loyalty Program
           </CardTitle>
@@ -244,10 +244,10 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
           </div>
 
           {loyaltySettings.enabled && (
-            <div className="space-y-4 pl-4 border-l-2 border-rose-200">
+            <div className="space-y-4 pl-4 border-l-2 border-stone-200">
               <div className="space-y-2">
                 <Label htmlFor={`visit-threshold-${businessId}`} className="flex items-center gap-2">
-                  <Hash className="h-4 w-4 text-rose-500" />
+                  <Hash className="h-4 w-4 text-teal-500" />
                   Visits Required for Reward
                 </Label>
                 <Input
@@ -262,13 +262,13 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
                       visitThreshold: parseInt(e.target.value) || 1,
                     }))
                   }
-                  className="max-w-[200px] border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                  className="max-w-[200px] border-stone-200 focus:border-teal-400 focus:ring-teal-400"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor={`discount-percent-${businessId}`} className="flex items-center gap-2">
-                  <Percent className="h-4 w-4 text-rose-500" />
+                  <Percent className="h-4 w-4 text-teal-500" />
                   Discount Percentage
                 </Label>
                 <Input
@@ -284,7 +284,7 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
                       discountPercent: parseInt(e.target.value) || 1,
                     }))
                   }
-                  className="max-w-[200px] border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                  className="max-w-[200px] border-stone-200 focus:border-teal-400 focus:ring-teal-400"
                 />
                 <p className="text-xs text-muted-foreground">
                   Discount applied after {loyaltySettings.visitThreshold} visits
@@ -297,16 +297,16 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
             data-testid={`button-save-loyalty-${businessId}`}
             onClick={handleSaveLoyalty}
             disabled={saveLoyaltyMutation.isPending}
-            className="bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500"
+            className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
           >
             {saveLoyaltyMutation.isPending ? "Saving..." : "Save Loyalty Settings"}
           </Button>
         </CardContent>
       </Card>
 
-      <Card className="border-rose-100 shadow-md" data-testid={`referral-card-${businessId}`}>
-        <CardHeader className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-t-lg">
-          <CardTitle className="flex items-center gap-2 text-rose-700">
+      <Card className="border-stone-100 shadow-md" data-testid={`referral-card-${businessId}`}>
+        <CardHeader className="bg-gradient-to-r from-stone-50 to-stone-100 rounded-t-lg">
+          <CardTitle className="flex items-center gap-2 text-teal-700">
             <Users className="h-5 w-5" />
             Referral Codes
           </CardTitle>
@@ -327,7 +327,7 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
                   onChange={(e) =>
                     setNewCode((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))
                   }
-                  className="border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                  className="border-stone-200 focus:border-teal-400 focus:ring-teal-400"
                 />
               </div>
               <div className="space-y-2">
@@ -342,7 +342,7 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
                   onChange={(e) =>
                     setNewCode((prev) => ({ ...prev, discountPercent: parseInt(e.target.value) || 1 }))
                   }
-                  className="border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                  className="border-stone-200 focus:border-teal-400 focus:ring-teal-400"
                 />
               </div>
               <div className="space-y-2">
@@ -355,7 +355,7 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
                   placeholder="Unlimited"
                   value={newCode.maxUses}
                   onChange={(e) => setNewCode((prev) => ({ ...prev, maxUses: e.target.value }))}
-                  className="border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+                  className="border-stone-200 focus:border-teal-400 focus:ring-teal-400"
                 />
               </div>
             </div>
@@ -363,7 +363,7 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
               data-testid={`button-create-code-${businessId}`}
               onClick={handleCreateCode}
               disabled={createCodeMutation.isPending}
-              className="bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500"
+              className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
             >
               <Plus className="h-4 w-4 mr-2" />
               {createCodeMutation.isPending ? "Creating..." : "Create Code"}
@@ -372,18 +372,18 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
 
           {referralCodes.length > 0 && (
             <div className="space-y-3">
-              <h4 className="font-medium text-rose-700">Active Codes</h4>
+              <h4 className="font-medium text-teal-700">Active Codes</h4>
               <div className="space-y-2">
                 {referralCodes.map((code) => (
                   <div
                     key={code.id}
                     data-testid={`referral-code-${code.id}`}
-                    className="flex items-center justify-between p-3 bg-rose-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-stone-50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <Badge
                         variant={code.active ? "default" : "secondary"}
-                        className={code.active ? "bg-rose-500" : ""}
+                        className={code.active ? "bg-stone-500" : ""}
                       >
                         {code.code}
                       </Badge>
@@ -420,9 +420,9 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
       </Card>
 
       {birthdayClients.length > 0 && (
-        <Card className="border-rose-100 shadow-md" data-testid={`birthdays-card-${businessId}`}>
-          <CardHeader className="bg-gradient-to-r from-rose-50 to-pink-50 rounded-t-lg">
-            <CardTitle className="flex items-center gap-2 text-rose-700">
+        <Card className="border-stone-100 shadow-md" data-testid={`birthdays-card-${businessId}`}>
+          <CardHeader className="bg-gradient-to-r from-stone-50 to-stone-100 rounded-t-lg">
+            <CardTitle className="flex items-center gap-2 text-teal-700">
               <Cake className="h-5 w-5" />
               Upcoming Birthdays
             </CardTitle>
@@ -436,10 +436,10 @@ export function LoyaltySettings({ businessId, businessName }: LoyaltySettingsPro
                 <div
                   key={client.id}
                   data-testid={`birthday-client-${client.id}`}
-                  className="flex items-center justify-between p-3 bg-rose-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-stone-50 rounded-lg"
                 >
                   <div className="flex items-center gap-3">
-                    <Cake className="h-4 w-4 text-rose-500" />
+                    <Cake className="h-4 w-4 text-teal-500" />
                     <span className="font-medium">
                       {client.firstName || ""} {client.lastName || ""}
                     </span>

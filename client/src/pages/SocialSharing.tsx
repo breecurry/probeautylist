@@ -168,11 +168,11 @@ export default function SocialSharing() {
 
   if (authLoading || businessesLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400" />
           </div>
         </div>
       </div>
@@ -186,7 +186,7 @@ export default function SocialSharing() {
 
   if (user?.role !== 'business_owner') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900">Business Owner Access Only</h1>
@@ -198,7 +198,7 @@ export default function SocialSharing() {
 
   if (goldBusinesses.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto border-amber-200 bg-gradient-to-br from-amber-50 to-white">
@@ -222,7 +222,7 @@ export default function SocialSharing() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -263,7 +263,7 @@ export default function SocialSharing() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-rose-400" />
+                  <Sparkles className="h-5 w-5 text-teal-400" />
                   Create a Post
                 </CardTitle>
                 <CardDescription>
@@ -285,7 +285,7 @@ export default function SocialSharing() {
                   <Button
                     onClick={() => createPostMutation.mutate(postContent)}
                     disabled={!postContent.trim() || createPostMutation.isPending}
-                    className="bg-rose-500 hover:bg-rose-600"
+                    className="bg-teal-600 hover:bg-teal-700"
                     data-testid="button-create-post"
                   >
                     {createPostMutation.isPending ? "Creating..." : "Create Post"}
@@ -298,7 +298,7 @@ export default function SocialSharing() {
               <h2 className="text-lg font-semibold text-gray-900">Your Posts</h2>
               {postsLoading ? (
                 <Card className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400 mx-auto" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400 mx-auto" />
                 </Card>
               ) : posts?.length === 0 ? (
                 <Card className="p-8 text-center text-gray-500">
@@ -423,25 +423,25 @@ export default function SocialSharing() {
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-gray-600">
                 <div className="flex gap-2">
-                  <span className="text-rose-400">•</span>
+                  <span className="text-teal-400">•</span>
                   <p>Announce new services or seasonal promotions</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-rose-400">•</span>
+                  <span className="text-teal-400">•</span>
                   <p>Share last-minute availability openings</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-rose-400">•</span>
+                  <span className="text-teal-400">•</span>
                   <p>Post about special occasions and holiday hours</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-rose-400">•</span>
+                  <span className="text-teal-400">•</span>
                   <p>Include a call-to-action like "Book now!"</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-br from-rose-50 to-white">
+            <Card className="bg-gradient-to-br from-stone-50 to-white">
               <CardContent className="pt-6 text-center">
                 <Crown className="h-8 w-8 text-amber-500 mx-auto mb-2" />
                 <p className="text-sm font-medium text-gray-900 mb-1">Gold Member Benefit</p>

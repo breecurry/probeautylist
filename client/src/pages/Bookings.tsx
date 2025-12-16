@@ -187,7 +187,7 @@ function ReviewClientDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]" data-testid="review-dialog">
         <DialogHeader>
-          <DialogTitle className="text-rose-700">Review Client</DialogTitle>
+          <DialogTitle className="text-teal-700">Review Client</DialogTitle>
           <DialogDescription>
             Share your experience with this client for the {booking.serviceName} service.
           </DialogDescription>
@@ -205,7 +205,7 @@ function ReviewClientDialog({
               placeholder="Share your experience with this client..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="min-h-[100px] border-rose-200 focus:border-rose-400 focus:ring-rose-400"
+              className="min-h-[100px] border-stone-200 focus:border-teal-400 focus:ring-teal-400"
             />
           </div>
         </div>
@@ -221,7 +221,7 @@ function ReviewClientDialog({
             onClick={handleSubmit}
             disabled={reviewMutation.isPending}
             data-testid="button-submit-review"
-            className="bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500"
+            className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
           >
             {reviewMutation.isPending ? "Submitting..." : "Submit Review"}
           </Button>
@@ -253,7 +253,7 @@ function BookingCard({
         className={`shadow-sm hover:shadow-md transition-shadow ${
           booking.priority 
             ? "border-amber-200 bg-gradient-to-r from-amber-50/30 to-white" 
-            : "border-rose-100"
+            : "border-stone-100"
         }`}
         data-testid={`booking-card-${booking.id}`}
       >
@@ -262,7 +262,7 @@ function BookingCard({
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 
-                  className="font-semibold text-rose-700"
+                  className="font-semibold text-teal-700"
                   data-testid={`booking-service-${booking.id}`}
                 >
                   {booking.serviceName}
@@ -309,7 +309,7 @@ function BookingCard({
                 {booking.completedByBusiness && (
                   <Badge 
                     variant="outline" 
-                    className="bg-rose-50 text-rose-700 border-rose-200"
+                    className="bg-stone-50 text-teal-700 border-stone-200"
                     data-testid={`completed-badge-${booking.id}`}
                   >
                     <CheckCircle className="h-3 w-3 mr-1" />
@@ -335,7 +335,7 @@ function BookingCard({
                 size="sm"
                 onClick={() => setReviewDialogOpen(true)}
                 data-testid={`button-review-client-${booking.id}`}
-                className="border-rose-300 text-rose-600 hover:bg-rose-50"
+                className="border-stone-300 text-teal-600 hover:bg-stone-50"
               >
                 <Star className="h-4 w-4 mr-1" />
                 Review Client
@@ -450,7 +450,7 @@ export default function Bookings() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-8" />
@@ -465,12 +465,12 @@ export default function Bookings() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 
-            className="text-3xl font-bold font-serif text-rose-700"
+            className="text-3xl font-bold font-serif text-teal-700"
             data-testid="page-title"
           >
             {isBusinessOwner ? "Business Bookings" : "My Bookings"}
@@ -494,7 +494,7 @@ export default function Bookings() {
         {isLoading ? (
           <div className="space-y-4" data-testid="loading-skeleton">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-rose-100">
+              <Card key={i} className="border-stone-100">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-2">
@@ -527,10 +527,10 @@ export default function Bookings() {
             ))}
           </div>
         ) : (
-          <Card className="border-rose-100" data-testid="no-bookings">
+          <Card className="border-stone-100" data-testid="no-bookings">
             <CardContent className="p-12 text-center">
-              <Calendar className="h-12 w-12 text-rose-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-rose-700 mb-2">No Bookings Yet</h3>
+              <Calendar className="h-12 w-12 text-teal-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-teal-700 mb-2">No Bookings Yet</h3>
               <p className="text-muted-foreground mb-4">
                 {isBusinessOwner 
                   ? "You don't have any bookings for your businesses yet." 
@@ -540,7 +540,7 @@ export default function Bookings() {
                 <Button 
                   data-testid="button-find-services"
                   onClick={() => setLocation("/search")}
-                  className="bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500"
+                  className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
                 >
                   Find Services
                 </Button>

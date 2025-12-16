@@ -325,7 +325,7 @@ function StaffCard({
       data-testid={`card-staff-${member.id}`}
     >
       <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 font-semibold text-lg">
+        <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-teal-600 font-semibold text-lg">
           {member.name.charAt(0).toUpperCase()}
         </div>
         <div>

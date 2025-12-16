@@ -54,13 +54,13 @@ export default function AdminSetup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-rose-50 to-white p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-stone-50 to-white p-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
-          <div className="mx-auto w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mb-4">
-            <Shield className="w-6 h-6 text-rose-600" />
+          <div className="mx-auto w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mb-4">
+            <Shield className="w-6 h-6 text-teal-600" />
           </div>
-          <CardTitle className="text-2xl text-rose-700">Admin Setup</CardTitle>
+          <CardTitle className="text-2xl text-stone-700">Admin Setup</CardTitle>
           <CardDescription>
             Create your admin account. This only works once.
           </CardDescription>
@@ -111,7 +111,7 @@ export default function AdminSetup() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-rose-500 hover:bg-rose-600"
+              className="w-full bg-teal-500 hover:bg-teal-600"
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

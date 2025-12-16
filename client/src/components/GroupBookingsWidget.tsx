@@ -211,7 +211,7 @@ export function GroupBookingsWidget() {
   }
 
   return (
-    <Card className="mb-6 border-purple-100 bg-gradient-to-r from-purple-50/50 to-pink-50/30" data-testid="group-bookings-widget">
+    <Card className="mb-6 border-purple-100 bg-gradient-to-r from-purple-50/50 to-stone-50/30" data-testid="group-bookings-widget">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-purple-700">
           <Users className="h-5 w-5" />

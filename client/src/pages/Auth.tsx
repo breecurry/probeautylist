@@ -80,7 +80,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-pink-50/30 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-stone-50/30 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/">
@@ -96,7 +96,7 @@ export default function Auth() {
           </TabsList>
 
           <TabsContent value="login">
-            <Card className="border-none shadow-xl shadow-pink-100">
+            <Card className="border-none shadow-xl shadow-stone-100">
               <CardHeader>
                 <CardTitle>Login</CardTitle>
                 <CardDescription>Enter your username or email to access your account.</CardDescription>
@@ -143,7 +143,7 @@ export default function Auth() {
           </TabsContent>
 
           <TabsContent value="signup">
-            <Card className="border-none shadow-xl shadow-pink-100">
+            <Card className="border-none shadow-xl shadow-stone-100">
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>Join our community today.</CardDescription>
@@ -154,7 +154,7 @@ export default function Auth() {
                     <div 
                       className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${
                         role === 'client' 
-                          ? 'border-primary bg-pink-50 text-primary' 
+                          ? 'border-primary bg-stone-50 text-primary' 
                           : 'border-transparent bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => setRole('client')}
@@ -166,7 +166,7 @@ export default function Auth() {
                     <div 
                       className={`cursor-pointer rounded-xl border-2 p-4 text-center transition-all ${
                         role === 'business' 
-                          ? 'border-primary bg-pink-50 text-primary' 
+                          ? 'border-primary bg-stone-50 text-primary' 
                           : 'border-transparent bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => setRole('business')}

@@ -33,12 +33,12 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-pink-200 hover:shadow-pink-300 transition-all" asChild>
+                <Button size="lg" className="h-12 px-8 text-lg rounded-full shadow-lg shadow-stone-200 hover:shadow-stone-300 transition-all" asChild>
                   <Link href="/search">
                     Find a Professional
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 hover:bg-pink-50" asChild>
+                <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 hover:bg-stone-50" asChild>
                   <Link href="/auth?type=business">
                     List Your Business
                   </Link>
@@ -51,7 +51,7 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="relative mx-auto w-full max-w-[500px] lg:max-w-none"
             >
-              <div className="aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl shadow-pink-200/50">
+              <div className="aspect-[4/5] overflow-hidden rounded-[2rem] shadow-2xl shadow-stone-200/50">
                 <img 
                   src={heroImage} 
                   alt="Luxury Salon Interior" 
@@ -60,7 +60,7 @@ export default function Home() {
               </div>
               <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl animate-in slide-in-from-bottom-10 fade-in duration-1000">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-pink-100 flex items-center justify-center text-primary font-bold text-xl">
+                  <div className="h-12 w-12 rounded-full bg-stone-100 flex items-center justify-center text-primary font-bold text-xl">
                     4.9
                   </div>
                   <div>
@@ -73,8 +73,8 @@ export default function Home() {
           </div>
         </div>
         
-        <div className="absolute top-0 right-0 -z-10 h-[600px] w-[600px] bg-pink-50/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4" />
-        <div className="absolute bottom-0 left-0 -z-10 h-[400px] w-[400px] bg-rose-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4" />
+        <div className="absolute top-0 right-0 -z-10 h-[600px] w-[600px] bg-stone-50/50 rounded-full blur-3xl opacity-60 translate-x-1/3 -translate-y-1/4" />
+        <div className="absolute bottom-0 left-0 -z-10 h-[400px] w-[400px] bg-stone-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4" />
       </section>
 
       {/* Why You Need BeautyConnect - For Clients */}
@@ -87,7 +87,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <span className="text-rose-400 font-medium text-sm uppercase tracking-wider">For Clients</span>
+            <span className="text-teal-500 font-medium text-sm uppercase tracking-wider">For Clients</span>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2">Your Beauty, Your Way</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mt-4">
               Stop scrolling through endless social media pages. Find verified, reviewed professionals in seconds.
@@ -134,10 +134,10 @@ export default function Home() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="h-full border-none shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-rose-50/30">
+                <Card className="h-full border-none shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-stone-50/30">
                   <CardContent className="p-6">
-                    <div className="h-12 w-12 rounded-full bg-rose-100 flex items-center justify-center mb-4">
-                      <feature.icon className="h-6 w-6 text-rose-400" />
+                    <div className="h-12 w-12 rounded-full bg-stone-100 flex items-center justify-center mb-4">
+                      <feature.icon className="h-6 w-6 text-teal-500" />
                     </div>
                     <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
                     <p className="text-muted-foreground text-sm">{feature.description}</p>
@@ -150,7 +150,7 @@ export default function Home() {
       </section>
 
       {/* Why Professionals Need This */}
-      <section className="py-20 bg-gradient-to-br from-rose-50/50 to-pink-50/30">
+      <section className="py-20 bg-gradient-to-br from-stone-50/50 to-stone-100/30">
         <div className="container px-4 md:px-6">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
@@ -159,7 +159,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <span className="text-rose-400 font-medium text-sm uppercase tracking-wider">For Professionals</span>
+              <span className="text-teal-500 font-medium text-sm uppercase tracking-wider">For Professionals</span>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2 mb-6">
                 Stop Leaving Money on the Table
               </h2>
@@ -180,7 +180,7 @@ export default function Home() {
                   "Accept tips and payments seamlessly"
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-rose-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="h-6 w-6 rounded-full bg-teal-500 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="h-4 w-4 text-white" />
                     </div>
                     <p className="text-gray-700">{benefit}</p>
@@ -188,7 +188,7 @@ export default function Home() {
                 ))}
               </div>
 
-              <Button size="lg" className="mt-8 h-12 px-8 rounded-full bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 shadow-lg shadow-rose-200" asChild>
+              <Button size="lg" className="mt-8 h-12 px-8 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-lg shadow-stone-200" asChild>
                 <Link href="/auth?type=business">
                   Start Growing Your Business
                 </Link>
@@ -210,8 +210,8 @@ export default function Home() {
               ].map((stat, index) => (
                 <Card key={index} className="border-none shadow-lg bg-white">
                   <CardContent className="p-6 text-center">
-                    <stat.icon className="h-8 w-8 text-rose-400 mx-auto mb-3" />
-                    <p className="text-3xl font-bold text-rose-500">{stat.number}</p>
+                    <stat.icon className="h-8 w-8 text-teal-500 mx-auto mb-3" />
+                    <p className="text-3xl font-bold text-teal-600">{stat.number}</p>
                     <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
                   </CardContent>
                 </Card>
@@ -332,8 +332,8 @@ export default function Home() {
                   ))}
                 </ul>
               </div>
-              <div className="p-6 rounded-2xl bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-100">
-                <h3 className="font-semibold text-lg mb-4 text-rose-500">With BeautyConnect</h3>
+              <div className="p-6 rounded-2xl bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-100">
+                <h3 className="font-semibold text-lg mb-4 text-teal-600">With BeautyConnect</h3>
                 <ul className="space-y-3 text-left">
                   {[
                     "Search by location, service, and rating",
@@ -343,7 +343,7 @@ export default function Home() {
                     "Seamless in-app tipping and payments"
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-gray-700">
-                      <span className="text-rose-400">✓</span>
+                      <span className="text-teal-500">✓</span>
                       {item}
                     </li>
                   ))}
@@ -355,7 +355,7 @@ export default function Home() {
       </section>
 
       {/* Featured Businesses Section */}
-      <section className="py-24 bg-rose-50/30">
+      <section className="py-24 bg-stone-50/30">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif">Trending Professionals</h2>
@@ -384,7 +384,7 @@ export default function Home() {
                     <CardHeader className="p-4 pb-2">
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg font-serif">{business.name}</CardTitle>
-                        <div className="flex items-center gap-1 bg-pink-50 px-2 py-0.5 rounded-full">
+                        <div className="flex items-center gap-1 bg-stone-50 px-2 py-0.5 rounded-full">
                           <Star className="w-3 h-3 fill-primary text-primary" />
                           <span className="text-xs font-medium text-primary">{business.rating}</span>
                         </div>
@@ -403,7 +403,7 @@ export default function Home() {
             ))}
           </div>
           <div className="text-center mt-10">
-            <Button variant="outline" size="lg" className="rounded-full border-rose-200 text-rose-500 hover:bg-rose-50" asChild>
+            <Button variant="outline" size="lg" className="rounded-full border-stone-200 text-teal-600 hover:bg-stone-50" asChild>
               <Link href="/search">View All Professionals</Link>
             </Button>
           </div>
@@ -414,7 +414,7 @@ export default function Home() {
       <section className="py-24 bg-white">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-16 space-y-4">
-            <span className="text-rose-400 font-medium text-sm uppercase tracking-wider">Pricing</span>
+            <span className="text-teal-500 font-medium text-sm uppercase tracking-wider">Pricing</span>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif">Plans That Grow With You</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Start free. Upgrade when you're ready to unlock your full potential.
@@ -431,11 +431,11 @@ export default function Home() {
               >
                 <Card className={`h-full flex flex-col relative overflow-hidden transition-all duration-300 ${
                   plan.highlight 
-                    ? 'border-rose-300 shadow-xl scale-105 z-10' 
+                    ? 'border-stone-300 shadow-xl scale-105 z-10' 
                     : 'border-border/50 shadow-md hover:shadow-lg'
                 }`}>
                   {plan.highlight && (
-                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-rose-300 via-rose-400 to-rose-300" />
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-400 via-teal-500 to-teal-400" />
                   )}
                   <CardHeader>
                     <h3 className="text-xl font-bold font-serif">{plan.name}</h3>
@@ -448,14 +448,14 @@ export default function Home() {
                     <ul className="space-y-3">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                          <Check className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
                           <span>{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className={`w-full rounded-full ${plan.highlight ? 'bg-gradient-to-r from-rose-400 to-pink-400 hover:from-rose-500 hover:to-pink-500 text-white' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
+                    <Button className={`w-full rounded-full ${plan.highlight ? 'bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
                       <Link href={`/auth?plan=${plan.id}&type=business`}>
                         Choose {plan.name}
                       </Link>
@@ -478,7 +478,7 @@ export default function Home() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse" data-testid="feature-comparison-table">
                 <thead>
-                  <tr className="border-b-2 border-rose-200">
+                  <tr className="border-b-2 border-stone-200">
                     <th className="text-left py-4 px-4 font-semibold text-gray-700">Feature</th>
                     <th className="text-center py-4 px-4 font-semibold text-gray-700">Starter<br/><span className="text-sm font-normal text-muted-foreground">Free</span></th>
                     <th className="text-center py-4 px-4 font-semibold text-gray-700">Bronze<br/><span className="text-sm font-normal text-muted-foreground">$0.99/mo</span></th>
@@ -489,8 +489,8 @@ export default function Home() {
                 <tbody>
                   {FEATURE_COMPARISON.map((category, catIndex) => (
                     <React.Fragment key={`cat-${catIndex}`}>
-                      <tr className="bg-rose-50/50">
-                        <td colSpan={5} className="py-3 px-4 font-semibold text-rose-600 text-sm uppercase tracking-wider">
+                      <tr className="bg-stone-50/50">
+                        <td colSpan={5} className="py-3 px-4 font-semibold text-teal-600 text-sm uppercase tracking-wider">
                           {category.category}
                         </td>
                       </tr>
@@ -553,7 +553,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-br from-rose-100 to-pink-100">
+      <section className="py-20 bg-gradient-to-br from-teal-100 to-emerald-100">
         <div className="container px-4 md:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -570,12 +570,12 @@ export default function Home() {
               BeautyConnect is where it all happens.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="h-12 px-8 text-lg rounded-full bg-white text-rose-500 hover:bg-rose-50 shadow-lg" asChild>
+              <Button size="lg" className="h-12 px-8 text-lg rounded-full bg-white text-teal-600 hover:bg-stone-50 shadow-lg" asChild>
                 <Link href="/auth">
                   Get Started Free
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 border-white/50 text-rose-600 hover:bg-white/20" asChild>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 border-white/50 text-teal-600 hover:bg-white/20" asChild>
                 <Link href="/search">
                   Browse Professionals
                 </Link>
@@ -586,7 +586,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 bg-white border-t border-rose-100">
+      <footer className="py-8 bg-white border-t border-stone-100">
         <div className="container px-4 md:px-6 text-center">
           <p className="text-sm text-muted-foreground">
             © 2024 BeautyConnect. Elevating beauty, one appointment at a time.

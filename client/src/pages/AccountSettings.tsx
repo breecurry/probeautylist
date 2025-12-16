@@ -165,17 +165,17 @@ export default function AccountSettings() {
 
   if (isLoading || loadingUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8 flex justify-center">
-          <div className="animate-pulse text-rose-400">Loading...</div>
+          <div className="animate-pulse text-teal-400">Loading...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50 to-white">
       <Navbar />
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <h1 className="text-2xl font-serif font-semibold text-gray-800 mb-6" data-testid="settings-title">
@@ -183,19 +183,19 @@ export default function AccountSettings() {
         </h1>
 
         <div className="space-y-6">
-          <Card className="border-rose-100">
+          <Card className="border-stone-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <User className="h-5 w-5 text-rose-400" />
+                <User className="h-5 w-5 text-teal-500" />
                 Profile Information
               </CardTitle>
               <CardDescription>Update your personal information</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4 mb-4">
-                <Avatar className="h-16 w-16 border-2 border-rose-200">
+                <Avatar className="h-16 w-16 border-2 border-stone-200">
                   <AvatarImage src={profilePhoto || undefined} alt="Profile" />
-                  <AvatarFallback className="bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 text-xl font-medium">
+                  <AvatarFallback className="bg-gradient-to-br from-stone-100 to-stone-200 text-teal-600 text-xl font-medium">
                     {fullUserData?.username?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
@@ -207,7 +207,7 @@ export default function AccountSettings() {
                     placeholder="https://example.com/photo.jpg"
                     value={profilePhoto}
                     onChange={(e) => setProfilePhoto(e.target.value)}
-                    className="border-rose-200 focus:border-rose-400"
+                    className="border-stone-200 focus:border-teal-400"
                   />
                 </div>
               </div>
@@ -221,7 +221,7 @@ export default function AccountSettings() {
                     placeholder="First name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="border-rose-200 focus:border-rose-400"
+                    className="border-stone-200 focus:border-teal-400"
                   />
                 </div>
                 <div>
@@ -232,7 +232,7 @@ export default function AccountSettings() {
                     placeholder="Last name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="border-rose-200 focus:border-rose-400"
+                    className="border-stone-200 focus:border-teal-400"
                   />
                 </div>
               </div>
@@ -241,17 +241,17 @@ export default function AccountSettings() {
                 data-testid="button-save-profile"
                 onClick={handleProfileSave}
                 disabled={profileSaving}
-                className="w-full bg-gradient-to-r from-rose-300 to-rose-400 hover:from-rose-400 hover:to-rose-500 text-white"
+                className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white"
               >
                 {profileSaving ? "Saving..." : "Save Profile"}
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-rose-100">
+          <Card className="border-stone-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <Lock className="h-5 w-5 text-rose-400" />
+                <Lock className="h-5 w-5 text-teal-500" />
                 Change Password
               </CardTitle>
               <CardDescription>Update your password to keep your account secure</CardDescription>
@@ -266,7 +266,7 @@ export default function AccountSettings() {
                   placeholder="Enter current password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="border-rose-200 focus:border-rose-400"
+                  className="border-stone-200 focus:border-teal-400"
                 />
               </div>
               
@@ -279,7 +279,7 @@ export default function AccountSettings() {
                   placeholder="Enter new password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="border-rose-200 focus:border-rose-400"
+                  className="border-stone-200 focus:border-teal-400"
                 />
               </div>
               
@@ -292,7 +292,7 @@ export default function AccountSettings() {
                   placeholder="Confirm new password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="border-rose-200 focus:border-rose-400"
+                  className="border-stone-200 focus:border-teal-400"
                 />
               </div>
               
@@ -300,17 +300,17 @@ export default function AccountSettings() {
                 data-testid="button-change-password"
                 onClick={handlePasswordChange}
                 disabled={passwordSaving || !currentPassword || !newPassword || !confirmPassword}
-                className="w-full bg-gradient-to-r from-rose-300 to-rose-400 hover:from-rose-400 hover:to-rose-500 text-white"
+                className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white"
               >
                 {passwordSaving ? "Changing..." : "Change Password"}
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-rose-100">
+          <Card className="border-stone-200">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
-                <AtSign className="h-5 w-5 text-rose-400" />
+                <AtSign className="h-5 w-5 text-teal-500" />
                 Change Username
               </CardTitle>
               <CardDescription>
@@ -338,7 +338,7 @@ export default function AccountSettings() {
                       placeholder="Enter new username"
                       value={newUsername}
                       onChange={(e) => setNewUsername(e.target.value)}
-                      className="border-rose-200 focus:border-rose-400"
+                      className="border-stone-200 focus:border-teal-400"
                     />
                   </div>
                   
@@ -346,7 +346,7 @@ export default function AccountSettings() {
                     data-testid="button-change-username"
                     onClick={handleUsernameChange}
                     disabled={usernameSaving || !newUsername.trim()}
-                    className="w-full bg-gradient-to-r from-rose-300 to-rose-400 hover:from-rose-400 hover:to-rose-500 text-white"
+                    className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white"
                   >
                     {usernameSaving ? "Changing..." : "Change Username"}
                   </Button>

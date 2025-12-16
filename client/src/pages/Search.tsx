@@ -47,7 +47,7 @@ export default function Search() {
       <Navbar />
       
       {/* Search Header */}
-      <div className="bg-pink-50/50 border-b border-pink-100 py-8">
+      <div className="bg-stone-50/50 border-b border-stone-100 py-8">
         <div className="container px-4 md:px-6">
           <h1 className="text-3xl font-serif font-bold mb-6">Find Beauty Professionals</h1>
           
@@ -120,7 +120,7 @@ export default function Search() {
                       <p className="text-sm text-muted-foreground mt-1">{business.type}</p>
                     </div>
                     <div className="flex flex-col items-end">
-                      <div className="flex items-center gap-1 bg-pink-50 px-2 py-1 rounded-md">
+                      <div className="flex items-center gap-1 bg-stone-50 px-2 py-1 rounded-md">
                         <Star className="w-3.5 h-3.5 fill-primary text-primary" />
                         <span className="font-medium text-sm">{business.rating}</span>
                       </div>

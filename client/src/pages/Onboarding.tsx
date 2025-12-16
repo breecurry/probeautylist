@@ -41,7 +41,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50/30 py-12 px-4">
+    <div className="min-h-screen bg-stone-50/30 py-12 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-serif font-bold text-foreground">
@@ -74,7 +74,7 @@ function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: an
   const { register, handleSubmit } = useForm();
   
   return (
-    <Card className="border-none shadow-xl shadow-pink-100">
+    <Card className="border-none shadow-xl shadow-stone-100">
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6 pt-6">
           <div className="space-y-2">
@@ -127,7 +127,7 @@ function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: an
                   key={plan.id}
                   className={`border rounded-lg p-4 cursor-pointer transition-all ${
                     (initialPlan === plan.id || (!initialPlan && plan.id === 'silver'))
-                      ? 'border-primary bg-pink-50 ring-1 ring-primary' 
+                      ? 'border-primary bg-stone-50 ring-1 ring-primary' 
                       : 'hover:bg-gray-50'
                   }`}
                 >
@@ -163,7 +163,7 @@ function ClientOnboardingForm({ onSubmit }: { onSubmit: (data: any) => void }) {
   ];
 
   return (
-    <Card className="border-none shadow-xl shadow-pink-100">
+    <Card className="border-none shadow-xl shadow-stone-100">
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-6 pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -35,7 +35,7 @@ interface AIGrowthInsights {
   generatedAt: string;
 }
 
-const COLORS = ['#f43f5e', '#fb7185', '#fda4af', '#fecdd3', '#fff1f2'];
+const COLORS = ['#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1'];
 const AI_COLORS = ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'];
 
 export default function BusinessAnalytics() {
@@ -110,11 +110,11 @@ export default function BusinessAnalytics() {
 
   if (authLoading || businessesLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400" />
           </div>
         </div>
       </div>
@@ -128,12 +128,12 @@ export default function BusinessAnalytics() {
 
   if (user?.role !== 'business_owner') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto">
             <CardContent className="pt-6 text-center">
-              <Users className="h-12 w-12 text-rose-400 mx-auto mb-4" />
+              <Users className="h-12 w-12 text-teal-400 mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Business Owners Only</h2>
               <p className="text-muted-foreground mb-4">
                 Analytics are only available for business owners.
@@ -150,12 +150,12 @@ export default function BusinessAnalytics() {
 
   if (!businesses || businesses.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto">
             <CardContent className="pt-6 text-center">
-              <TrendingUp className="h-12 w-12 text-rose-400 mx-auto mb-4" />
+              <TrendingUp className="h-12 w-12 text-teal-400 mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">No Businesses Found</h2>
               <p className="text-muted-foreground mb-4">
                 Create a business to access analytics.
@@ -172,7 +172,7 @@ export default function BusinessAnalytics() {
 
   if (goldBusinesses.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+      <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto border-amber-200 bg-gradient-to-br from-amber-50 to-white">
@@ -204,7 +204,7 @@ export default function BusinessAnalytics() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50/50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-stone-50/50 to-white">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
@@ -231,7 +231,7 @@ export default function BusinessAnalytics() {
 
         {analyticsLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-rose-400" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400" />
           </div>
         ) : analyticsError ? (
           <Card className="max-w-md mx-auto">
@@ -250,7 +250,7 @@ export default function BusinessAnalytics() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-rose-600" data-testid="text-conversion-rate">
+                  <div className="text-3xl font-bold text-teal-600" data-testid="text-conversion-rate">
                     {analytics.conversionRate.toFixed(1)}%
                   </div>
                   <p className="text-xs text-muted-foreground">Completed vs Total Bookings</p>
@@ -307,7 +307,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-revenue-chart">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-rose-500" />
+                    <TrendingUp className="h-5 w-5 text-teal-500" />
                     Revenue Trends
                   </CardTitle>
                 </CardHeader>
@@ -322,9 +322,9 @@ export default function BusinessAnalytics() {
                         <Line 
                           type="monotone" 
                           dataKey="revenue" 
-                          stroke="#f43f5e" 
+                          stroke="#14b8a6" 
                           strokeWidth={2}
-                          dot={{ fill: '#f43f5e' }}
+                          dot={{ fill: '#14b8a6' }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -339,7 +339,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-top-services">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-rose-500" />
+                    <Award className="h-5 w-5 text-teal-500" />
                     Top Services
                   </CardTitle>
                 </CardHeader>
@@ -379,7 +379,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-peak-hours">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-rose-500" />
+                    <Clock className="h-5 w-5 text-teal-500" />
                     Peak Hours
                   </CardTitle>
                 </CardHeader>
@@ -394,7 +394,7 @@ export default function BusinessAnalytics() {
                           labelFormatter={(hour: number) => formatHour(hour)}
                           formatter={(value: number) => [value, 'Bookings']}
                         />
-                        <Bar dataKey="count" fill="#fb7185" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="count" fill="#2dd4bf" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -408,7 +408,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-peak-days">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-rose-500" />
+                    <Calendar className="h-5 w-5 text-teal-500" />
                     Peak Days
                   </CardTitle>
                 </CardHeader>
@@ -420,7 +420,7 @@ export default function BusinessAnalytics() {
                         <XAxis dataKey="dayName" />
                         <YAxis />
                         <Tooltip formatter={(value: number) => [value, 'Bookings']} />
-                        <Bar dataKey="count" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (

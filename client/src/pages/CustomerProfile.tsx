@@ -99,13 +99,13 @@ export default function CustomerProfile() {
             </h2>
 
             {profile.reviews.length === 0 ? (
-              <div className="text-center py-12 bg-pink-50/30 rounded-lg border border-dashed border-pink-200" data-testid="no-reviews-message">
+              <div className="text-center py-12 bg-stone-50/30 rounded-lg border border-dashed border-stone-200" data-testid="no-reviews-message">
                 <p className="text-muted-foreground">No reviews yet.</p>
               </div>
             ) : (
               <div className="grid gap-4" data-testid="reviews-list">
                 {profile.reviews.map((review) => (
-                  <Card key={review.id} className="border-none bg-pink-50/30 shadow-sm" data-testid={`review-card-${review.id}`}>
+                  <Card key={review.id} className="border-none bg-stone-50/30 shadow-sm" data-testid={`review-card-${review.id}`}>
                     <CardContent className="p-5">
                       <div className="flex justify-between items-start mb-3">
                         <div>

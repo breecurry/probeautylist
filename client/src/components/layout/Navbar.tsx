@@ -84,9 +84,9 @@ export function Navbar() {
   const showAdmin = user?.role === 'admin';
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-gradient-to-r from-white via-rose-50/30 to-white border-b border-rose-100/50 backdrop-blur-md">
+    <nav className="sticky top-0 z-50 w-full bg-gradient-to-r from-white via-stone-50/30 to-white border-b border-stone-200/50 backdrop-blur-md">
       <div className="container mx-auto flex h-12 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-1.5 font-serif text-lg font-semibold text-rose-400 hover:text-rose-500 transition-colors">
+        <Link href="/" className="flex items-center gap-1.5 font-serif text-lg font-semibold text-teal-600 hover:text-teal-700 transition-colors">
           <Scissors className="h-4 w-4" />
           <span className="tracking-wide">BeautyConnect</span>
         </Link>
@@ -97,8 +97,8 @@ export function Navbar() {
             <button 
               key={link.href} 
               onClick={() => handleNavigation(link.href)}
-              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-rose-400 ${
-                location === link.href ? "text-rose-400" : "text-gray-500"
+              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-teal-600 ${
+                location === link.href ? "text-teal-600" : "text-gray-500"
               }`}
             >
               {link.name}
@@ -108,8 +108,8 @@ export function Navbar() {
           {showAdmin && (
             <button 
               onClick={() => handleNavigation('/admin')}
-              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-rose-400 ${
-                location === '/admin' ? "text-rose-400" : "text-gray-500"
+              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-teal-600 ${
+                location === '/admin' ? "text-teal-600" : "text-gray-500"
               }`}
             >
               Admin
@@ -119,7 +119,7 @@ export function Navbar() {
           {!isAuthenticated ? (
             <Button 
               size="sm" 
-              className="h-8 px-4 text-xs font-medium bg-gradient-to-r from-rose-300 to-rose-400 hover:from-rose-400 hover:to-rose-500 text-white border-0 shadow-sm shadow-rose-200/50 rounded-full"
+              className="h-8 px-4 text-xs font-medium bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white border-0 shadow-sm shadow-stone-200/50 rounded-full"
               asChild
             >
               <Link href="/auth">Login</Link>
@@ -129,9 +129,9 @@ export function Navbar() {
               <NotificationBell />
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-rose-50">
-                  <Avatar className="h-7 w-7 border border-rose-200">
-                    <AvatarFallback className="bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 text-xs font-medium">
+                <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-stone-50">
+                  <Avatar className="h-7 w-7 border border-stone-200">
+                    <AvatarFallback className="bg-gradient-to-br from-stone-100 to-stone-200 text-teal-600 text-xs font-medium">
                       {user?.username?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -186,7 +186,7 @@ export function Navbar() {
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-rose-500 focus:text-rose-600">
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 focus:text-red-600">
                   <LogOut className="mr-2 h-4 w-4" />
                   Sign Out
                 </DropdownMenuItem>
@@ -199,18 +199,18 @@ export function Navbar() {
         {/* Mobile Nav */}
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild className="md:hidden">
-            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-rose-50">
-              <Menu className="h-5 w-5 text-rose-400" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-stone-50">
+              <Menu className="h-5 w-5 text-teal-600" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[280px] bg-gradient-to-b from-white to-rose-50/30">
+          <SheetContent side="right" className="w-[280px] bg-gradient-to-b from-white to-stone-50/30">
             <div className="flex flex-col gap-1 mt-8">
               {isAuthenticated && (
-                <div className="mb-6 pb-4 border-b border-rose-100">
+                <div className="mb-6 pb-4 border-b border-stone-200">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border border-rose-200">
-                        <AvatarFallback className="bg-gradient-to-br from-rose-100 to-rose-200 text-rose-600 font-medium">
+                      <Avatar className="h-10 w-10 border border-stone-200">
+                        <AvatarFallback className="bg-gradient-to-br from-stone-100 to-stone-200 text-teal-600 font-medium">
                           {user?.username?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -230,7 +230,7 @@ export function Navbar() {
                   <button 
                     key={link.href} 
                     onClick={() => handleNavigation(link.href)}
-                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
                   >
                     {Icon && <Icon className="h-4 w-4" />}
                     {link.name}
@@ -241,7 +241,7 @@ export function Navbar() {
               {showAdmin && (
                 <button 
                   onClick={() => handleNavigation('/admin')}
-                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
                 >
                   <Shield className="h-4 w-4" />
                   Admin Panel
@@ -252,7 +252,7 @@ export function Navbar() {
                 <>
                   <button 
                     onClick={() => handleNavigation('/analytics')}
-                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
                     data-testid="mobile-analytics"
                   >
                     <BarChart3 className="h-4 w-4" />
@@ -260,7 +260,7 @@ export function Navbar() {
                   </button>
                   <button 
                     onClick={() => handleNavigation('/social-sharing')}
-                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
                     data-testid="mobile-social-sharing"
                   >
                     <Share2 className="h-4 w-4" />
@@ -272,7 +272,7 @@ export function Navbar() {
               {isAuthenticated && (
                 <button 
                   onClick={() => handleNavigation('/settings')}
-                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-rose-50 text-gray-600 hover:text-rose-500 transition-colors text-left"
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
                   data-testid="mobile-settings"
                 >
                   <Settings className="h-4 w-4" />
@@ -280,10 +280,10 @@ export function Navbar() {
                 </button>
               )}
 
-              <div className="mt-4 pt-4 border-t border-rose-100">
+              <div className="mt-4 pt-4 border-t border-stone-200">
                 {!isAuthenticated ? (
                   <Button 
-                    className="w-full bg-gradient-to-r from-rose-300 to-rose-400 hover:from-rose-400 hover:to-rose-500 text-white rounded-full"
+                    className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white rounded-full"
                     onClick={() => { setIsOpen(false); setLocation('/auth'); }}
                   >
                     Login
@@ -291,7 +291,7 @@ export function Navbar() {
                 ) : (
                   <Button 
                     variant="outline"
-                    className="w-full border-rose-200 text-rose-500 hover:bg-rose-50 rounded-full"
+                    className="w-full border-stone-200 text-red-500 hover:bg-stone-50 rounded-full"
                     onClick={handleLogout}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
