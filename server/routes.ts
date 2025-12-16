@@ -30,6 +30,8 @@ declare global {
 passport.use(
   new LocalStrategy(async (usernameOrEmail, password, done) => {
     try {
+      console.log('[auth] Login attempt for:', usernameOrEmail);
+      
       // Try to find user by username first, then by email
       let user = await storage.getUserByUsername(usernameOrEmail);
       if (!user) {
@@ -37,16 +39,21 @@ passport.use(
       }
       
       if (!user) {
+        console.log('[auth] User not found:', usernameOrEmail);
         return done(null, false, { message: "Invalid username/email or password" });
       }
 
+      console.log('[auth] User found:', user.username, 'checking password...');
       const isValid = await bcrypt.compare(password, user.password);
       if (!isValid) {
+        console.log('[auth] Invalid password for user:', user.username);
         return done(null, false, { message: "Invalid username/email or password" });
       }
 
+      console.log('[auth] Login successful for:', user.username);
       return done(null, { id: user.id, username: user.username, email: user.email, role: user.role });
     } catch (err) {
+      console.error('[auth] Login error:', err);
       return done(err);
     }
   }),
