@@ -77,7 +77,7 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 -z-10 h-[400px] w-[400px] bg-stone-50/50 rounded-full blur-3xl opacity-60 -translate-x-1/3 translate-y-1/4" />
       </section>
 
-      {/* Why You Need BeautyConnect - For Clients */}
+      {/* Why You Need Pro Beauty List - For Clients */}
       <section className="py-20 bg-white">
         <div className="container px-4 md:px-6">
           <motion.div 
@@ -168,7 +168,7 @@ export default function Home() {
                 Your Instagram reach is dropping. Word of mouth only goes so far.
               </p>
               <p className="text-foreground font-medium text-lg mb-8">
-                BeautyConnect puts you in front of clients actively looking to book—right now, in your area.
+                Pro Beauty List puts you in front of clients actively looking to book—right now, in your area.
               </p>
 
               <div className="space-y-4">
@@ -316,7 +316,7 @@ export default function Home() {
             </h2>
             <div className="grid md:grid-cols-2 gap-8 mt-12">
               <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100">
-                <h3 className="font-semibold text-lg mb-4 text-gray-500">Without BeautyConnect</h3>
+                <h3 className="font-semibold text-lg mb-4 text-gray-500">Without Pro Beauty List</h3>
                 <ul className="space-y-3 text-left">
                   {[
                     "Scrolling through 50 Instagram accounts",
@@ -333,7 +333,7 @@ export default function Home() {
                 </ul>
               </div>
               <div className="p-6 rounded-2xl bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-100">
-                <h3 className="font-semibold text-lg mb-4 text-teal-600">With BeautyConnect</h3>
+                <h3 className="font-semibold text-lg mb-4 text-teal-600">With Pro Beauty List</h3>
                 <ul className="space-y-3 text-left">
                   {[
                     "Search by location, service, and rating",
@@ -567,7 +567,7 @@ export default function Home() {
             </h2>
             <p className="text-muted-foreground text-lg mb-8">
               Whether you're looking for your next favorite stylist or ready to grow your beauty business, 
-              BeautyConnect is where it all happens.
+              Pro Beauty List is where it all happens.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="h-12 px-8 text-lg rounded-full bg-white text-teal-600 hover:bg-stone-50 shadow-lg" asChild>
@@ -589,7 +589,7 @@ export default function Home() {
       <footer className="py-8 bg-white border-t border-stone-100">
         <div className="container px-4 md:px-6 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 BeautyConnect. Elevating beauty, one appointment at a time.
+            © 2024 Pro Beauty List. Elevating beauty, one appointment at a time.
           </p>
         </div>
       </footer>

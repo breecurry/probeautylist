@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.beautyconnect.app',
-  appName: 'BeautyConnect',
+  appId: 'com.probeautylist.app',
+  appName: 'Pro Beauty List',
   webDir: 'dist/public',
   server: {
     androidScheme: 'https',
@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
     SplashScreen: {
       launchShowDuration: 2000,
       launchAutoHide: true,
-      backgroundColor: '#FDF2F8',
+      backgroundColor: '#F5F3F0',
       androidSplashResourceName: 'splash',
       androidScaleType: 'CENTER_CROP',
       showSpinner: false,
@@ -21,7 +21,7 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       style: 'LIGHT',
-      backgroundColor: '#EC4899',
+      backgroundColor: '#9BA8A2',
     },
   },
 };

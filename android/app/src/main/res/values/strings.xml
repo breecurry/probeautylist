@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">BeautyConnect</string>
-    <string name="title_activity_main">BeautyConnect</string>
-    <string name="package_name">com.beautyconnect.app</string>
-    <string name="custom_url_scheme">com.beautyconnect.app</string>
+    <string name="app_name">Pro Beauty List</string>
+    <string name="title_activity_main">Pro Beauty List</string>
+    <string name="package_name">com.probeautylist.app</string>
+    <string name="custom_url_scheme">com.probeautylist.app</string>
 </resources>

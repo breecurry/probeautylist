@@ -60,9 +60,9 @@ export async function sendPasswordResetEmail(
     console.log(`[email] Using from address: ${fromEmail || 'noreply@resend.dev (default)'}`);
     
     const result = await client.emails.send({
-      from: fromEmail || 'BeautyConnect <noreply@resend.dev>',
+      from: fromEmail || 'Pro Beauty List <noreply@resend.dev>',
       to: toEmail,
-      subject: 'Reset Your BeautyConnect Password',
+      subject: 'Reset Your Pro Beauty List Password',
       html: `
         <!DOCTYPE html>
         <html>
@@ -72,21 +72,21 @@ export async function sendPasswordResetEmail(
         </head>
         <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb; margin: 0; padding: 20px;">
           <div style="max-width: 600px; margin: 0 auto; background-color: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <div style="background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); padding: 32px; text-align: center;">
-              <h1 style="color: white; margin: 0; font-size: 28px;">BeautyConnect</h1>
+            <div style="background: linear-gradient(135deg, #9BA8A2 0%, #7A6A5A 100%); padding: 32px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px;">Pro Beauty List</h1>
             </div>
             <div style="padding: 32px;">
               <h2 style="color: #1f2937; margin-top: 0;">Password Reset Request</h2>
               <p style="color: #4b5563; line-height: 1.6;">Hello ${username},</p>
               <p style="color: #4b5563; line-height: 1.6;">We received a request to reset your password. Click the button below to create a new password:</p>
               <div style="text-align: center; margin: 32px 0;">
-                <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Reset Password</a>
+                <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #9BA8A2 0%, #7A6A5A 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">Reset Password</a>
               </div>
               <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">This link will expire in 1 hour for security reasons.</p>
               <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
               <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
               <p style="color: #9ca3af; font-size: 12px; text-align: center; margin: 0;">
-                This email was sent by BeautyConnect. If you have any questions, please contact our support team.
+                This email was sent by Pro Beauty List. If you have any questions, please contact our support team.
               </p>
             </div>
           </div>

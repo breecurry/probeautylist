@@ -88,7 +88,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-12 items-center justify-between px-4 md:px-6">
         <Link href="/" className="flex items-center gap-1.5 font-serif text-lg font-semibold text-teal-600 hover:text-teal-700 transition-colors">
           <Scissors className="h-4 w-4" />
-          <span className="tracking-wide">BeautyConnect</span>
+          <span className="tracking-wide">Pro Beauty List</span>
         </Link>
 
         {/* Desktop Nav */}

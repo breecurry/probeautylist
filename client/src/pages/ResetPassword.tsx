@@ -81,7 +81,7 @@ export default function ResetPassword() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/">
-              <h1 className="text-3xl font-serif font-bold text-primary cursor-pointer">BeautyConnect</h1>
+              <h1 className="text-3xl font-serif font-bold text-primary cursor-pointer">Pro Beauty List</h1>
             </Link>
           </div>
 
@@ -120,7 +120,7 @@ export default function ResetPassword() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <Link href="/">
-              <h1 className="text-3xl font-serif font-bold text-primary cursor-pointer">BeautyConnect</h1>
+              <h1 className="text-3xl font-serif font-bold text-primary cursor-pointer">Pro Beauty List</h1>
             </Link>
           </div>
 
@@ -152,7 +152,7 @@ export default function ResetPassword() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/">
-            <h1 className="text-3xl font-serif font-bold text-primary cursor-pointer">BeautyConnect</h1>
+            <h1 className="text-3xl font-serif font-bold text-primary cursor-pointer">Pro Beauty List</h1>
           </Link>
           <p className="text-muted-foreground mt-2">Create your new password</p>
         </div>

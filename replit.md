@@ -1,8 +1,8 @@
-# BeautyConnect - Salon & Spa Booking Platform
+# Pro Beauty List - Salon & Spa Booking Platform
 
 ## Overview
 
-BeautyConnect is a full-stack web application for connecting clients with beauty professionals (hair stylists, nail artists, spa services). The platform enables business owners to list their services, manage bookings, and showcase portfolios, while clients can search, book appointments, leave reviews, and send tips. The application includes tiered subscription plans for businesses and integrates with Stripe for payment processing.
+Pro Beauty List is a full-stack web application for connecting clients with beauty professionals (hair stylists, nail artists, spa services). The platform enables business owners to list their services, manage bookings, and showcase portfolios, while clients can search, book appointments, leave reviews, and send tips. The application includes tiered subscription plans for businesses and integrates with Stripe for payment processing.
 
 ## User Preferences
 
