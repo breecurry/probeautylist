@@ -55,7 +55,7 @@ function WaitlistCard({
             </p>
           )}
           {entry.notified && (
-            <p className="text-sm text-green-600 mt-1 flex items-center gap-1">
+            <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
               <Bell className="h-3 w-3" />
               Notified - a spot opened up!
             </p>

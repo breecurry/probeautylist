@@ -84,14 +84,14 @@ function BeforeAfterSlider({ beforeUrl, afterUrl }: { beforeUrl: string; afterUr
         }}
       >
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
-          <ChevronLeft className="w-4 h-4 text-teal-600" />
-          <ChevronRight className="w-4 h-4 text-teal-600" />
+          <ChevronLeft className="w-4 h-4 text-amber-600" />
+          <ChevronRight className="w-4 h-4 text-amber-600" />
         </div>
       </div>
-      <div className="absolute top-2 left-2 bg-teal-600 text-white px-2 py-1 rounded text-xs font-medium">
+      <div className="absolute top-2 left-2 bg-amber-600 text-white px-2 py-1 rounded text-xs font-medium">
         Before
       </div>
-      <div className="absolute top-2 right-2 bg-green-600 text-white px-2 py-1 rounded text-xs font-medium">
+      <div className="absolute top-2 right-2 bg-amber-600 text-white px-2 py-1 rounded text-xs font-medium">
         After
       </div>
     </div>
@@ -164,7 +164,7 @@ function UploadDialog({ businessId, onSuccess }: { businessId: string; onSuccess
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2 border-stone-200 text-teal-600 hover:bg-stone-50" data-testid="button-upload-before-after">
+        <Button variant="outline" className="gap-2 border-stone-200 text-amber-600 hover:bg-stone-50" data-testid="button-upload-before-after">
           <Camera className="w-4 h-4" />
           Share Your Transformation
         </Button>
@@ -172,7 +172,7 @@ function UploadDialog({ businessId, onSuccess }: { businessId: string; onSuccess
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-teal-500" />
+            <Sparkles className="w-5 h-5 text-amber-600" />
             Share Your Before & After
           </DialogTitle>
           <DialogDescription>
@@ -275,7 +275,7 @@ function PendingPhotoCard({ photo, onApprove, onDelete }: { photo: BeforeAfterPh
         <div className="flex gap-2">
           <Button 
             size="sm" 
-            className="flex-1 bg-green-600 hover:bg-green-700"
+            className="flex-1 bg-amber-600 hover:bg-amber-700"
             onClick={onApprove}
             data-testid={`button-approve-${photo.id}`}
           >
@@ -391,7 +391,7 @@ export function BeforeAfterGallery({ businessId, isOwner = false, showUpload = f
         </div>
       ) : (
         <div className="text-center py-12 bg-stone-50/30 rounded-lg border border-dashed border-stone-200">
-          <Sparkles className="w-10 h-10 text-teal-300 mx-auto mb-3" />
+          <Sparkles className="w-10 h-10 text-amber-300 mx-auto mb-3" />
           <p className="text-muted-foreground">No transformations yet.</p>
           {showUpload && (
             <p className="text-sm text-muted-foreground mt-1">

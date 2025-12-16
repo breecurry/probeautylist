@@ -114,7 +114,7 @@ export default function BusinessAnalytics() {
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
           </div>
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function BusinessAnalytics() {
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto">
             <CardContent className="pt-6 text-center">
-              <Users className="h-12 w-12 text-teal-400 mx-auto mb-4" />
+              <Users className="h-12 w-12 text-amber-500 mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">Business Owners Only</h2>
               <p className="text-muted-foreground mb-4">
                 Analytics are only available for business owners.
@@ -155,7 +155,7 @@ export default function BusinessAnalytics() {
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto">
             <CardContent className="pt-6 text-center">
-              <TrendingUp className="h-12 w-12 text-teal-400 mx-auto mb-4" />
+              <TrendingUp className="h-12 w-12 text-amber-500 mx-auto mb-4" />
               <h2 className="text-xl font-semibold mb-2">No Businesses Found</h2>
               <p className="text-muted-foreground mb-4">
                 Create a business to access analytics.
@@ -231,7 +231,7 @@ export default function BusinessAnalytics() {
 
         {analyticsLoading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
           </div>
         ) : analyticsError ? (
           <Card className="max-w-md mx-auto">
@@ -250,7 +250,7 @@ export default function BusinessAnalytics() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-teal-600" data-testid="text-conversion-rate">
+                  <div className="text-3xl font-bold text-amber-600" data-testid="text-conversion-rate">
                     {analytics.conversionRate.toFixed(1)}%
                   </div>
                   <p className="text-xs text-muted-foreground">Completed vs Total Bookings</p>
@@ -307,7 +307,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-revenue-chart">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-teal-500" />
+                    <TrendingUp className="h-5 w-5 text-amber-600" />
                     Revenue Trends
                   </CardTitle>
                 </CardHeader>
@@ -339,7 +339,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-top-services">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-teal-500" />
+                    <Award className="h-5 w-5 text-amber-600" />
                     Top Services
                   </CardTitle>
                 </CardHeader>
@@ -379,7 +379,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-peak-hours">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-teal-500" />
+                    <Clock className="h-5 w-5 text-amber-600" />
                     Peak Hours
                   </CardTitle>
                 </CardHeader>
@@ -408,7 +408,7 @@ export default function BusinessAnalytics() {
               <Card data-testid="card-peak-days">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-teal-500" />
+                    <Calendar className="h-5 w-5 text-amber-600" />
                     Peak Days
                   </CardTitle>
                 </CardHeader>

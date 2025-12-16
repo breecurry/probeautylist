@@ -84,7 +84,7 @@ export function NotificationBell() {
           <Bell className="h-4 w-4 text-gray-500" />
           {unreadCount > 0 && (
             <span 
-              className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-teal-500 text-white text-[10px] font-medium flex items-center justify-center"
+              className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-amber-600 text-white text-[10px] font-medium flex items-center justify-center"
               data-testid="notification-unread-count"
             >
               {unreadCount > 9 ? "9+" : unreadCount}
@@ -99,7 +99,7 @@ export function NotificationBell() {
             <Button 
               variant="ghost" 
               size="sm" 
-              className="text-xs text-teal-500 hover:text-teal-600 h-auto p-0"
+              className="text-xs text-amber-600 hover:text-amber-600 h-auto p-0"
               onClick={() => markAllReadMutation.mutate()}
               data-testid="button-mark-all-read"
             >
@@ -126,7 +126,7 @@ export function NotificationBell() {
                 >
                   <div className="flex items-start gap-2">
                     {!notification.read && (
-                      <span className="h-2 w-2 rounded-full bg-teal-500 mt-1.5 flex-shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-amber-600 mt-1.5 flex-shrink-0" />
                     )}
                     <div className={!notification.read ? "" : "ml-4"}>
                       <p className="font-medium text-sm text-gray-800">

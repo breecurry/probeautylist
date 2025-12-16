@@ -41,73 +41,80 @@
   --color-ring: hsl(var(--ring));
 }
 
-/* Sage Green & Taupe Theme */
+/* Brown & Gold Luxury Theme */
 :root {
-  /* Soft Taupe Background */
-  --background: 30 15% 94%; 
-  --foreground: 30 20% 20%; 
+  /* Soft Cream Background */
+  --background: 35 20% 95%; 
+  --foreground: 25 30% 15%; 
 
-  /* Muted Sage Green Primary */
-  --primary: 155 12% 63%; 
-  --primary-foreground: 0 0% 100%;
+  /* Rich Brown Primary */
+  --primary: 25 35% 35%; 
+  --primary-foreground: 40 30% 95%;
 
-  /* Light Sage Secondary */
-  --secondary: 155 10% 88%;
-  --secondary-foreground: 30 20% 25%;
+  /* Warm Gold Accent for highlights */
+  --gold: 43 80% 50%;
+  --gold-dark: 38 70% 40%;
 
-  /* Soft Taupe Cards */
-  --card: 30 12% 97%;
-  --card-foreground: 30 20% 20%;
+  /* Light Warm Secondary */
+  --secondary: 35 15% 90%;
+  --secondary-foreground: 25 30% 20%;
 
-  --popover: 30 12% 97%;
-  --popover-foreground: 30 20% 20%;
+  /* Cream Cards */
+  --card: 35 18% 98%;
+  --card-foreground: 25 30% 15%;
 
-  --muted: 30 12% 90%;
-  --muted-foreground: 30 15% 45%;
+  --popover: 35 18% 98%;
+  --popover-foreground: 25 30% 15%;
 
-  /* Medium Dark Taupe Accent */
-  --accent: 30 18% 45%;
-  --accent-foreground: 0 0% 100%;
+  --muted: 35 12% 90%;
+  --muted-foreground: 25 15% 45%;
+
+  /* Deep Brown Accent */
+  --accent: 25 40% 25%;
+  --accent-foreground: 40 30% 95%;
 
   --destructive: 0 65% 50%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 30 12% 82%;
-  --input: 30 12% 85%;
-  --ring: 155 12% 55%;
+  --border: 30 15% 82%;
+  --input: 30 15% 85%;
+  --ring: 43 70% 50%;
 
   --radius: 1rem;
 }
 
 .dark {
-  /* Dark mode with sage and taupe tones */
-  --background: 30 10% 10%;
-  --foreground: 40 10% 90%;
+  /* Dark mode with brown and gold tones */
+  --background: 25 15% 8%;
+  --foreground: 40 15% 90%;
 
-  --primary: 155 15% 50%;
-  --primary-foreground: 0 0% 100%;
+  --primary: 25 30% 45%;
+  --primary-foreground: 40 30% 95%;
 
-  --secondary: 155 10% 18%;
-  --secondary-foreground: 155 10% 85%;
+  --gold: 43 80% 55%;
+  --gold-dark: 38 70% 45%;
 
-  --card: 30 10% 12%;
-  --card-foreground: 40 10% 90%;
+  --secondary: 25 15% 15%;
+  --secondary-foreground: 35 15% 85%;
 
-  --popover: 30 10% 12%;
-  --popover-foreground: 40 10% 90%;
+  --card: 25 12% 12%;
+  --card-foreground: 40 15% 90%;
 
-  --muted: 30 10% 15%;
-  --muted-foreground: 30 5% 60%;
+  --popover: 25 12% 12%;
+  --popover-foreground: 40 15% 90%;
 
-  --accent: 30 15% 20%;
-  --accent-foreground: 30 10% 85%;
+  --muted: 25 10% 15%;
+  --muted-foreground: 30 8% 55%;
+
+  --accent: 25 20% 20%;
+  --accent-foreground: 35 15% 85%;
 
   --destructive: 0 62% 30%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 30 10% 20%;
-  --input: 30 10% 20%;
-  --ring: 155 15% 45%;
+  --border: 25 12% 20%;
+  --input: 25 12% 20%;
+  --ring: 43 70% 50%;
 }
 
 @layer base {

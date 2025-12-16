@@ -49,7 +49,7 @@ function StatusBadge({ status }: { status: string }) {
       icon: <CheckCircle className="h-3 w-3 mr-1" /> 
     },
     completed: { 
-      className: "bg-green-100 text-green-700 border-green-200", 
+      className: "bg-amber-100 text-amber-700 border-amber-200", 
       icon: <CheckCircle className="h-3 w-3 mr-1" /> 
     },
     cancelled: { 

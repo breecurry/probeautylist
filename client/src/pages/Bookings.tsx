@@ -64,7 +64,7 @@ function StatusBadge({ status }: { status: string }) {
       icon: <CheckCircle className="h-3 w-3 mr-1" /> 
     },
     completed: { 
-      className: "bg-green-100 text-green-700 border-green-200", 
+      className: "bg-amber-100 text-amber-700 border-amber-200", 
       icon: <CheckCircle className="h-3 w-3 mr-1" /> 
     },
     cancelled: { 
@@ -187,7 +187,7 @@ function ReviewClientDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]" data-testid="review-dialog">
         <DialogHeader>
-          <DialogTitle className="text-teal-700">Review Client</DialogTitle>
+          <DialogTitle className="text-amber-700">Review Client</DialogTitle>
           <DialogDescription>
             Share your experience with this client for the {booking.serviceName} service.
           </DialogDescription>
@@ -205,7 +205,7 @@ function ReviewClientDialog({
               placeholder="Share your experience with this client..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="min-h-[100px] border-stone-200 focus:border-teal-400 focus:ring-teal-400"
+              className="min-h-[100px] border-stone-200 focus:border-amber-500 focus:ring-amber-500"
             />
           </div>
         </div>
@@ -221,7 +221,7 @@ function ReviewClientDialog({
             onClick={handleSubmit}
             disabled={reviewMutation.isPending}
             data-testid="button-submit-review"
-            className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+            className="bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600"
           >
             {reviewMutation.isPending ? "Submitting..." : "Submit Review"}
           </Button>
@@ -262,7 +262,7 @@ function BookingCard({
             <div className="space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 
-                  className="font-semibold text-teal-700"
+                  className="font-semibold text-amber-700"
                   data-testid={`booking-service-${booking.id}`}
                 >
                   {booking.serviceName}
@@ -290,7 +290,7 @@ function BookingCard({
                 {booking.depositPaid ? (
                   <Badge 
                     variant="outline" 
-                    className="bg-green-50 text-green-700 border-green-200"
+                    className="bg-amber-50 text-amber-700 border-amber-200"
                     data-testid={`deposit-paid-${booking.id}`}
                   >
                     <CheckCircle className="h-3 w-3 mr-1" />
@@ -309,7 +309,7 @@ function BookingCard({
                 {booking.completedByBusiness && (
                   <Badge 
                     variant="outline" 
-                    className="bg-stone-50 text-teal-700 border-stone-200"
+                    className="bg-stone-50 text-amber-700 border-stone-200"
                     data-testid={`completed-badge-${booking.id}`}
                   >
                     <CheckCircle className="h-3 w-3 mr-1" />
@@ -335,7 +335,7 @@ function BookingCard({
                 size="sm"
                 onClick={() => setReviewDialogOpen(true)}
                 data-testid={`button-review-client-${booking.id}`}
-                className="border-stone-300 text-teal-600 hover:bg-stone-50"
+                className="border-stone-300 text-amber-600 hover:bg-stone-50"
               >
                 <Star className="h-4 w-4 mr-1" />
                 Review Client
@@ -470,7 +470,7 @@ export default function Bookings() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 
-            className="text-3xl font-bold font-serif text-teal-700"
+            className="text-3xl font-bold font-serif text-amber-700"
             data-testid="page-title"
           >
             {isBusinessOwner ? "Business Bookings" : "My Bookings"}
@@ -529,8 +529,8 @@ export default function Bookings() {
         ) : (
           <Card className="border-stone-100" data-testid="no-bookings">
             <CardContent className="p-12 text-center">
-              <Calendar className="h-12 w-12 text-teal-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-teal-700 mb-2">No Bookings Yet</h3>
+              <Calendar className="h-12 w-12 text-amber-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-amber-700 mb-2">No Bookings Yet</h3>
               <p className="text-muted-foreground mb-4">
                 {isBusinessOwner 
                   ? "You don't have any bookings for your businesses yet." 
@@ -540,7 +540,7 @@ export default function Bookings() {
                 <Button 
                   data-testid="button-find-services"
                   onClick={() => setLocation("/search")}
-                  className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                  className="bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600"
                 >
                   Find Services
                 </Button>

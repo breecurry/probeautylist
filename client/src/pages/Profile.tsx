@@ -270,7 +270,7 @@ export default function Profile() {
                   {/* Tip Button */}
                   <Dialog open={isTipOpen} onOpenChange={setIsTipOpen}>
                     <DialogTrigger asChild>
-                      <Button size="sm" variant="outline" className="gap-2 text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 shadow-sm">
+                      <Button size="sm" variant="outline" className="gap-2 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700 shadow-sm">
                         <DollarSign className="w-4 h-4" />
                         Tip Your Tech
                       </Button>
@@ -306,7 +306,7 @@ export default function Profile() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button onClick={handleSendTip} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                        <Button onClick={handleSendTip} className="w-full bg-amber-600 hover:bg-amber-700 text-white">
                           Send Tip
                         </Button>
                       </DialogFooter>
@@ -403,8 +403,8 @@ export default function Profile() {
                           onClick={() => handleSaveToBoard(String(item.id))}
                           className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${
                             savedPortfolioItems.has(String(item.id))
-                              ? 'bg-teal-600 text-white'
-                              : 'bg-white/90 text-teal-600 hover:bg-teal-600 hover:text-white'
+                              ? 'bg-amber-600 text-white'
+                              : 'bg-white/90 text-amber-600 hover:bg-amber-600 hover:text-white'
                           }`}
                           data-testid={`button-save-${item.id}`}
                           title={savedPortfolioItems.has(String(item.id)) ? "Saved to board" : "Save to inspiration board"}
@@ -415,7 +415,7 @@ export default function Profile() {
                     {socialFeaturesEnabled && (
                         <CardFooter className="p-3 border-t bg-stone-50/20 flex justify-between items-center">
                             <div className="flex gap-4">
-                                <button className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${item.likedByMe ? 'text-teal-500' : 'text-muted-foreground hover:text-teal-500'}`}>
+                                <button className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${item.likedByMe ? 'text-amber-600' : 'text-muted-foreground hover:text-amber-600'}`}>
                                     <Heart className={`w-5 h-5 ${item.likedByMe ? 'fill-current' : ''}`} />
                                     <span>{item.likes}</span>
                                 </button>
@@ -787,7 +787,7 @@ export default function Profile() {
                       <ul className="space-y-1.5">
                         {business.funFacts.map((fact, i) => (
                           <li key={i} className="text-xs text-muted-foreground italic flex items-start gap-1.5">
-                            <span className="text-teal-300">•</span> {fact}
+                            <span className="text-amber-300">•</span> {fact}
                           </li>
                         ))}
                       </ul>
@@ -800,7 +800,7 @@ export default function Profile() {
               </Card>
               
               {hasCompletedService && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800 flex items-start gap-2">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-start gap-2">
                     <Check className="w-4 h-4 mt-0.5" />
                     <div>
                         <p className="font-bold">Service Completed</p>

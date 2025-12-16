@@ -220,8 +220,8 @@ export default function Admin() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Building2 className="w-5 h-5 text-green-600" />
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <Building2 className="w-5 h-5 text-amber-600" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold" data-testid="stat-businesses">{stats?.totalBusinesses || 0}</p>
@@ -319,7 +319,7 @@ export default function Admin() {
               <CardContent>
                 {pendingBusinesses.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <Check className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                    <Check className="w-12 h-12 mx-auto mb-4 text-amber-600" />
                     <p>All caught up! No pending approvals.</p>
                   </div>
                 ) : (
@@ -346,7 +346,7 @@ export default function Admin() {
                             <div className="flex justify-end gap-2">
                               <Button 
                                 size="sm" 
-                                className="bg-green-600 hover:bg-green-700 text-white"
+                                className="bg-amber-600 hover:bg-amber-700 text-white"
                                 onClick={() => approveBusinessMutation.mutate(business.id)}
                                 data-testid={`approve-${business.id}`}
                               >

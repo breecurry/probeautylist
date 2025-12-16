@@ -93,7 +93,7 @@ function BusinessCard({ business }: { business: Business }) {
       data-testid={`business-card-${business.id}`}
     >
       <CardHeader className="bg-gradient-to-r from-stone-50 to-stone-100 rounded-t-lg">
-        <CardTitle className="flex items-center gap-2 text-teal-700">
+        <CardTitle className="flex items-center gap-2 text-amber-700">
           <Store className="h-5 w-5" />
           <span data-testid={`business-name-${business.id}`}>{business.name}</span>
           {business.tier === 'gold' && (
@@ -129,7 +129,7 @@ function BusinessCard({ business }: { business: Business }) {
           <div className="space-y-4 pl-4 border-l-2 border-stone-200">
             <div className="space-y-2">
               <Label htmlFor={`deposit-amount-${business.id}`} className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-teal-500" />
+                <DollarSign className="h-4 w-4 text-amber-600" />
                 Deposit Amount ($)
               </Label>
               <Input
@@ -142,13 +142,13 @@ function BusinessCard({ business }: { business: Business }) {
                 onChange={(e) => 
                   setSettings(prev => ({ ...prev, depositAmount: e.target.value }))
                 }
-                className="max-w-[200px] border-stone-200 focus:border-teal-400 focus:ring-teal-400"
+                className="max-w-[200px] border-stone-200 focus:border-amber-500 focus:ring-amber-500"
               />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor={`advance-notice-${business.id}`} className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-teal-500" />
+                <Clock className="h-4 w-4 text-amber-600" />
                 Advance Notice (hours)
               </Label>
               <Input
@@ -160,7 +160,7 @@ function BusinessCard({ business }: { business: Business }) {
                 onChange={(e) => 
                   setSettings(prev => ({ ...prev, advanceNoticeHours: parseInt(e.target.value) || 0 }))
                 }
-                className="max-w-[200px] border-stone-200 focus:border-teal-400 focus:ring-teal-400"
+                className="max-w-[200px] border-stone-200 focus:border-amber-500 focus:ring-amber-500"
               />
               <p className="text-xs text-muted-foreground">
                 How many hours in advance clients must book
@@ -174,7 +174,7 @@ function BusinessCard({ business }: { business: Business }) {
             data-testid={`button-save-${business.id}`}
             onClick={handleSave}
             disabled={updateMutation.isPending}
-            className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+            className="bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600"
           >
             <Save className="h-4 w-4 mr-2" />
             {updateMutation.isPending ? "Saving..." : "Save Changes"}
@@ -337,7 +337,7 @@ function BusinessWaitlistSection({ businessId, businessName }: { businessId: str
                 </p>
                 {entry.notified ? (
                   <Badge 
-                    className="mt-2 bg-green-100 text-green-700 hover:bg-green-100"
+                    className="mt-2 bg-amber-100 text-amber-700 hover:bg-amber-100"
                     data-testid={`waitlist-entry-notified-${entry.id}`}
                   >
                     <Bell className="h-3 w-3 mr-1" />
@@ -414,7 +414,7 @@ export default function MyBusinesses() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 
-            className="text-3xl font-bold font-serif text-teal-700"
+            className="text-3xl font-bold font-serif text-amber-700"
             data-testid="page-title"
           >
             My Businesses
@@ -464,7 +464,7 @@ export default function MyBusinesses() {
 
                 {business.tier === 'gold' && (
                   <div data-testid={`loyalty-section-${business.id}`}>
-                    <h2 className="text-xl font-semibold text-teal-700 mb-4 flex items-center gap-2">
+                    <h2 className="text-xl font-semibold text-amber-700 mb-4 flex items-center gap-2">
                       <Crown className="h-5 w-5 text-yellow-500" />
                       Loyalty & Referral Engine - {business.name}
                     </h2>
@@ -477,15 +477,15 @@ export default function MyBusinesses() {
         ) : (
           <Card className="border-stone-100" data-testid="no-businesses">
             <CardContent className="p-12 text-center">
-              <Store className="h-12 w-12 text-teal-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-teal-700 mb-2">No Businesses Yet</h3>
+              <Store className="h-12 w-12 text-amber-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-amber-700 mb-2">No Businesses Yet</h3>
               <p className="text-muted-foreground mb-4">
                 You haven't created any businesses. Start by registering your first business.
               </p>
               <Button 
                 data-testid="button-create-business"
                 onClick={() => setLocation("/onboarding?type=business")}
-                className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+                className="bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600"
               >
                 Create Your First Business
               </Button>

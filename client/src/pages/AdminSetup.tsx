@@ -58,7 +58,7 @@ export default function AdminSetup() {
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-stone-100 rounded-full flex items-center justify-center mb-4">
-            <Shield className="w-6 h-6 text-teal-600" />
+            <Shield className="w-6 h-6 text-amber-600" />
           </div>
           <CardTitle className="text-2xl text-stone-700">Admin Setup</CardTitle>
           <CardDescription>
@@ -111,7 +111,7 @@ export default function AdminSetup() {
             </div>
             <Button
               type="submit"
-              className="w-full bg-teal-500 hover:bg-teal-600"
+              className="w-full bg-amber-600 hover:bg-amber-600"
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}

@@ -172,7 +172,7 @@ export default function SocialSharing() {
         <Navbar />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500" />
           </div>
         </div>
       </div>
@@ -263,7 +263,7 @@ export default function SocialSharing() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-teal-400" />
+                  <Sparkles className="h-5 w-5 text-amber-500" />
                   Create a Post
                 </CardTitle>
                 <CardDescription>
@@ -285,7 +285,7 @@ export default function SocialSharing() {
                   <Button
                     onClick={() => createPostMutation.mutate(postContent)}
                     disabled={!postContent.trim() || createPostMutation.isPending}
-                    className="bg-teal-600 hover:bg-teal-700"
+                    className="bg-amber-600 hover:bg-amber-700"
                     data-testid="button-create-post"
                   >
                     {createPostMutation.isPending ? "Creating..." : "Create Post"}
@@ -298,7 +298,7 @@ export default function SocialSharing() {
               <h2 className="text-lg font-semibold text-gray-900">Your Posts</h2>
               {postsLoading ? (
                 <Card className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-400 mx-auto" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto" />
                 </Card>
               ) : posts?.length === 0 ? (
                 <Card className="p-8 text-center text-gray-500">
@@ -344,7 +344,7 @@ export default function SocialSharing() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white border-0 hover:from-teal-600 hover:to-emerald-600"
+                          className="bg-gradient-to-r from-amber-600 to-amber-600 text-white border-0 hover:from-amber-600 hover:to-amber-600"
                           onClick={() => handleShare('instagram', post)}
                           data-testid={`button-share-instagram-${post.id}`}
                         >
@@ -423,19 +423,19 @@ export default function SocialSharing() {
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-gray-600">
                 <div className="flex gap-2">
-                  <span className="text-teal-400">•</span>
+                  <span className="text-amber-500">•</span>
                   <p>Announce new services or seasonal promotions</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-teal-400">•</span>
+                  <span className="text-amber-500">•</span>
                   <p>Share last-minute availability openings</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-teal-400">•</span>
+                  <span className="text-amber-500">•</span>
                   <p>Post about special occasions and holiday hours</p>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-teal-400">•</span>
+                  <span className="text-amber-500">•</span>
                   <p>Include a call-to-action like "Book now!"</p>
                 </div>
               </CardContent>

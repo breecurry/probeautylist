@@ -58,16 +58,16 @@ function RebookCard({
       >
         <div className="flex items-start gap-3">
           <div className="p-2 bg-stone-100 rounded-full">
-            <Clock className="h-5 w-5 text-teal-600" />
+            <Clock className="h-5 w-5 text-amber-600" />
           </div>
           <div>
-            <p className="font-medium text-teal-700" data-testid={`rebooking-service-${suggestion.id}`}>
+            <p className="font-medium text-amber-700" data-testid={`rebooking-service-${suggestion.id}`}>
               {suggestion.serviceName}
             </p>
             <p className="text-sm text-muted-foreground">
               at <span className="font-medium">{suggestion.businessName}</span>
             </p>
-            <p className="text-sm text-teal-600 mt-1" data-testid={`rebooking-time-${suggestion.id}`}>
+            <p className="text-sm text-amber-600 mt-1" data-testid={`rebooking-time-${suggestion.id}`}>
               {weeksSince > 0 
                 ? `It's been ${weeksSince} week${weeksSince !== 1 ? 's' : ''} since your last visit`
                 : `It's been ${suggestion.daysSinceBooking} day${suggestion.daysSinceBooking !== 1 ? 's' : ''} since your last visit`
@@ -78,7 +78,7 @@ function RebookCard({
         <Button
           onClick={() => setDialogOpen(true)}
           data-testid={`button-rebook-${suggestion.id}`}
-          className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+          className="bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600"
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Book Again
@@ -88,7 +88,7 @@ function RebookCard({
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-[425px]" data-testid="rebook-dialog">
           <DialogHeader>
-            <DialogTitle className="text-teal-700 flex items-center gap-2">
+            <DialogTitle className="text-amber-700 flex items-center gap-2">
               <CalendarPlus className="h-5 w-5" />
               Rebook {suggestion.serviceName}
             </DialogTitle>
@@ -117,7 +117,7 @@ function RebookCard({
               onClick={handleRebook}
               disabled={!selectedDate}
               data-testid="button-confirm-rebook"
-              className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+              className="bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600"
             >
               Confirm Booking
             </Button>
@@ -199,8 +199,8 @@ export function RebookingWidget() {
       data-testid="rebooking-widget"
     >
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-teal-700 text-xl">
-          <Calendar className="h-5 w-5 text-teal-500" />
+        <CardTitle className="flex items-center gap-2 text-amber-700 text-xl">
+          <Calendar className="h-5 w-5 text-amber-600" />
           Time to Rebook?
         </CardTitle>
         <p className="text-sm text-muted-foreground">

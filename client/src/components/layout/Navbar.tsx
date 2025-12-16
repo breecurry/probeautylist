@@ -86,7 +86,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 w-full bg-gradient-to-r from-white via-stone-50/30 to-white border-b border-stone-200/50 backdrop-blur-md">
       <div className="container mx-auto flex h-12 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-1.5 font-serif text-lg font-semibold text-teal-600 hover:text-teal-700 transition-colors">
+        <Link href="/" className="flex items-center gap-1.5 font-serif text-lg font-semibold text-amber-600 hover:text-amber-700 transition-colors">
           <Scissors className="h-4 w-4" />
           <span className="tracking-wide">Pro Beauty List</span>
         </Link>
@@ -97,8 +97,8 @@ export function Navbar() {
             <button 
               key={link.href} 
               onClick={() => handleNavigation(link.href)}
-              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-teal-600 ${
-                location === link.href ? "text-teal-600" : "text-gray-500"
+              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-amber-600 ${
+                location === link.href ? "text-amber-600" : "text-gray-500"
               }`}
             >
               {link.name}
@@ -108,8 +108,8 @@ export function Navbar() {
           {showAdmin && (
             <button 
               onClick={() => handleNavigation('/admin')}
-              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-teal-600 ${
-                location === '/admin' ? "text-teal-600" : "text-gray-500"
+              className={`text-xs font-medium tracking-wide uppercase transition-colors hover:text-amber-600 ${
+                location === '/admin' ? "text-amber-600" : "text-gray-500"
               }`}
             >
               Admin
@@ -119,7 +119,7 @@ export function Navbar() {
           {!isAuthenticated ? (
             <Button 
               size="sm" 
-              className="h-8 px-4 text-xs font-medium bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white border-0 shadow-sm shadow-stone-200/50 rounded-full"
+              className="h-8 px-4 text-xs font-medium bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-600 text-white border-0 shadow-sm shadow-stone-200/50 rounded-full"
               asChild
             >
               <Link href="/auth">Login</Link>
@@ -131,7 +131,7 @@ export function Navbar() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0 hover:bg-stone-50">
                   <Avatar className="h-7 w-7 border border-stone-200">
-                    <AvatarFallback className="bg-gradient-to-br from-stone-100 to-stone-200 text-teal-600 text-xs font-medium">
+                    <AvatarFallback className="bg-gradient-to-br from-stone-100 to-stone-200 text-amber-600 text-xs font-medium">
                       {user?.username?.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
@@ -200,7 +200,7 @@ export function Navbar() {
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-stone-50">
-              <Menu className="h-5 w-5 text-teal-600" />
+              <Menu className="h-5 w-5 text-amber-600" />
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-[280px] bg-gradient-to-b from-white to-stone-50/30">
@@ -210,7 +210,7 @@ export function Navbar() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10 border border-stone-200">
-                        <AvatarFallback className="bg-gradient-to-br from-stone-100 to-stone-200 text-teal-600 font-medium">
+                        <AvatarFallback className="bg-gradient-to-br from-stone-100 to-stone-200 text-amber-600 font-medium">
                           {user?.username?.charAt(0).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
@@ -230,7 +230,7 @@ export function Navbar() {
                   <button 
                     key={link.href} 
                     onClick={() => handleNavigation(link.href)}
-                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-amber-600 transition-colors text-left"
                   >
                     {Icon && <Icon className="h-4 w-4" />}
                     {link.name}
@@ -241,7 +241,7 @@ export function Navbar() {
               {showAdmin && (
                 <button 
                   onClick={() => handleNavigation('/admin')}
-                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-amber-600 transition-colors text-left"
                 >
                   <Shield className="h-4 w-4" />
                   Admin Panel
@@ -252,7 +252,7 @@ export function Navbar() {
                 <>
                   <button 
                     onClick={() => handleNavigation('/analytics')}
-                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-amber-600 transition-colors text-left"
                     data-testid="mobile-analytics"
                   >
                     <BarChart3 className="h-4 w-4" />
@@ -260,7 +260,7 @@ export function Navbar() {
                   </button>
                   <button 
                     onClick={() => handleNavigation('/social-sharing')}
-                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
+                    className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-amber-600 transition-colors text-left"
                     data-testid="mobile-social-sharing"
                   >
                     <Share2 className="h-4 w-4" />
@@ -272,7 +272,7 @@ export function Navbar() {
               {isAuthenticated && (
                 <button 
                   onClick={() => handleNavigation('/settings')}
-                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-teal-600 transition-colors text-left"
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-amber-600 transition-colors text-left"
                   data-testid="mobile-settings"
                 >
                   <Settings className="h-4 w-4" />
@@ -283,7 +283,7 @@ export function Navbar() {
               <div className="mt-4 pt-4 border-t border-stone-200">
                 {!isAuthenticated ? (
                   <Button 
-                    className="w-full bg-gradient-to-r from-teal-400 to-teal-500 hover:from-teal-500 hover:to-teal-600 text-white rounded-full"
+                    className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-600 text-white rounded-full"
                     onClick={() => { setIsOpen(false); setLocation('/auth'); }}
                   >
                     Login

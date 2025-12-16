@@ -106,7 +106,7 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <span className="text-teal-500 font-medium text-sm uppercase tracking-wider">For Clients</span>
+            <span className="text-amber-600 font-medium text-sm uppercase tracking-wider">For Clients</span>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2">Your Beauty, Your Way</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mt-4">
               Stop scrolling through endless social media pages. Find verified, reviewed professionals in seconds.
@@ -156,7 +156,7 @@ export default function Home() {
                 <Card className="h-full border-none shadow-md hover:shadow-lg transition-shadow bg-gradient-to-br from-white to-stone-50/30">
                   <CardContent className="p-6">
                     <div className="h-12 w-12 rounded-full bg-stone-100 flex items-center justify-center mb-4">
-                      <feature.icon className="h-6 w-6 text-teal-500" />
+                      <feature.icon className="h-6 w-6 text-amber-600" />
                     </div>
                     <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
                     <p className="text-muted-foreground text-sm">{feature.description}</p>
@@ -178,7 +178,7 @@ export default function Home() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <span className="text-teal-500 font-medium text-sm uppercase tracking-wider">For Professionals</span>
+              <span className="text-amber-600 font-medium text-sm uppercase tracking-wider">For Professionals</span>
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2 mb-6">
                 Stop Leaving Money on the Table
               </h2>
@@ -199,7 +199,7 @@ export default function Home() {
                   "Accept tips and payments seamlessly"
                 ].map((benefit, index) => (
                   <div key={index} className="flex items-start gap-3">
-                    <div className="h-6 w-6 rounded-full bg-teal-500 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="h-6 w-6 rounded-full bg-amber-600 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="h-4 w-4 text-white" />
                     </div>
                     <p className="text-gray-700">{benefit}</p>
@@ -207,7 +207,7 @@ export default function Home() {
                 ))}
               </div>
 
-              <Button size="lg" className="mt-8 h-12 px-8 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 shadow-lg shadow-stone-200" asChild>
+              <Button size="lg" className="mt-8 h-12 px-8 rounded-full bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600 shadow-lg shadow-stone-200" asChild>
                 <Link href="/auth?type=business">
                   Start Growing Your Business
                 </Link>
@@ -229,8 +229,8 @@ export default function Home() {
               ].map((stat, index) => (
                 <Card key={index} className="border-none shadow-lg bg-white">
                   <CardContent className="p-6 text-center">
-                    <stat.icon className="h-8 w-8 text-teal-500 mx-auto mb-3" />
-                    <p className="text-3xl font-bold text-teal-600">{stat.number}</p>
+                    <stat.icon className="h-8 w-8 text-amber-600 mx-auto mb-3" />
+                    <p className="text-3xl font-bold text-amber-600">{stat.number}</p>
                     <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
                   </CardContent>
                 </Card>
@@ -352,7 +352,7 @@ export default function Home() {
                 </ul>
               </div>
               <div className="p-6 rounded-2xl bg-gradient-to-br from-stone-50 to-stone-100 border border-stone-100">
-                <h3 className="font-semibold text-lg mb-4 text-teal-600">With Pro Beauty List</h3>
+                <h3 className="font-semibold text-lg mb-4 text-amber-600">With Pro Beauty List</h3>
                 <ul className="space-y-3 text-left">
                   {[
                     "Search by location, service, and rating",
@@ -362,7 +362,7 @@ export default function Home() {
                     "Seamless in-app tipping and payments"
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-2 text-gray-700">
-                      <span className="text-teal-500">✓</span>
+                      <span className="text-amber-600">✓</span>
                       {item}
                     </li>
                   ))}
@@ -422,7 +422,7 @@ export default function Home() {
             ))}
           </div>
           <div className="text-center mt-10">
-            <Button variant="outline" size="lg" className="rounded-full border-stone-200 text-teal-600 hover:bg-stone-50" asChild>
+            <Button variant="outline" size="lg" className="rounded-full border-stone-200 text-amber-600 hover:bg-stone-50" asChild>
               <Link href="/search">View All Professionals</Link>
             </Button>
           </div>
@@ -433,7 +433,7 @@ export default function Home() {
       <section className="py-24 bg-white">
         <div className="container px-4 md:px-6">
           <div className="text-center mb-16 space-y-4">
-            <span className="text-teal-500 font-medium text-sm uppercase tracking-wider">Pricing</span>
+            <span className="text-amber-600 font-medium text-sm uppercase tracking-wider">Pricing</span>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif">Plans That Grow With You</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Start free. Upgrade when you're ready to unlock your full potential.
@@ -443,7 +443,7 @@ export default function Home() {
             <div className="flex items-center justify-center gap-4 mt-8" data-testid="billing-toggle-container">
               <Label 
                 htmlFor="billing-toggle" 
-                className={`text-sm font-medium cursor-pointer transition-colors ${billingPeriod === 'monthly' ? 'text-teal-600' : 'text-muted-foreground'}`}
+                className={`text-sm font-medium cursor-pointer transition-colors ${billingPeriod === 'monthly' ? 'text-amber-600' : 'text-muted-foreground'}`}
               >
                 Monthly
               </Label>
@@ -452,16 +452,16 @@ export default function Home() {
                 data-testid="billing-toggle"
                 checked={billingPeriod === 'yearly'}
                 onCheckedChange={(checked) => setBillingPeriod(checked ? 'yearly' : 'monthly')}
-                className="data-[state=checked]:bg-teal-500"
+                className="data-[state=checked]:bg-amber-600"
               />
               <div className="flex items-center gap-2">
                 <Label 
                   htmlFor="billing-toggle" 
-                  className={`text-sm font-medium cursor-pointer transition-colors ${billingPeriod === 'yearly' ? 'text-teal-600' : 'text-muted-foreground'}`}
+                  className={`text-sm font-medium cursor-pointer transition-colors ${billingPeriod === 'yearly' ? 'text-amber-600' : 'text-muted-foreground'}`}
                 >
                   Yearly
                 </Label>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700">
                   Save 15%
                 </span>
               </div>
@@ -482,7 +482,7 @@ export default function Home() {
                     : 'border-border/50 shadow-md hover:shadow-lg'
                 }`} data-testid={`pricing-card-${plan.id}`}>
                   {plan.highlight && (
-                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-teal-400 via-teal-500 to-teal-400" />
+                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-500" />
                   )}
                   <CardHeader>
                     <h3 className="text-xl font-bold font-serif">{plan.name}</h3>
@@ -508,7 +508,7 @@ export default function Home() {
                             <p className="text-sm text-muted-foreground mt-1">
                               (${(plan.yearlyPriceValue / 12).toFixed(2)}/mo avg)
                             </p>
-                            <p className="text-sm text-green-600 font-medium mt-1">
+                            <p className="text-sm text-amber-600 font-medium mt-1">
                               Save ${getYearlySavings(plan).toFixed(2)} vs monthly
                             </p>
                           </>
@@ -520,14 +520,14 @@ export default function Home() {
                     <ul className="space-y-3">
                       {plan.features.map((feature, i) => (
                         <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                          <Check className="w-4 h-4 text-teal-500 shrink-0 mt-0.5" />
+                          <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                           <span>{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button className={`w-full rounded-full ${plan.highlight ? 'bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600 text-white' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
+                    <Button className={`w-full rounded-full ${plan.highlight ? 'bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600 text-white' : 'bg-white hover:bg-gray-50 text-foreground border border-input'}`} asChild>
                       <Link href={`/auth?plan=${plan.id}&billing=${billingPeriod}&type=business`}>
                         Choose {plan.name}
                       </Link>
@@ -577,7 +577,7 @@ export default function Home() {
                   {FEATURE_COMPARISON.map((category, catIndex) => (
                     <React.Fragment key={`cat-${catIndex}`}>
                       <tr className="bg-stone-50/50">
-                        <td colSpan={5} className="py-3 px-4 font-semibold text-teal-600 text-sm uppercase tracking-wider">
+                        <td colSpan={5} className="py-3 px-4 font-semibold text-amber-600 text-sm uppercase tracking-wider">
                           {category.category}
                         </td>
                       </tr>
@@ -587,7 +587,7 @@ export default function Home() {
                           <td className="text-center py-3 px-4">
                             {typeof feature.free === 'boolean' ? (
                               feature.free ? (
-                                <Check className="w-5 h-5 text-green-500 mx-auto" />
+                                <Check className="w-5 h-5 text-amber-600 mx-auto" />
                               ) : (
                                 <X className="w-5 h-5 text-gray-300 mx-auto" />
                               )
@@ -598,7 +598,7 @@ export default function Home() {
                           <td className="text-center py-3 px-4">
                             {typeof feature.bronze === 'boolean' ? (
                               feature.bronze ? (
-                                <Check className="w-5 h-5 text-green-500 mx-auto" />
+                                <Check className="w-5 h-5 text-amber-600 mx-auto" />
                               ) : (
                                 <X className="w-5 h-5 text-gray-300 mx-auto" />
                               )
@@ -609,7 +609,7 @@ export default function Home() {
                           <td className="text-center py-3 px-4">
                             {typeof feature.silver === 'boolean' ? (
                               feature.silver ? (
-                                <Check className="w-5 h-5 text-green-500 mx-auto" />
+                                <Check className="w-5 h-5 text-amber-600 mx-auto" />
                               ) : (
                                 <X className="w-5 h-5 text-gray-300 mx-auto" />
                               )
@@ -640,7 +640,7 @@ export default function Home() {
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-gradient-to-br from-teal-100 to-emerald-100">
+      <section className="py-20 bg-gradient-to-br from-amber-100 to-amber-100">
         <div className="container px-4 md:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -657,12 +657,12 @@ export default function Home() {
               Pro Beauty List is where it all happens.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="h-12 px-8 text-lg rounded-full bg-white text-teal-600 hover:bg-stone-50 shadow-lg" asChild>
+              <Button size="lg" className="h-12 px-8 text-lg rounded-full bg-white text-amber-600 hover:bg-stone-50 shadow-lg" asChild>
                 <Link href="/auth">
                   Get Started Free
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 border-white/50 text-teal-600 hover:bg-white/20" asChild>
+              <Button size="lg" variant="outline" className="h-12 px-8 text-lg rounded-full border-2 border-white/50 text-amber-600 hover:bg-white/20" asChild>
                 <Link href="/search">
                   Browse Professionals
                 </Link>

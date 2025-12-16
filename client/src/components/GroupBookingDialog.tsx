@@ -128,7 +128,7 @@ export function GroupBookingDialog({ businessId, businessName, services, open, o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto" data-testid="group-booking-dialog">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-teal-700">
+          <DialogTitle className="flex items-center gap-2 text-amber-700">
             <Users className="w-5 h-5" />
             Group Booking - {businessName}
           </DialogTitle>
@@ -141,11 +141,11 @@ export function GroupBookingDialog({ businessId, businessName, services, open, o
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                step >= s ? "bg-teal-600 text-white" : "bg-gray-200 text-gray-500"
+                step >= s ? "bg-amber-600 text-white" : "bg-gray-200 text-gray-500"
               }`}>
                 {step > s ? <Check className="w-4 h-4" /> : s}
               </div>
-              {s < 3 && <div className={`w-12 h-1 ${step > s ? "bg-teal-600" : "bg-gray-200"}`} />}
+              {s < 3 && <div className={`w-12 h-1 ${step > s ? "bg-amber-600" : "bg-gray-200"}`} />}
             </div>
           ))}
         </div>
@@ -205,7 +205,7 @@ export function GroupBookingDialog({ businessId, businessName, services, open, o
                 <Card key={index} className="border-stone-100">
                   <CardContent className="p-4 space-y-3">
                     <div className="flex justify-between items-center">
-                      <Badge variant="outline" className="bg-stone-50 text-teal-700">
+                      <Badge variant="outline" className="bg-stone-50 text-amber-700">
                         Guest {index + 1}
                       </Badge>
                       {guests.length > 1 && (
@@ -293,7 +293,7 @@ export function GroupBookingDialog({ businessId, businessName, services, open, o
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Total Price</span>
-                  <span className="font-bold text-lg text-teal-700">${totalPrice.toFixed(2)}</span>
+                  <span className="font-bold text-lg text-amber-700">${totalPrice.toFixed(2)}</span>
                 </div>
                 {locationNote && (
                   <div className="pt-2 border-t">
@@ -311,7 +311,7 @@ export function GroupBookingDialog({ businessId, businessName, services, open, o
                     <span className="font-medium">{guest.name}</span>
                     <span className="text-sm text-muted-foreground ml-2">{guest.serviceName}</span>
                   </div>
-                  <span className="text-teal-600 font-medium">{guest.servicePrice}</span>
+                  <span className="text-amber-600 font-medium">{guest.servicePrice}</span>
                 </div>
               ))}
             </div>
@@ -333,7 +333,7 @@ export function GroupBookingDialog({ businessId, businessName, services, open, o
               onClick={() => setStep(step + 1)}
               disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
               data-testid="button-next-step"
-              className="bg-teal-600 hover:bg-teal-700"
+              className="bg-amber-600 hover:bg-amber-700"
             >
               Next <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
@@ -342,7 +342,7 @@ export function GroupBookingDialog({ businessId, businessName, services, open, o
               onClick={() => createGroupBookingMutation.mutate()}
               disabled={!canSubmit || createGroupBookingMutation.isPending}
               data-testid="button-submit-group-booking"
-              className="bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-600 hover:to-emerald-600"
+              className="bg-gradient-to-r from-amber-600 to-amber-600 hover:from-amber-600 hover:to-amber-600"
             >
               {createGroupBookingMutation.isPending ? "Creating..." : "Confirm Group Booking"}
             </Button>
