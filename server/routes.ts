@@ -11,6 +11,7 @@ import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertReviewPhotoSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema, insertInspirationBoardItemSchema, insertStaffMemberSchema, insertFollowUpSettingsSchema, insertClientNoteSchema, insertGiftCardSchema, insertSocialMediaSettingsSchema, insertExpenseSchema } from "@shared/schema";
 import { sendPasswordResetEmail, sendWelcomeEmail, sendBookingConfirmationEmail, sendBusinessBookingNotificationEmail } from "./services/emailService";
+import { logNewBusinessRegistration } from "./services/businessLogger";
 import crypto from "crypto";
 
 const PgSession = ConnectPgSimple(session);
@@ -323,6 +324,27 @@ export async function registerRoutes(
       }
 
       const business = await storage.createBusiness(result.data);
+      
+      const owner = await storage.getUser(req.user!.id);
+      if (owner) {
+        logNewBusinessRegistration(
+          {
+            id: business.id,
+            name: business.name,
+            description: business.description,
+            address: business.address,
+            phone: business.phone,
+            tier: business.tier,
+          },
+          {
+            email: owner.email,
+            username: owner.username,
+            firstName: owner.firstName,
+            lastName: owner.lastName,
+          }
+        ).catch(err => console.error('[business-logger] Error:', err));
+      }
+      
       res.json(business);
     } catch (error) {
       next(error);
