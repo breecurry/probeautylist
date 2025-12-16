@@ -10,7 +10,7 @@ import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import bcrypt from "bcryptjs";
 import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertReviewPhotoSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema, insertInspirationBoardItemSchema, insertStaffMemberSchema, insertFollowUpSettingsSchema, insertClientNoteSchema, insertGiftCardSchema, insertSocialMediaSettingsSchema, insertExpenseSchema } from "@shared/schema";
-import { sendPasswordResetEmail } from "./services/emailService";
+import { sendPasswordResetEmail, sendWelcomeEmail, sendBookingConfirmationEmail, sendBusinessBookingNotificationEmail } from "./services/emailService";
 import crypto from "crypto";
 
 const PgSession = ConnectPgSimple(session);
@@ -156,10 +156,15 @@ export async function registerRoutes(
         password: hashedPassword,
       });
 
-      req.login({ id: user.id, username: user.username, email: user.email, role: user.role }, (err) => {
+      req.login({ id: user.id, username: user.username, email: user.email, role: user.role }, async (err) => {
         if (err) {
           return next(err);
         }
+        
+        // Send welcome email (non-blocking)
+        sendWelcomeEmail(user.email, user.username, user.role as 'client' | 'business_owner')
+          .catch(emailErr => console.error('[email] Welcome email failed:', emailErr));
+        
         return res.json({ id: user.id, username: user.username, email: user.email, role: user.role });
       });
     } catch (error: any) {
@@ -411,7 +416,35 @@ export async function registerRoutes(
               ? `Priority booking request for ${booking.serviceName} on ${new Date(booking.date).toLocaleDateString()}`
               : `New booking request for ${booking.serviceName} on ${new Date(booking.date).toLocaleDateString()}`,
           });
+          
+          // Send email notification to business owner (non-blocking)
+          const bookingDate = new Date(booking.date);
+          const bookingTime = bookingDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          
+          sendBusinessBookingNotificationEmail(
+            businessOwner.email,
+            businessOwner.username,
+            req.user!.username,
+            booking.serviceName,
+            bookingDate,
+            bookingTime
+          ).catch(emailErr => console.error('[email] Business booking notification failed:', emailErr));
         }
+        
+        // Send booking confirmation to client (non-blocking)
+        const clientBookingDate = new Date(booking.date);
+        const clientBookingTime = clientBookingDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        const depositAmountNum = booking.depositPaid && booking.depositAmount ? parseFloat(booking.depositAmount) : undefined;
+        
+        sendBookingConfirmationEmail(
+          req.user!.email,
+          req.user!.username,
+          business.name,
+          booking.serviceName,
+          clientBookingDate,
+          clientBookingTime,
+          depositAmountNum
+        ).catch(emailErr => console.error('[email] Booking confirmation failed:', emailErr));
       }
       
       res.json(booking);
