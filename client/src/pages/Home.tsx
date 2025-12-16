@@ -486,20 +486,33 @@ export default function Home() {
                   )}
                   <CardHeader>
                     <h3 className="text-xl font-bold font-serif">{plan.name}</h3>
-                    <div className="flex items-baseline gap-1 mt-2">
-                      <span className="text-3xl font-bold" data-testid={`price-${plan.id}`}>{getDisplayPrice(plan)}</span>
-                      {plan.priceValue > 0 && (
-                        <span className="text-muted-foreground text-sm">/mo</span>
-                      )}
-                    </div>
-                    {billingPeriod === 'yearly' && plan.priceValue > 0 && (
-                      <div className="mt-2 space-y-1">
-                        <p className="text-xs text-muted-foreground">
-                          Billed annually at ${plan.yearlyPriceValue.toFixed(2)}/year
-                        </p>
-                        <p className="text-xs text-green-600 font-medium">
-                          Save ${getYearlySavings(plan).toFixed(2)} per year
-                        </p>
+                    {billingPeriod === 'monthly' ? (
+                      <div className="flex items-baseline gap-1 mt-2">
+                        <span className="text-3xl font-bold" data-testid={`price-${plan.id}`}>{getDisplayPrice(plan)}</span>
+                        {plan.priceValue > 0 && (
+                          <span className="text-muted-foreground text-sm">/mo</span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="mt-2">
+                        {plan.priceValue === 0 ? (
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-bold" data-testid={`price-${plan.id}`}>Free</span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-3xl font-bold" data-testid={`price-${plan.id}`}>${plan.yearlyPriceValue.toFixed(2)}</span>
+                              <span className="text-muted-foreground text-sm">/year</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              (${(plan.yearlyPriceValue / 12).toFixed(2)}/mo avg)
+                            </p>
+                            <p className="text-sm text-green-600 font-medium mt-1">
+                              Save ${getYearlySavings(plan).toFixed(2)} vs monthly
+                            </p>
+                          </>
+                        )}
                       </div>
                     )}
                   </CardHeader>
@@ -540,9 +553,24 @@ export default function Home() {
                   <tr className="border-b-2 border-stone-200">
                     <th className="text-left py-4 px-4 font-semibold text-gray-700">Feature</th>
                     <th className="text-center py-4 px-4 font-semibold text-gray-700">Starter<br/><span className="text-sm font-normal text-muted-foreground">Free</span></th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Sm-Med Business<br/><span className="text-sm font-normal text-muted-foreground">{getDisplayPrice(PLANS[1])}/mo</span></th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Pro<br/><span className="text-sm font-normal text-muted-foreground">{getDisplayPrice(PLANS[2])}/mo</span></th>
-                    <th className="text-center py-4 px-4 font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-t-lg">Pro Premier 👑<br/><span className="text-sm font-normal text-amber-600">{getDisplayPrice(PLANS[3])}/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">
+                      Sm-Med Business<br/>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {billingPeriod === 'monthly' ? '$0.99/mo' : `$${PLANS[1].yearlyPriceValue.toFixed(2)}/yr`}
+                      </span>
+                    </th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">
+                      Pro<br/>
+                      <span className="text-sm font-normal text-muted-foreground">
+                        {billingPeriod === 'monthly' ? '$5.00/mo' : `$${PLANS[2].yearlyPriceValue.toFixed(2)}/yr`}
+                      </span>
+                    </th>
+                    <th className="text-center py-4 px-4 font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-t-lg">
+                      Pro Premier 👑<br/>
+                      <span className="text-sm font-normal text-amber-600">
+                        {billingPeriod === 'monthly' ? '$20.00/mo' : `$${PLANS[3].yearlyPriceValue.toFixed(2)}/yr`}
+                      </span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
