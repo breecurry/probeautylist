@@ -55,7 +55,7 @@ export const PLANS = [
   },
   {
     id: 'bronze',
-    name: 'Sm-Med Business',
+    name: 'Growth',
     price: '$0.99',
     priceValue: 0.99,
     yearlyPriceValue: 10.09, // $0.99 * 12 * 0.85 = $10.09/year ($0.84/mo)
@@ -87,7 +87,7 @@ export const PLANS = [
     yearlyPriceValue: 51.00, // $5.00 * 12 * 0.85 = $51.00/year ($4.25/mo)
     description: 'For established professionals',
     features: [
-      'Everything in Sm-Med Business',
+      'Everything in Growth',
       'Portfolio (30 Photos)',
       'Waitlist Management',
       'Style Inspiration Board',

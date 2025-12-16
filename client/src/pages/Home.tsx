@@ -554,7 +554,7 @@ export default function Home() {
                     <th className="text-left py-4 px-4 font-semibold text-gray-700">Feature</th>
                     <th className="text-center py-4 px-4 font-semibold text-gray-700">Starter<br/><span className="text-sm font-normal text-muted-foreground">Free</span></th>
                     <th className="text-center py-4 px-4 font-semibold text-gray-700">
-                      Sm-Med Business<br/>
+                      Growth<br/>
                       <span className="text-sm font-normal text-muted-foreground">
                         {billingPeriod === 'monthly' ? '$0.99/mo' : `$${PLANS[1].yearlyPriceValue.toFixed(2)}/yr`}
                       </span>
@@ -676,7 +676,7 @@ export default function Home() {
       <footer className="py-8 bg-white border-t border-stone-100">
         <div className="container px-4 md:px-6 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2024 Pro Beauty List. Elevating beauty, one appointment at a time.
+            © 2025 Pro Beauty List. Elevating beauty, one appointment at a time.
           </p>
         </div>
       </footer>
