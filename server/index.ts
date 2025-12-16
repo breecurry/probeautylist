@@ -133,10 +133,8 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await initStripe();
+  // Register routes first so health checks pass quickly
   await registerRoutes(httpServer, app);
-  
-  startNotificationScheduler();
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
@@ -169,6 +167,10 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      
+      // Initialize Stripe and scheduler AFTER server is listening (for faster health checks)
+      initStripe().catch(err => console.error('Stripe init error:', err));
+      startNotificationScheduler();
     },
   );
 })();
