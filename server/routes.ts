@@ -182,8 +182,23 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/auth/login", passport.authenticate("local"), (req, res) => {
-    res.json(req.user);
+  app.post("/api/auth/login", (req, res, next) => {
+    passport.authenticate("local", (err: any, user: any, info: any) => {
+      if (err) {
+        console.error('[auth] Login error:', err);
+        return res.status(500).json({ message: "Login failed. Please try again." });
+      }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || "Invalid username/email or password" });
+      }
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error('[auth] Session login error:', loginErr);
+          return res.status(500).json({ message: "Login failed. Please try again." });
+        }
+        return res.json(user);
+      });
+    })(req, res, next);
   });
 
   app.post("/api/auth/logout", (req, res) => {
