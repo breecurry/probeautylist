@@ -50,7 +50,7 @@ export const PLANS = [
   },
   {
     id: 'bronze',
-    name: 'Bronze',
+    name: 'Sm-Med Business',
     price: '$0.99',
     priceValue: 0.99,
     description: 'Great for growing businesses',
@@ -78,12 +78,12 @@ export const PLANS = [
   },
   {
     id: 'silver',
-    name: 'Silver',
+    name: 'Pro',
     price: '$5.00',
     priceValue: 5.00,
     description: 'For established professionals',
     features: [
-      'Everything in Bronze',
+      'Everything in Sm-Med Business',
       'Unlimited Portfolio',
       'Top of Search Results',
     ],
@@ -98,12 +98,12 @@ export const PLANS = [
   },
   {
     id: 'gold',
-    name: 'Gold',
+    name: 'Pro Premier 👑',
     price: '$20.00',
     priceValue: 20.00,
     description: 'Premium features for top performers',
     features: [
-      'Everything in Silver',
+      'Everything in Pro',
       'Smart Rebooking',
       'Automated Follow-ups',
       'Social Media Integration',
@@ -151,18 +151,18 @@ export const FEATURE_COMPARISON = [
     { name: 'Staff Management', free: false, bronze: true, silver: true, gold: true },
     { name: 'Online Gift Cards', free: false, bronze: true, silver: true, gold: true },
   ]},
-  { category: 'Automation (Gold Only)', features: [
+  { category: 'Automation (Pro Premier Only)', features: [
     { name: 'Smart Rebooking', free: false, bronze: false, silver: false, gold: true },
     { name: 'Automated Follow-ups', free: false, bronze: false, silver: false, gold: true },
     { name: 'Social Media Integration', free: false, bronze: false, silver: false, gold: true },
   ]},
-  { category: 'Analytics & Growth (Gold Only)', features: [
+  { category: 'Analytics & Growth (Pro Premier Only)', features: [
     { name: 'Expense Tracking & Profit', free: false, bronze: false, silver: false, gold: true },
     { name: 'Business Analytics Dashboard', free: false, bronze: false, silver: false, gold: true },
     { name: 'Loyalty & Referral Program', free: false, bronze: false, silver: false, gold: true },
     { name: 'AI Growth Insights', free: false, bronze: false, silver: false, gold: true },
   ]},
-  { category: 'Premium Perks (Gold Only)', features: [
+  { category: 'Premium Perks (Pro Premier Only)', features: [
     { name: 'VIP Spotlight Placement', free: false, bronze: false, silver: false, gold: true },
     { name: 'Priority Booking Experience', free: false, bronze: false, silver: false, gold: true },
   ]},

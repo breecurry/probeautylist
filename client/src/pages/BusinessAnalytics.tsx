@@ -178,9 +178,9 @@ export default function BusinessAnalytics() {
           <Card className="max-w-md mx-auto border-amber-200 bg-gradient-to-br from-amber-50 to-white">
             <CardContent className="pt-6 text-center">
               <Crown className="h-12 w-12 text-amber-500 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Gold Tier Required</h2>
+              <h2 className="text-xl font-semibold mb-2">Pro Premier Tier Required</h2>
               <p className="text-muted-foreground mb-4">
-                Business Intelligence Dashboard is an exclusive feature for Gold tier businesses.
+                Business Intelligence Dashboard is an exclusive feature for Pro Premier tier businesses.
                 Upgrade to unlock powerful analytics and insights.
               </p>
               <Button 
@@ -188,7 +188,7 @@ export default function BusinessAnalytics() {
                 className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700"
                 data-testid="button-upgrade-gold"
               >
-                Upgrade to Gold
+                Upgrade to Pro Premier
               </Button>
             </CardContent>
           </Card>
@@ -210,7 +210,7 @@ export default function BusinessAnalytics() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900" data-testid="text-analytics-title">Business Intelligence</h1>
-            <p className="text-muted-foreground">Insights and analytics for your Gold tier business</p>
+            <p className="text-muted-foreground">Insights and analytics for your Pro Premier tier business</p>
           </div>
           
           {goldBusinesses.length > 1 && (

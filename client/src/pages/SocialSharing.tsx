@@ -204,15 +204,15 @@ export default function SocialSharing() {
           <Card className="max-w-md mx-auto border-amber-200 bg-gradient-to-br from-amber-50 to-white">
             <CardHeader className="text-center">
               <Crown className="h-12 w-12 text-amber-500 mx-auto mb-2" />
-              <CardTitle className="text-amber-900">Gold Tier Required</CardTitle>
+              <CardTitle className="text-amber-900">Pro Premier Tier Required</CardTitle>
               <CardDescription className="text-amber-700">
-                Social sharing is a premium feature available exclusively for Gold tier businesses.
-                Upgrade to Gold to promote your services on social media.
+                Social sharing is a premium feature available exclusively for Pro Premier tier businesses.
+                Upgrade to Pro Premier to promote your services on social media.
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <Button onClick={() => setLocation("/my-businesses")} className="bg-amber-500 hover:bg-amber-600">
-                Upgrade to Gold
+                Upgrade to Pro Premier
               </Button>
             </CardContent>
           </Card>
@@ -444,7 +444,7 @@ export default function SocialSharing() {
             <Card className="bg-gradient-to-br from-stone-50 to-white">
               <CardContent className="pt-6 text-center">
                 <Crown className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-                <p className="text-sm font-medium text-gray-900 mb-1">Gold Member Benefit</p>
+                <p className="text-sm font-medium text-gray-900 mb-1">Pro Premier Member Benefit</p>
                 <p className="text-xs text-gray-600">
                   Social sharing helps you reach more clients and fill your appointment book faster.
                 </p>

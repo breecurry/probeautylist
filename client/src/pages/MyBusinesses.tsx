@@ -99,7 +99,7 @@ function BusinessCard({ business }: { business: Business }) {
           {business.tier === 'gold' && (
             <Badge className="bg-yellow-500 text-white" data-testid={`badge-gold-${business.id}`}>
               <Crown className="h-3 w-3 mr-1" />
-              Gold
+              Pro Premier 👑
             </Badge>
           )}
         </CardTitle>

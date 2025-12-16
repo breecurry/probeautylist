@@ -237,7 +237,7 @@ export default function Home() {
             </div>
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl font-serif mt-2">Featured Professionals</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto mt-4">
-              Our top-rated Gold tier professionals offering exceptional service and premium experiences.
+              Our top-rated Pro Premier tier professionals offering exceptional service and premium experiences.
             </p>
           </motion.div>
 
@@ -260,7 +260,7 @@ export default function Home() {
                       />
                       <div className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
                         <Crown className="w-3.5 h-3.5" />
-                        <span>GOLD</span>
+                        <span>PRO PREMIER</span>
                       </div>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </div>
@@ -481,9 +481,9 @@ export default function Home() {
                   <tr className="border-b-2 border-stone-200">
                     <th className="text-left py-4 px-4 font-semibold text-gray-700">Feature</th>
                     <th className="text-center py-4 px-4 font-semibold text-gray-700">Starter<br/><span className="text-sm font-normal text-muted-foreground">Free</span></th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Bronze<br/><span className="text-sm font-normal text-muted-foreground">$0.99/mo</span></th>
-                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Silver<br/><span className="text-sm font-normal text-muted-foreground">$5/mo</span></th>
-                    <th className="text-center py-4 px-4 font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-t-lg">Gold<br/><span className="text-sm font-normal text-amber-600">$20/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Sm-Med Business<br/><span className="text-sm font-normal text-muted-foreground">$0.99/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold text-gray-700">Pro<br/><span className="text-sm font-normal text-muted-foreground">$5/mo</span></th>
+                    <th className="text-center py-4 px-4 font-semibold bg-gradient-to-r from-amber-50 to-yellow-50 text-amber-700 rounded-t-lg">Pro Premier 👑<br/><span className="text-sm font-normal text-amber-600">$20/mo</span></th>
                   </tr>
                 </thead>
                 <tbody>
