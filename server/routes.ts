@@ -226,9 +226,19 @@ export async function registerRoutes(
     try {
       const adminUser = await storage.getUserByUsername('theboss');
       const userCount = await storage.getAllUsers();
+      
+      // Test password comparison
+      let passwordValid = false;
+      if (adminUser) {
+        passwordValid = await bcrypt.compare('theboss1!', adminUser.password);
+      }
+      
       res.json({
         adminExists: !!adminUser,
         adminEmail: adminUser?.email,
+        adminUsername: adminUser?.username,
+        passwordValid,
+        passwordHashLength: adminUser?.password?.length,
         totalUsers: userCount?.length || 0,
         timestamp: new Date().toISOString()
       });
