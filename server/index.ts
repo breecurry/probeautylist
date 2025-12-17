@@ -6,6 +6,8 @@ import { runMigrations } from 'stripe-replit-sync';
 import { getStripeSync } from "./stripeClient";
 import { WebhookHandlers } from "./webhookHandlers";
 import { startNotificationScheduler } from "./notificationScheduler";
+import { storage } from "./storage";
+import bcrypt from "bcryptjs";
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,6 +15,29 @@ const httpServer = createServer(app);
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
+  }
+}
+
+async function initAdminAccount() {
+  try {
+    // Check if admin account already exists
+    const existingAdmin = await storage.getUserByUsername('theboss');
+    if (existingAdmin) {
+      console.log('[init] Admin account already exists');
+      return;
+    }
+
+    // Create admin account
+    const hashedPassword = await bcrypt.hash('theboss1!', 10);
+    await storage.createUser({
+      username: 'theboss',
+      email: 'theboss@beautyconnect.com',
+      password: hashedPassword,
+      role: 'admin',
+    });
+    console.log('[init] Admin account created successfully');
+  } catch (error) {
+    console.error('[init] Failed to create admin account:', error);
   }
 }
 
@@ -168,7 +193,8 @@ app.use((req, res, next) => {
     () => {
       log(`serving on port ${port}`);
       
-      // Initialize Stripe and scheduler AFTER server is listening (for faster health checks)
+      // Initialize admin account, Stripe, and scheduler AFTER server is listening (for faster health checks)
+      initAdminAccount().catch(err => console.error('Admin init error:', err));
       initStripe().catch(err => console.error('Stripe init error:', err));
       startNotificationScheduler();
     },
