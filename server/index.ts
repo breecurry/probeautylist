@@ -20,15 +20,26 @@ declare module "http" {
 
 async function initAdminAccount() {
   try {
-    // Check if admin account already exists
     const existingAdmin = await storage.getUserByUsername('theboss');
+    const correctPassword = 'theboss1!';
+    const hashedPassword = await bcrypt.hash(correctPassword, 10);
+    
     if (existingAdmin) {
-      console.log('[init] Admin account already exists');
+      // Check if password hash is valid (bcrypt hashes are 60 chars)
+      const passwordValid = existingAdmin.password.length === 60 && 
+        await bcrypt.compare(correctPassword, existingAdmin.password);
+      
+      if (!passwordValid) {
+        console.log('[init] Admin password is invalid, resetting...');
+        await storage.updateUserPassword(existingAdmin.id, hashedPassword);
+        console.log('[init] Admin password reset successfully');
+      } else {
+        console.log('[init] Admin account already exists with valid password');
+      }
       return;
     }
 
     // Create admin account
-    const hashedPassword = await bcrypt.hash('theboss1!', 10);
     await storage.createUser({
       username: 'theboss',
       email: 'theboss@beautyconnect.com',
