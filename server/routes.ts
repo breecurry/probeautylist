@@ -221,32 +221,6 @@ export async function registerRoutes(
     res.json(req.user);
   });
 
-  // Diagnostic endpoint to check database status (temporary)
-  app.get("/api/debug/db-status", async (req, res) => {
-    try {
-      const adminUser = await storage.getUserByUsername('theboss');
-      const userCount = await storage.getAllUsers();
-      
-      // Test password comparison
-      let passwordValid = false;
-      if (adminUser) {
-        passwordValid = await bcrypt.compare('theboss1!', adminUser.password);
-      }
-      
-      res.json({
-        adminExists: !!adminUser,
-        adminEmail: adminUser?.email,
-        adminUsername: adminUser?.username,
-        passwordValid,
-        passwordHashLength: adminUser?.password?.length,
-        totalUsers: userCount?.length || 0,
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   // Password reset - request reset email
   app.post("/api/auth/forgot-password", async (req, res, next) => {
     try {
