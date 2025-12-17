@@ -221,6 +221,22 @@ export async function registerRoutes(
     res.json(req.user);
   });
 
+  // Diagnostic endpoint to check database status (temporary)
+  app.get("/api/debug/db-status", async (req, res) => {
+    try {
+      const adminUser = await storage.getUserByUsername('theboss');
+      const userCount = await storage.getAllUsers();
+      res.json({
+        adminExists: !!adminUser,
+        adminEmail: adminUser?.email,
+        totalUsers: userCount?.length || 0,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Password reset - request reset email
   app.post("/api/auth/forgot-password", async (req, res, next) => {
     try {
