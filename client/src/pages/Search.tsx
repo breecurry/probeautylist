@@ -40,21 +40,76 @@ export default function Search() {
   });
 
   const handleUseLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Location Not Supported",
+        description: "Your browser doesn't support location services.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLocating(true);
     
-    setTimeout(() => {
-      setIsLocating(false);
-      setSearchTerm("Downtown");
-      toast({
-        title: "Location Found",
-        description: "Showing professionals near Downtown, Cityville",
-      });
-    }, 1500);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          // Use reverse geocoding to get city name from coordinates
+          const { latitude, longitude } = position.coords;
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            { headers: { 'User-Agent': 'ProBeautyList/1.0' } }
+          );
+          if (!response.ok) {
+            throw new Error('Geocoding service unavailable');
+          }
+          const data = await response.json();
+          
+          // Extract city or town name
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || "";
+          const state = data.address?.state || "";
+          const locationText = city ? (state ? `${city}, ${state}` : city) : "";
+          
+          setSearchTerm(locationText);
+          setIsLocating(false);
+          toast({
+            title: "Location Found",
+            description: locationText ? `Showing professionals near ${locationText}` : "Location detected",
+          });
+        } catch (error) {
+          setIsLocating(false);
+          toast({
+            title: "Location Error",
+            description: "Couldn't determine your city. Please enter it manually.",
+            variant: "destructive",
+          });
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        let message = "Unable to get your location.";
+        if (error.code === error.PERMISSION_DENIED) {
+          message = "Location access denied. Please enable it in your browser settings.";
+        }
+        toast({
+          title: "Location Error",
+          description: message,
+          variant: "destructive",
+        });
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
   };
 
   const filteredBusinesses = businesses.filter(b => {
-    const matchesSearch = b.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          b.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const search = searchTerm.toLowerCase().trim();
+    // Match by name, location, address, or service type
+    const matchesSearch = !search || 
+                          b.name.toLowerCase().includes(search) || 
+                          (b.location && b.location.toLowerCase().includes(search)) ||
+                          (b.address && b.address.toLowerCase().includes(search)) ||
+                          (b.serviceType && b.serviceType.toLowerCase().includes(search)) ||
+                          (b.description && b.description.toLowerCase().includes(search));
     const matchesType = selectedType === "all" || b.serviceType === selectedType;
     return matchesSearch && matchesType;
   }).sort((a, b) => {
