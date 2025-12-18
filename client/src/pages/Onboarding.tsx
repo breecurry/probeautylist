@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
@@ -10,8 +10,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { SERVICE_TYPES, PLANS } from "@/lib/mock-data";
-import { Upload, CheckCircle } from "lucide-react";
+import { Upload, CheckCircle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function Onboarding() {
   const [location, setLocation] = useLocation();
@@ -71,48 +73,154 @@ export default function Onboarding() {
 }
 
 function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: any) => void, initialPlan: string | null }) {
-  const { register, handleSubmit } = useForm();
-  
+  const { register, handleSubmit, setValue } = useForm();
+  const [selectedPlan, setSelectedPlan] = useState(initialPlan || 'free');
+  const [serviceType, setServiceType] = useState(SERVICE_TYPES[0]);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
+
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: "Please upload a file smaller than 10MB",
+          variant: "destructive"
+        });
+        return;
+      }
+      setUploadedFile(file);
+    }
+  };
+
+  const handlePlanSelect = (planId: string) => {
+    setSelectedPlan(planId);
+  };
+
+  const handleFormSubmit = async (data: any) => {
+    if (!uploadedFile) {
+      toast({
+        title: "Certification Required",
+        description: "Please upload your cosmetology license or certificate",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      const formData = {
+        ...data,
+        serviceType,
+        tier: selectedPlan,
+        certificationFileName: uploadedFile.name
+      };
+      
+      await onSubmit(formData);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to submit. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Card className="border-none shadow-xl shadow-stone-100">
-      <form onSubmit={handleSubmit(onSubmit)}>
+      <form onSubmit={handleSubmit(handleFormSubmit)}>
         <CardContent className="space-y-6 pt-6">
           <div className="space-y-2">
             <Label htmlFor="businessName">Business Name</Label>
-            <Input id="businessName" placeholder="e.g. Glow Beauty Studio" required {...register("businessName")} />
+            <Input 
+              id="businessName" 
+              placeholder="e.g. Glow Beauty Studio" 
+              required 
+              {...register("businessName")} 
+              data-testid="input-business-name"
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Primary Service Type</Label>
-              <Select defaultValue={SERVICE_TYPES[0]}>
-                <SelectTrigger>
+              <Select value={serviceType} onValueChange={setServiceType}>
+                <SelectTrigger data-testid="select-service-type">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
                   {SERVICE_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                    <SelectItem key={t} value={t} data-testid={`option-service-${t}`}>{t}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="yearsExp">Years of Experience</Label>
-              <Input id="yearsExp" type="number" min="0" placeholder="e.g. 5" {...register("yearsExp")} />
+              <Input 
+                id="yearsExp" 
+                type="number" 
+                min="0" 
+                placeholder="e.g. 5" 
+                {...register("yearsExp")} 
+                data-testid="input-years-exp"
+              />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="bio">Business Bio</Label>
-            <Textarea id="bio" placeholder="Tell clients about your style and expertise..." className="min-h-[100px]" {...register("bio")} />
+            <Textarea 
+              id="bio" 
+              placeholder="Tell clients about your style and expertise..." 
+              className="min-h-[100px]" 
+              {...register("bio")} 
+              data-testid="input-bio"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Certification / License (Required)</Label>
-            <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer bg-gray-50/50">
-              <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">Click to upload your cosmetology license or certificate</p>
-              <input type="file" className="hidden" required />
+            <div 
+              onClick={handleFileClick}
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+                uploadedFile 
+                  ? 'border-primary bg-primary/5' 
+                  : 'border-gray-200 hover:border-primary/50 bg-gray-50/50'
+              }`}
+              data-testid="upload-certification"
+            >
+              {uploadedFile ? (
+                <>
+                  <FileText className="w-8 h-8 mx-auto text-primary mb-2" />
+                  <p className="text-sm font-medium text-primary">{uploadedFile.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Click to change file</p>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">Click to upload your cosmetology license or certificate</p>
+                </>
+              )}
+              <input 
+                ref={fileInputRef}
+                type="file" 
+                className="hidden" 
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                onChange={handleFileChange}
+                data-testid="input-file"
+              />
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               * Your profile will not be public until an admin verifies your credentials.
@@ -125,11 +233,13 @@ function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: an
               {PLANS.map((plan) => (
                 <div 
                   key={plan.id}
+                  onClick={() => handlePlanSelect(plan.id)}
                   className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                    (initialPlan === plan.id || (!initialPlan && plan.id === 'silver'))
-                      ? 'border-primary bg-stone-50 ring-1 ring-primary' 
-                      : 'hover:bg-gray-50'
+                    selectedPlan === plan.id
+                      ? 'border-primary bg-stone-50 ring-2 ring-primary' 
+                      : 'hover:bg-gray-50 hover:border-gray-300'
                   }`}
+                  data-testid={`plan-${plan.id}`}
                 >
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-semibold">{plan.name}</span>
@@ -140,14 +250,25 @@ function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: an
                       <li key={i}>{f}</li>
                     ))}
                   </ul>
+                  {selectedPlan === plan.id && (
+                    <div className="mt-2 flex items-center text-primary text-xs font-medium">
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      Selected
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 h-12 text-lg">
-            Submit for Approval
+          <Button 
+            type="submit" 
+            className="w-full bg-primary hover:bg-primary/90 h-12 text-lg"
+            disabled={isSubmitting}
+            data-testid="button-submit"
+          >
+            {isSubmitting ? "Submitting..." : "Submit for Approval"}
           </Button>
         </CardFooter>
       </form>
