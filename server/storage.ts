@@ -49,7 +49,7 @@ export interface IStorage {
   getBusiness(id: string): Promise<Business | undefined>;
   getBusinessesByOwner(ownerId: string): Promise<Business[]>;
   getApprovedBusinesses(): Promise<Business[]>;
-  getPendingBusinesses(): Promise<Business[]>;
+  getPendingBusinesses(): Promise<(Business & { ownerUsername: string; ownerEmail: string })[]>;
   createBusiness(business: InsertBusiness): Promise<Business>;
   updateBusiness(id: string, data: Partial<Business>): Promise<Business | undefined>;
   approveBusiness(id: string): Promise<Business | undefined>;
@@ -274,8 +274,35 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(businesses).where(eq(businesses.approved, true)).orderBy(desc(businesses.createdAt));
   }
 
-  async getPendingBusinesses(): Promise<Business[]> {
-    return db.select().from(businesses).where(eq(businesses.approved, false)).orderBy(desc(businesses.createdAt));
+  async getPendingBusinesses(): Promise<(Business & { ownerUsername: string; ownerEmail: string })[]> {
+    const result = await db.select({
+      id: businesses.id,
+      ownerId: businesses.ownerId,
+      name: businesses.name,
+      serviceType: businesses.serviceType,
+      description: businesses.description,
+      location: businesses.location,
+      address: businesses.address,
+      phone: businesses.phone,
+      image: businesses.image,
+      tier: businesses.tier,
+      approved: businesses.approved,
+      funFacts: businesses.funFacts,
+      depositRequired: businesses.depositRequired,
+      depositAmount: businesses.depositAmount,
+      advanceNoticeHours: businesses.advanceNoticeHours,
+      rebookingEnabled: businesses.rebookingEnabled,
+      defaultRebookingDays: businesses.defaultRebookingDays,
+      noShowThreshold: businesses.noShowThreshold,
+      createdAt: businesses.createdAt,
+      ownerUsername: users.username,
+      ownerEmail: users.email
+    })
+    .from(businesses)
+    .leftJoin(users, eq(businesses.ownerId, users.id))
+    .where(eq(businesses.approved, false))
+    .orderBy(desc(businesses.createdAt));
+    return result as (Business & { ownerUsername: string; ownerEmail: string })[];
   }
 
   async createBusiness(business: InsertBusiness): Promise<Business> {
