@@ -356,7 +356,12 @@ export async function registerRoutes(
 
       const business = await storage.createBusiness(result.data);
       
+      // Upgrade user role to business_owner if they're currently a client
       const owner = await storage.getUser(req.user!.id);
+      if (owner && owner.role === 'client') {
+        await storage.updateUserRole(req.user!.id, 'business_owner');
+      }
+      
       if (owner) {
         logNewBusinessRegistration(
           {

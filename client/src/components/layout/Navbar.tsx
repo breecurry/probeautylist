@@ -151,6 +151,12 @@ export function Navbar() {
                   <Calendar className="mr-2 h-4 w-4" />
                   My Bookings
                 </DropdownMenuItem>
+                {user?.role === 'client' && (
+                  <DropdownMenuItem onClick={() => setLocation('/onboarding')} data-testid="dropdown-register-business">
+                    <Store className="mr-2 h-4 w-4" />
+                    Register Your Business
+                  </DropdownMenuItem>
+                )}
                 {user?.role === 'business_owner' && (
                   <>
                     <DropdownMenuItem onClick={() => setLocation('/my-businesses')} data-testid="dropdown-my-businesses">
@@ -245,6 +251,17 @@ export function Navbar() {
                 >
                   <Shield className="h-4 w-4" />
                   Admin Panel
+                </button>
+              )}
+
+              {user?.role === 'client' && (
+                <button 
+                  onClick={() => handleNavigation('/onboarding')}
+                  className="flex items-center gap-3 text-sm font-medium py-2.5 px-3 rounded-lg hover:bg-stone-50 text-gray-600 hover:text-amber-600 transition-colors text-left"
+                  data-testid="mobile-register-business"
+                >
+                  <Store className="h-4 w-4" />
+                  Register Your Business
                 </button>
               )}
 
