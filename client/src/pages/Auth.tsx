@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,22 @@ export default function Auth() {
   const { toast } = useToast();
   const { refreshUser } = useAuth();
   
+  // Preserve query params for plan selection
+  const searchParams = new URLSearchParams(window.location.search);
+  const planParam = searchParams.get("plan");
+  const billingParam = searchParams.get("billing");
+  const typeParam = searchParams.get("type");
+  
+  // Auto-select business role if coming from pricing page
+  const initialRole = typeParam === "business" ? "business" : "client";
+  
   const [loginData, setLoginData] = useState({ usernameOrEmail: "", password: "" });
   const [signupData, setSignupData] = useState({ username: "", email: "", password: "", firstName: "", lastName: "" });
+  
+  // Set role based on URL param on mount
+  useEffect(() => {
+    if (typeParam === "business") setRole("business");
+  }, [typeParam]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +78,10 @@ export default function Auth() {
       });
       
       if (role === 'business') {
-        setLocation('/onboarding?type=business');
+        const onboardingParams = new URLSearchParams({ type: 'business' });
+        if (planParam) onboardingParams.set('plan', planParam);
+        if (billingParam) onboardingParams.set('billing', billingParam);
+        setLocation(`/onboarding?${onboardingParams.toString()}`);
       } else {
         setLocation('/search');
       }

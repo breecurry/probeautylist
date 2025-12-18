@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
@@ -12,12 +12,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { SERVICE_TYPES, PLANS } from "@/lib/mock-data";
 import { Upload, CheckCircle, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { createBusiness, createSubscriptionCheckout } from "@/lib/api";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Onboarding() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Parse query params manually since wouter doesn't provide a hook for it
   const searchParams = new URLSearchParams(window.location.search);
@@ -27,19 +28,88 @@ export default function Onboarding() {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = (data: any) => {
-    setIsSubmitting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+  const onBusinessSubmit = async (data: any) => {
+    if (!user) {
       toast({
-        title: "Profile Created!",
-        description: type === 'business' 
-          ? "Your business profile is under review. We'll notify you once approved."
-          : "Welcome! Your preferences have been saved.",
+        title: "Not logged in",
+        description: "Please log in to create a business",
+        variant: "destructive"
       });
-      setLocation(type === 'business' ? '/profile/1' : '/search');
-    }, 1500);
+      setLocation('/auth?type=business');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Map plan IDs to tier names for the database
+      const tierMapping: Record<string, string> = {
+        'free': 'free',
+        'bronze': 'bronze',
+        'silver': 'silver', 
+        'gold': 'gold'
+      };
+      const selectedTier = tierMapping[data.tier] || 'free';
+      
+      // Create the business in database - start as free, Stripe webhook will upgrade
+      const business = await createBusiness({
+        name: data.businessName,
+        description: data.bio || '',
+        serviceType: data.serviceType,
+        tier: 'free', // Always start as free, Stripe will upgrade on successful payment
+        ownerId: user.id,
+        approved: false,
+        location: data.location || '',
+        address: data.location || '',
+        phone: '',
+      });
+
+      // If paid plan selected, redirect to Stripe checkout
+      console.log('[onboarding] Business created, tier from form:', data.tier, 'selectedTier:', selectedTier, 'business id:', business.id);
+      if (selectedTier && selectedTier !== 'free') {
+        console.log('[onboarding] Attempting Stripe checkout for tier:', selectedTier);
+        try {
+          const checkoutResult = await createSubscriptionCheckout(business.id, selectedTier);
+          console.log('[onboarding] Checkout result:', checkoutResult);
+          if (checkoutResult.url) {
+            console.log('[onboarding] Redirecting to:', checkoutResult.url);
+            window.location.href = checkoutResult.url;
+            return;
+          }
+        } catch (checkoutError: any) {
+          console.error('[onboarding] Checkout error:', checkoutError);
+          toast({
+            title: "Checkout Error",
+            description: "Business created but couldn't start checkout. You can upgrade from your profile.",
+            variant: "destructive"
+          });
+        }
+      } else {
+        console.log('[onboarding] Free tier selected, skipping checkout');
+      }
+
+      // For free plan, just show success and redirect
+      toast({
+        title: "Business Created!",
+        description: "Your business profile is under review. We'll notify you once approved.",
+      });
+      setLocation(`/profile/${business.id}`);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create business. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onClientSubmit = (data: any) => {
+    toast({
+      title: "Welcome!",
+      description: "Your preferences have been saved.",
+    });
+    setLocation('/search');
   };
 
   return (
@@ -62,9 +132,9 @@ export default function Onboarding() {
           transition={{ duration: 0.5 }}
         >
           {type === 'business' ? (
-            <BusinessOnboardingForm onSubmit={onSubmit} initialPlan={planId} />
+            <BusinessOnboardingForm onSubmit={onBusinessSubmit} initialPlan={planId} isSubmitting={isSubmitting} />
           ) : (
-            <ClientOnboardingForm onSubmit={onSubmit} />
+            <ClientOnboardingForm onSubmit={onClientSubmit} />
           )}
         </motion.div>
       </div>
@@ -72,15 +142,21 @@ export default function Onboarding() {
   );
 }
 
-function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: any) => void, initialPlan: string | null }) {
+function BusinessOnboardingForm({ onSubmit, initialPlan, isSubmitting: parentIsSubmitting }: { onSubmit: (data: any) => Promise<void>, initialPlan: string | null, isSubmitting: boolean }) {
   const { register, handleSubmit, setValue } = useForm();
   const [selectedPlan, setSelectedPlan] = useState(initialPlan || 'free');
   const [serviceType, setServiceType] = useState(SERVICE_TYPES[0]);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const [, setLocation] = useLocation();
+
+  // Sync selectedPlan when initialPlan changes (only on mount or when initialPlan changes)
+  useEffect(() => {
+    if (initialPlan) {
+      console.log('[onboarding] Setting plan from URL param:', initialPlan);
+      setSelectedPlan(initialPlan);
+    }
+  }, [initialPlan]);
 
   const handleFileClick = () => {
     fileInputRef.current?.click();
@@ -106,35 +182,18 @@ function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: an
   };
 
   const handleFormSubmit = async (data: any) => {
-    if (!uploadedFile) {
-      toast({
-        title: "Certification Required",
-        description: "Please upload your cosmetology license or certificate",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
+    console.log('[onboarding] Form submitting, selectedPlan state:', selectedPlan);
+    console.log('[onboarding] initialPlan prop:', initialPlan);
     
-    try {
-      const formData = {
-        ...data,
-        serviceType,
-        tier: selectedPlan,
-        certificationFileName: uploadedFile.name
-      };
-      
-      await onSubmit(formData);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    const formData = {
+      ...data,
+      serviceType,
+      tier: selectedPlan,
+      certificationFileName: uploadedFile?.name || null
+    };
+    
+    console.log('[onboarding] Form data being submitted:', formData);
+    await onSubmit(formData);
   };
 
   return (
@@ -149,6 +208,17 @@ function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: an
               required 
               {...register("businessName")} 
               data-testid="input-business-name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <Input 
+              id="location" 
+              placeholder="e.g. Los Angeles, CA" 
+              required 
+              {...register("location")} 
+              data-testid="input-location"
             />
           </div>
 
@@ -265,10 +335,10 @@ function BusinessOnboardingForm({ onSubmit, initialPlan }: { onSubmit: (data: an
           <Button 
             type="submit" 
             className="w-full bg-primary hover:bg-primary/90 h-12 text-lg"
-            disabled={isSubmitting}
+            disabled={parentIsSubmitting}
             data-testid="button-submit"
           >
-            {isSubmitting ? "Submitting..." : "Submit for Approval"}
+            {parentIsSubmitting ? "Submitting..." : "Submit for Approval"}
           </Button>
         </CardFooter>
       </form>

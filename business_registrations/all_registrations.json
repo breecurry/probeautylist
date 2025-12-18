@@ -1,0 +1,46 @@
+[
+  {
+    "id": "3104c789-6397-44e1-b797-a4fd70f4ad69",
+    "name": "Test Salon 9KqL",
+    "ownerEmail": "checkout2__zdPBT@test.com",
+    "ownerName": "Checkout Test",
+    "description": "Testing checkout",
+    "address": "Los Angeles, CA",
+    "phone": "",
+    "tier": "free",
+    "registeredAt": "2025-12-18T00:38:45.173Z"
+  },
+  {
+    "id": "2302e880-ff42-4abe-82c4-f2a66028e1fb",
+    "name": "Debug Salon IqsI",
+    "ownerEmail": "debug_BF4T-S@test.com",
+    "ownerName": "Debug Test",
+    "description": "Debug test",
+    "address": "New York, NY",
+    "phone": "",
+    "tier": "free",
+    "registeredAt": "2025-12-18T00:41:35.388Z"
+  },
+  {
+    "id": "fb0ee77f-3e91-4b35-830e-1748962842bb",
+    "name": "Fix Test Salon",
+    "ownerEmail": "fix_VVbkZ7@example.com",
+    "ownerName": "Fix Tester",
+    "description": "Fix test",
+    "address": "Miami, FL",
+    "phone": "",
+    "tier": "free",
+    "registeredAt": "2025-12-18T00:44:41.146Z"
+  },
+  {
+    "id": "46336c47-7a86-4616-8b09-3cb05748b37e",
+    "name": "Final Salon 0Er4",
+    "ownerEmail": "final_ELy29l@example.com",
+    "ownerName": "Final Tester",
+    "description": "Final test",
+    "address": "Chicago, IL",
+    "phone": "",
+    "tier": "free",
+    "registeredAt": "2025-12-18T00:49:07.151Z"
+  }
+]
