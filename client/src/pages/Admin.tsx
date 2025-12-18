@@ -69,18 +69,26 @@ export default function Admin() {
 
   const { data: stats, isLoading: statsLoading } = useQuery<AdminStats>({
     queryKey: ['/api/admin/stats'],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: allUsers = [], isLoading: usersLoading } = useQuery<User[]>({
     queryKey: ['/api/admin/users'],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: allBusinesses = [], isLoading: businessesLoading } = useQuery<Business[]>({
     queryKey: ['/api/admin/businesses'],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const { data: pendingBusinesses = [] } = useQuery<Business[]>({
     queryKey: ['/api/businesses/pending'],
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
   const updateRoleMutation = useMutation({
