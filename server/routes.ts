@@ -527,25 +527,16 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Only business owners can create bookings for their business" });
       }
       
-      const { clientEmail, clientName, serviceName, servicePrice, date, notes } = req.body;
+      const { clientId: selectedClientId, clientName, clientPhone, serviceName, servicePrice, date, notes } = req.body;
       
       if (!serviceName || !servicePrice || !date) {
         return res.status(400).json({ message: "Service name, price, and date are required" });
       }
       
-      // Find or create a client record
+      // Use selected client or business owner as placeholder for walk-ins
       let clientId: string;
-      
-      if (clientEmail) {
-        // Try to find existing client by email
-        const existingClient = await storage.getUserByEmail(clientEmail);
-        if (existingClient) {
-          clientId = existingClient.id;
-        } else {
-          // Create a walk-in client entry using business owner as placeholder
-          // In production, you might want to create a proper client record
-          clientId = req.user!.id;
-        }
+      if (selectedClientId) {
+        clientId = selectedClientId;
       } else {
         // Walk-in booking - use business owner as client placeholder
         clientId = req.user!.id;
@@ -554,9 +545,12 @@ export async function registerRoutes(
       const bookingData = {
         clientId,
         businessId,
-        serviceName: notes ? `${serviceName} - ${notes}` : serviceName,
+        serviceName,
         servicePrice,
         date: new Date(date),
+        notes: notes || null,
+        clientName: clientName || null,
+        clientPhone: clientPhone || null,
       };
       
       const booking = await storage.createBookingWithPriority(bookingData, false);

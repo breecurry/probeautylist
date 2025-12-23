@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Calendar as CalendarIcon, Plus, RefreshCw, ChevronLeft, ChevronRight, Clock, ExternalLink, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, RefreshCw, ChevronLeft, ChevronRight, Clock, ExternalLink, Trash2, User, Phone, FileText, Users } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,6 +49,20 @@ interface Business {
   services: string;
 }
 
+interface Client {
+  id: string;
+  username: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface ClientNote {
+  id: string;
+  note: string;
+  createdAt: string;
+}
+
 export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -61,6 +75,10 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
   const [newBookingTime, setNewBookingTime] = useState("10:00");
   const [newBookingNotes, setNewBookingNotes] = useState("");
   const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [isWalkIn, setIsWalkIn] = useState(true);
+  const [walkInClientName, setWalkInClientName] = useState("");
+  const [walkInClientPhone, setWalkInClientPhone] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -82,6 +100,26 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
       setSelectedBusinessId(userBusinesses[0].id);
     }
   }, [userBusinesses, selectedBusinessId]);
+
+  const { data: businessClients = [] } = useQuery<Client[]>({
+    queryKey: ["/api/businesses", selectedBusinessId, "clients"],
+    queryFn: async () => {
+      const res = await fetch(`/api/businesses/${selectedBusinessId}/clients`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedBusinessId && createBookingDialogOpen,
+  });
+
+  const { data: clientNotes = [] } = useQuery<ClientNote[]>({
+    queryKey: ["/api/businesses", selectedBusinessId, "clients", selectedClientId, "notes"],
+    queryFn: async () => {
+      const res = await fetch(`/api/businesses/${selectedBusinessId}/clients/${selectedClientId}/notes`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!selectedBusinessId && !!selectedClientId && !isWalkIn,
+  });
 
   const { data: calendarEvents = [], isLoading: eventsLoading, error: eventsError, refetch } = useQuery<CalendarEvent[]>({
     queryKey: ["/api/calendar/events", currentMonth.toISOString()],
@@ -191,7 +229,16 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
   });
 
   const createBookingMutation = useMutation({
-    mutationFn: async (data: { businessId: string; serviceName: string; servicePrice: string; date: string; notes?: string }) => {
+    mutationFn: async (data: { 
+      businessId: string; 
+      serviceName: string; 
+      servicePrice: string; 
+      date: string; 
+      notes?: string;
+      clientId?: string;
+      clientName?: string;
+      clientPhone?: string;
+    }) => {
       const res = await fetch(`/api/businesses/${data.businessId}/bookings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -213,6 +260,10 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
       setNewBookingService("");
       setNewBookingPrice("");
       setNewBookingNotes("");
+      setSelectedClientId("");
+      setIsWalkIn(true);
+      setWalkInClientName("");
+      setWalkInClientPhone("");
       setSelectedDate(null);
       queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
     },
@@ -238,6 +289,9 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
       servicePrice: newBookingPrice,
       date: bookingDate.toISOString(),
       notes: newBookingNotes || undefined,
+      clientId: isWalkIn ? undefined : selectedClientId || undefined,
+      clientName: isWalkIn ? walkInClientName || undefined : undefined,
+      clientPhone: isWalkIn ? walkInClientPhone || undefined : undefined,
     });
   };
 
@@ -592,14 +646,14 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
       </CardContent>
 
       <Dialog open={createBookingDialogOpen} onOpenChange={setCreateBookingDialogOpen}>
-        <DialogContent data-testid="create-booking-dialog">
+        <DialogContent data-testid="create-booking-dialog" className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-amber-700">Add Appointment</DialogTitle>
             <DialogDescription>
-              Add a new appointment to your calendar for {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "the selected day"}
+              Add a new appointment for {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "the selected day"}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-4">
             {userBusinesses.length > 1 && (
               <div className="space-y-2">
                 <Label htmlFor="booking-business">Business</Label>
@@ -617,29 +671,149 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
                 </Select>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="booking-service">Service</Label>
-              <Input
-                id="booking-service"
-                value={newBookingService}
-                onChange={(e) => setNewBookingService(e.target.value)}
-                placeholder="e.g., Haircut, Manicure, Massage"
-                data-testid="input-booking-service"
-              />
+            
+            <div className="bg-stone-50 p-4 rounded-lg space-y-4">
+              <div className="flex items-center gap-2 text-stone-700">
+                <Users className="h-4 w-4" />
+                <span className="font-medium">Client Information</span>
+              </div>
+              
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="clientType"
+                    checked={isWalkIn}
+                    onChange={() => {
+                      setIsWalkIn(true);
+                      setSelectedClientId("");
+                    }}
+                    className="accent-amber-600"
+                    data-testid="radio-walkin"
+                  />
+                  <span className="text-sm">Walk-in / New Client</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="clientType"
+                    checked={!isWalkIn}
+                    onChange={() => {
+                      setIsWalkIn(false);
+                      setWalkInClientName("");
+                      setWalkInClientPhone("");
+                    }}
+                    className="accent-amber-600"
+                    data-testid="radio-existing"
+                  />
+                  <span className="text-sm">Existing Client</span>
+                </label>
+              </div>
+
+              {isWalkIn ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-name" className="flex items-center gap-1.5 text-sm">
+                      <User className="h-3.5 w-3.5" />
+                      Client Name
+                    </Label>
+                    <Input
+                      id="walkin-name"
+                      value={walkInClientName}
+                      onChange={(e) => setWalkInClientName(e.target.value)}
+                      placeholder="Enter client name"
+                      data-testid="input-walkin-name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="walkin-phone" className="flex items-center gap-1.5 text-sm">
+                      <Phone className="h-3.5 w-3.5" />
+                      Phone (optional)
+                    </Label>
+                    <Input
+                      id="walkin-phone"
+                      type="tel"
+                      value={walkInClientPhone}
+                      onChange={(e) => setWalkInClientPhone(e.target.value)}
+                      placeholder="(555) 123-4567"
+                      data-testid="input-walkin-phone"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="select-client">Select Client</Label>
+                    <Select value={selectedClientId} onValueChange={setSelectedClientId}>
+                      <SelectTrigger data-testid="select-client">
+                        <SelectValue placeholder="Choose an existing client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {businessClients.length === 0 ? (
+                          <div className="px-3 py-2 text-sm text-stone-500">No clients found</div>
+                        ) : (
+                          businessClients.map((client) => (
+                            <SelectItem key={client.id} value={client.id}>
+                              {client.firstName && client.lastName 
+                                ? `${client.firstName} ${client.lastName}` 
+                                : client.username} ({client.email})
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {selectedClientId && clientNotes.length > 0 && (
+                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-md">
+                      <div className="flex items-center gap-1.5 text-amber-700 mb-2">
+                        <FileText className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">Prior Notes About This Client</span>
+                      </div>
+                      <ScrollArea className="max-h-24">
+                        <div className="space-y-2">
+                          {clientNotes.map((note) => (
+                            <div key={note.id} className="text-xs text-stone-600 bg-white p-2 rounded border">
+                              {note.note}
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="booking-price">Price ($)</Label>
-              <Input
-                id="booking-price"
-                type="number"
-                value={newBookingPrice}
-                onChange={(e) => setNewBookingPrice(e.target.value)}
-                placeholder="e.g., 50"
-                data-testid="input-booking-price"
-              />
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="booking-service">Service</Label>
+                <Input
+                  id="booking-service"
+                  value={newBookingService}
+                  onChange={(e) => setNewBookingService(e.target.value)}
+                  placeholder="e.g., Haircut, Manicure"
+                  data-testid="input-booking-service"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="booking-price">Price ($)</Label>
+                <Input
+                  id="booking-price"
+                  type="number"
+                  value={newBookingPrice}
+                  onChange={(e) => setNewBookingPrice(e.target.value)}
+                  placeholder="50"
+                  data-testid="input-booking-price"
+                />
+              </div>
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="booking-time">Time</Label>
+              <Label htmlFor="booking-time" className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5" />
+                Appointment Time
+              </Label>
               <Input
                 id="booking-time"
                 type="time"
@@ -648,18 +822,24 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
                 data-testid="input-booking-time"
               />
             </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="booking-notes">Notes (optional)</Label>
-              <Input
+              <Label htmlFor="booking-notes" className="flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Appointment Notes
+              </Label>
+              <textarea
                 id="booking-notes"
                 value={newBookingNotes}
                 onChange={(e) => setNewBookingNotes(e.target.value)}
-                placeholder="e.g., Client name or special requests"
+                placeholder="Special requests, things to remember, color formulas, product preferences, etc."
+                className="w-full min-h-[80px] px-3 py-2 border border-stone-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent resize-none"
                 data-testid="input-booking-notes"
               />
+              <p className="text-xs text-stone-500">These notes will appear on the appointment for quick reference</p>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2 border-t">
             <Button variant="outline" onClick={() => setCreateBookingDialogOpen(false)}>
               Cancel
             </Button>
