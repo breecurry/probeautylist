@@ -165,3 +165,43 @@ Gold tier business owners have access to 5 exclusive premium features:
 - `@replit/vite-plugin-cartographer` - Code navigation
 - `@replit/vite-plugin-dev-banner` - Development mode indicator
 - Custom meta images plugin for OpenGraph tags
+
+## Mobile App Configuration (Capacitor)
+
+The app is configured for native mobile deployment using Capacitor.
+
+### App Identifiers
+- **App ID**: `com.probeautylist.app`
+- **App Name**: Pro Beauty List
+- **Web Directory**: `dist/public`
+
+### Configuration Files
+- `capacitor.config.ts` - Main Capacitor configuration
+- `android/` - Android native project
+- `ios/` - iOS native project
+
+### Building Mobile Apps
+
+**Prerequisites:**
+- Apple Developer Account ($99/year) for iOS App Store
+- Google Play Developer Account ($25 one-time) for Android
+
+**Build Commands (run locally with Android Studio/Xcode):**
+```bash
+# Build the web app first
+npm run build
+
+# Sync web assets to native projects
+npx cap sync
+
+# Open in Android Studio
+npx cap open android
+
+# Open in Xcode (macOS only)
+npx cap open ios
+```
+
+### Splash Screen & Status Bar
+- Splash screen configured with #F5F3F0 background (matches app theme)
+- Status bar uses #9BA8A2 (sage green) with light text
+- 2-second splash duration with auto-hide
