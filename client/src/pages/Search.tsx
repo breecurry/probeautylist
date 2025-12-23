@@ -105,7 +105,7 @@ export default function Search() {
     const search = searchTerm.toLowerCase().trim();
     // Match by name, location, address, or service type
     const matchesSearch = !search || 
-                          b.name.toLowerCase().includes(search) || 
+                          (b.name && b.name.toLowerCase().includes(search)) || 
                           (b.location && b.location.toLowerCase().includes(search)) ||
                           (b.address && b.address.toLowerCase().includes(search)) ||
                           (b.serviceType && b.serviceType.toLowerCase().includes(search)) ||
