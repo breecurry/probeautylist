@@ -12,6 +12,7 @@ import bcrypt from "bcryptjs";
 import { insertUserSchema, insertBusinessSchema, insertBookingSchema, insertReviewSchema, insertReviewPhotoSchema, insertClientReviewSchema, insertPortfolioItemSchema, insertPortfolioCommentSchema, insertMessageSchema, insertTipSchema, insertLoyaltyProgramSchema, insertReferralCodeSchema, insertBeforeAfterPhotoSchema, insertWaitlistEntrySchema, insertGroupBookingSchema, insertGroupBookingGuestSchema, insertInspirationBoardItemSchema, insertStaffMemberSchema, insertFollowUpSettingsSchema, insertClientNoteSchema, insertGiftCardSchema, insertSocialMediaSettingsSchema, insertExpenseSchema } from "@shared/schema";
 import { sendPasswordResetEmail, sendWelcomeEmail, sendBookingConfirmationEmail, sendBusinessBookingNotificationEmail } from "./services/emailService";
 import { logNewBusinessRegistration } from "./services/businessLogger";
+import { createCalendarEvent, listCalendarEvents, deleteCalendarEvent } from "./services/googleCalendar";
 import crypto from "crypto";
 
 const PgSession = ConnectPgSimple(session);
@@ -1888,6 +1889,89 @@ export async function registerRoutes(
 
       res.json(updated);
     } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get("/api/calendar/events", requireAuth, async (req, res, next) => {
+    try {
+      const timeMin = req.query.timeMin ? new Date(req.query.timeMin as string) : undefined;
+      const timeMax = req.query.timeMax ? new Date(req.query.timeMax as string) : undefined;
+      const events = await listCalendarEvents(timeMin, timeMax);
+      res.json(events);
+    } catch (error: any) {
+      if (error.message === 'Google Calendar not connected') {
+        return res.status(400).json({ message: "Google Calendar is not connected. Please connect your calendar in settings." });
+      }
+      next(error);
+    }
+  });
+
+  app.post("/api/calendar/sync-booking/:bookingId", requireAuth, async (req, res, next) => {
+    try {
+      const booking = await storage.getBooking(req.params.bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      const isClient = booking.clientId === req.user!.id;
+      const business = await storage.getBusiness(booking.businessId);
+      const isBusinessOwner = business && business.ownerId === req.user!.id;
+      
+      if (!isClient && !isBusinessOwner) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+
+      const client = await storage.getUser(booking.clientId);
+      
+      const event = await createCalendarEvent({
+        id: booking.id,
+        serviceName: booking.serviceName,
+        date: booking.date.toISOString(),
+        businessName: business?.name,
+        clientName: client?.username,
+      });
+
+      res.json({ message: "Booking synced to calendar", event });
+    } catch (error: any) {
+      if (error.message === 'Google Calendar not connected') {
+        return res.status(400).json({ message: "Google Calendar is not connected. Please connect your calendar in settings." });
+      }
+      next(error);
+    }
+  });
+
+  app.post("/api/calendar/events", requireAuth, async (req, res, next) => {
+    try {
+      const { title, date, duration } = req.body;
+      
+      if (!title || !date) {
+        return res.status(400).json({ message: "Title and date are required" });
+      }
+
+      const event = await createCalendarEvent({
+        id: crypto.randomUUID(),
+        serviceName: title,
+        date: date,
+      });
+
+      res.json({ message: "Event created", event });
+    } catch (error: any) {
+      if (error.message === 'Google Calendar not connected') {
+        return res.status(400).json({ message: "Google Calendar is not connected. Please connect your calendar in settings." });
+      }
+      next(error);
+    }
+  });
+
+  app.delete("/api/calendar/events/:eventId", requireAuth, async (req, res, next) => {
+    try {
+      await deleteCalendarEvent(req.params.eventId);
+      res.json({ message: "Event deleted" });
+    } catch (error: any) {
+      if (error.message === 'Google Calendar not connected') {
+        return res.status(400).json({ message: "Google Calendar is not connected. Please connect your calendar in settings." });
+      }
       next(error);
     }
   });
