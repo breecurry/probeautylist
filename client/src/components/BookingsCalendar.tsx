@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Calendar as CalendarIcon, Plus, RefreshCw, ChevronLeft, ChevronRight, Clock, ExternalLink, Trash2 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from "date-fns";
@@ -18,6 +18,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface CalendarEvent {
   id: string;
@@ -36,17 +43,45 @@ interface Booking {
   status: string;
 }
 
+interface Business {
+  id: string;
+  name: string;
+  services: string;
+}
+
 export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createBookingDialogOpen, setCreateBookingDialogOpen] = useState(false);
   const [newEventTitle, setNewEventTitle] = useState("");
   const [newEventTime, setNewEventTime] = useState("10:00");
+  const [newBookingService, setNewBookingService] = useState("");
+  const [newBookingPrice, setNewBookingPrice] = useState("");
+  const [newBookingTime, setNewBookingTime] = useState("10:00");
+  const [newBookingNotes, setNewBookingNotes] = useState("");
+  const [selectedBusinessId, setSelectedBusinessId] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const isBusinessOwner = user?.role === 'business_owner' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
+
+  const { data: userBusinesses = [] } = useQuery<Business[]>({
+    queryKey: ["/api/my-businesses"],
+    queryFn: async () => {
+      const res = await fetch("/api/my-businesses", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: isBusinessOwner,
+  });
+
+  useEffect(() => {
+    if (userBusinesses.length === 1 && !selectedBusinessId) {
+      setSelectedBusinessId(userBusinesses[0].id);
+    }
+  }, [userBusinesses, selectedBusinessId]);
 
   const { data: calendarEvents = [], isLoading: eventsLoading, error: eventsError, refetch } = useQuery<CalendarEvent[]>({
     queryKey: ["/api/calendar/events", currentMonth.toISOString()],
@@ -154,6 +189,57 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
       });
     },
   });
+
+  const createBookingMutation = useMutation({
+    mutationFn: async (data: { businessId: string; serviceName: string; servicePrice: string; date: string; notes?: string }) => {
+      const res = await fetch(`/api/businesses/${data.businessId}/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: "Failed to create booking" }));
+        throw new Error(error.message);
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Appointment Added",
+        description: "The appointment has been added to your calendar.",
+      });
+      setCreateBookingDialogOpen(false);
+      setNewBookingService("");
+      setNewBookingPrice("");
+      setNewBookingNotes("");
+      setSelectedDate(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/bookings"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleCreateBooking = () => {
+    if (!selectedDate || !newBookingService.trim() || !newBookingPrice.trim() || !selectedBusinessId) return;
+    
+    const [hours, minutes] = newBookingTime.split(':').map(Number);
+    const bookingDate = new Date(selectedDate);
+    bookingDate.setHours(hours, minutes, 0, 0);
+
+    createBookingMutation.mutate({
+      businessId: selectedBusinessId,
+      serviceName: newBookingService,
+      servicePrice: newBookingPrice,
+      date: bookingDate.toISOString(),
+      notes: newBookingNotes || undefined,
+    });
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -450,21 +536,39 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
                     </div>
                   </ScrollArea>
 
-                  {isCalendarConnected && isAdmin && (
-                    <div className="pt-2 border-t">
+                  {isBusinessOwner && userBusinesses.length > 0 && (
+                    <div className="pt-2 border-t space-y-2">
                       <Button
                         size="sm"
-                        variant="outline"
+                        variant="default"
                         onClick={() => {
                           setSelectedDate(day);
-                          setCreateDialogOpen(true);
+                          if (userBusinesses.length === 1) {
+                            setSelectedBusinessId(userBusinesses[0].id);
+                          }
+                          setCreateBookingDialogOpen(true);
                         }}
-                        className="w-full"
-                        data-testid={`button-add-event-${format(day, 'yyyy-MM-dd')}`}
+                        className="w-full bg-amber-600 hover:bg-amber-700"
+                        data-testid={`button-add-appointment-${format(day, 'yyyy-MM-dd')}`}
                       >
                         <Plus className="h-4 w-4 mr-1" />
-                        Add Event to This Day
+                        Add Appointment
                       </Button>
+                      {isAdmin && isCalendarConnected && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedDate(day);
+                            setCreateDialogOpen(true);
+                          }}
+                          className="w-full"
+                          data-testid={`button-add-event-${format(day, 'yyyy-MM-dd')}`}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Calendar Event
+                        </Button>
+                      )}
                     </div>
                   )}
                 </DialogContent>
@@ -486,6 +590,90 @@ export function BookingsCalendar({ bookings = [] }: { bookings?: Booking[] }) {
           )}
         </div>
       </CardContent>
+
+      <Dialog open={createBookingDialogOpen} onOpenChange={setCreateBookingDialogOpen}>
+        <DialogContent data-testid="create-booking-dialog">
+          <DialogHeader>
+            <DialogTitle className="text-amber-700">Add Appointment</DialogTitle>
+            <DialogDescription>
+              Add a new appointment to your calendar for {selectedDate ? format(selectedDate, "MMMM d, yyyy") : "the selected day"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {userBusinesses.length > 1 && (
+              <div className="space-y-2">
+                <Label htmlFor="booking-business">Business</Label>
+                <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
+                  <SelectTrigger data-testid="select-business">
+                    <SelectValue placeholder="Select a business" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {userBusinesses.map((business) => (
+                      <SelectItem key={business.id} value={business.id}>
+                        {business.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="booking-service">Service</Label>
+              <Input
+                id="booking-service"
+                value={newBookingService}
+                onChange={(e) => setNewBookingService(e.target.value)}
+                placeholder="e.g., Haircut, Manicure, Massage"
+                data-testid="input-booking-service"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="booking-price">Price ($)</Label>
+              <Input
+                id="booking-price"
+                type="number"
+                value={newBookingPrice}
+                onChange={(e) => setNewBookingPrice(e.target.value)}
+                placeholder="e.g., 50"
+                data-testid="input-booking-price"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="booking-time">Time</Label>
+              <Input
+                id="booking-time"
+                type="time"
+                value={newBookingTime}
+                onChange={(e) => setNewBookingTime(e.target.value)}
+                data-testid="input-booking-time"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="booking-notes">Notes (optional)</Label>
+              <Input
+                id="booking-notes"
+                value={newBookingNotes}
+                onChange={(e) => setNewBookingNotes(e.target.value)}
+                placeholder="e.g., Client name or special requests"
+                data-testid="input-booking-notes"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setCreateBookingDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateBooking}
+              disabled={!selectedDate || !newBookingService.trim() || !newBookingPrice.trim() || !selectedBusinessId || createBookingMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700"
+              data-testid="button-create-booking"
+            >
+              {createBookingMutation.isPending ? "Adding..." : "Add Appointment"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
