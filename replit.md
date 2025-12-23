@@ -87,6 +87,21 @@ Preferred communication style: Simple, everyday language.
 - Service file: `server/services/googleCalendar.ts`
 - UI component: `client/src/components/BookingsCalendar.tsx`
 
+### Business Owner Appointment Creation
+- Business owners can add appointments directly from the calendar
+- Click on any day → "Add Appointment" button → comprehensive form
+- Client selection options:
+  - **Walk-in / New Client**: Enter client name and phone number
+  - **Existing Client**: Select from dropdown of previous clients
+- When selecting an existing client, prior notes about that client are displayed
+- Appointment details include:
+  - Service name and price
+  - Appointment time
+  - Detailed notes section (color formulas, preferences, special requests)
+- Bookings created by business owners are auto-confirmed
+- Fields stored in `bookings` table: `notes`, `clientName`, `clientPhone`
+- API endpoint: POST /api/businesses/:businessId/bookings
+
 ### Authentication & Authorization
 - Session-based authentication with PostgreSQL persistence
 - Role-based access control (client, business_owner, admin)
