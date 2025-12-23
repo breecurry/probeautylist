@@ -57,6 +57,7 @@ export interface IStorage {
   getBooking(id: string): Promise<Booking | undefined>;
   getBookingsByClient(clientId: string): Promise<Booking[]>;
   getBookingsByBusiness(businessId: string): Promise<Booking[]>;
+  getBusinessClients(businessId: string): Promise<{ id: string; username: string; email: string; firstName: string | null; lastName: string | null }[]>;
   createBooking(booking: InsertBooking): Promise<Booking>;
   updateBookingStatus(id: string, status: string): Promise<Booking | undefined>;
   markBookingCompleted(id: string): Promise<Booking | undefined>;
@@ -331,6 +332,22 @@ export class DatabaseStorage implements IStorage {
 
   async getBookingsByBusiness(businessId: string): Promise<Booking[]> {
     return db.select().from(bookings).where(eq(bookings.businessId, businessId)).orderBy(desc(bookings.createdAt));
+  }
+
+  async getBusinessClients(businessId: string): Promise<{ id: string; username: string; email: string; firstName: string | null; lastName: string | null }[]> {
+    // Get unique clients who have booked with this business
+    const result = await db
+      .selectDistinct({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        firstName: users.firstName,
+        lastName: users.lastName,
+      })
+      .from(bookings)
+      .innerJoin(users, eq(bookings.clientId, users.id))
+      .where(eq(bookings.businessId, businessId));
+    return result;
   }
 
   async createBooking(booking: InsertBooking): Promise<Booking> {

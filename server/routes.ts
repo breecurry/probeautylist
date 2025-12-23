@@ -512,6 +512,86 @@ export async function registerRoutes(
     }
   });
 
+  // Business owner creates a booking for their business
+  app.post("/api/businesses/:businessId/bookings", requireAuth, async (req, res, next) => {
+    try {
+      const { businessId } = req.params;
+      const business = await storage.getBusiness(businessId);
+      
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+      
+      // Only business owner or admin can create bookings for a business
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Only business owners can create bookings for their business" });
+      }
+      
+      const { clientEmail, clientName, serviceName, servicePrice, date, notes } = req.body;
+      
+      if (!serviceName || !servicePrice || !date) {
+        return res.status(400).json({ message: "Service name, price, and date are required" });
+      }
+      
+      // Find or create a client record
+      let clientId: string;
+      
+      if (clientEmail) {
+        // Try to find existing client by email
+        const existingClient = await storage.getUserByEmail(clientEmail);
+        if (existingClient) {
+          clientId = existingClient.id;
+        } else {
+          // Create a walk-in client entry using business owner as placeholder
+          // In production, you might want to create a proper client record
+          clientId = req.user!.id;
+        }
+      } else {
+        // Walk-in booking - use business owner as client placeholder
+        clientId = req.user!.id;
+      }
+      
+      const bookingData = {
+        clientId,
+        businessId,
+        serviceName: notes ? `${serviceName} - ${notes}` : serviceName,
+        servicePrice,
+        date: new Date(date),
+      };
+      
+      const booking = await storage.createBookingWithPriority(bookingData, false);
+      
+      // Auto-confirm the booking since business owner created it
+      const confirmedBooking = await storage.updateBookingStatus(booking.id, 'confirmed');
+      
+      res.json(confirmedBooking);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  // Get clients who have previously booked with a business
+  app.get("/api/businesses/:businessId/clients", requireAuth, async (req, res, next) => {
+    try {
+      const { businessId } = req.params;
+      const business = await storage.getBusiness(businessId);
+      
+      if (!business) {
+        return res.status(404).json({ message: "Business not found" });
+      }
+      
+      // Only business owner or admin can view clients
+      if (business.ownerId !== req.user!.id && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const clients = await storage.getBusinessClients(businessId);
+      res.json(clients);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get("/api/clients/:clientId/loyalty/:businessId", requireAuth, async (req, res, next) => {
     try {
       const { clientId, businessId } = req.params;
