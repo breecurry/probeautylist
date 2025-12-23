@@ -23,6 +23,7 @@ import { RebookingWidget } from "@/components/RebookingWidget";
 import { WaitlistWidget } from "@/components/WaitlistWidget";
 import { GroupBookingsWidget } from "@/components/GroupBookingsWidget";
 import { InspirationBoard } from "@/components/InspirationBoard";
+import { BookingsCalendar } from "@/components/BookingsCalendar";
 
 interface Booking {
   id: string;
@@ -481,6 +482,8 @@ export default function Bookings() {
               : "View your upcoming and past appointments"}
           </p>
         </div>
+
+        <BookingsCalendar bookings={bookings || []} />
 
         {!isBusinessOwner && (
           <>

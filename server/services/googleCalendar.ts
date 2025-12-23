@@ -3,11 +3,16 @@ import { google } from 'googleapis';
 let connectionSettings: any;
 
 async function getAccessToken() {
-  if (connectionSettings && connectionSettings.settings.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
+  if (connectionSettings && connectionSettings.settings?.expires_at && new Date(connectionSettings.settings.expires_at).getTime() > Date.now()) {
     return connectionSettings.settings.access_token;
   }
   
   const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  if (!hostname) {
+    console.error('[calendar] REPLIT_CONNECTORS_HOSTNAME not set');
+    throw new Error('Google Calendar not connected');
+  }
+
   const xReplitToken = process.env.REPL_IDENTITY 
     ? 'repl ' + process.env.REPL_IDENTITY 
     : process.env.WEB_REPL_RENEWAL 
@@ -15,22 +20,37 @@ async function getAccessToken() {
     : null;
 
   if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
+    console.error('[calendar] X_REPLIT_TOKEN not available (neither REPL_IDENTITY nor WEB_REPL_RENEWAL set)');
+    throw new Error('Google Calendar not connected');
   }
 
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-calendar',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
+  try {
+    const response = await fetch(
+      'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=google-calendar',
+      {
+        headers: {
+          'Accept': 'application/json',
+          'X_REPLIT_TOKEN': xReplitToken
+        }
       }
+    );
+    
+    if (!response.ok) {
+      console.error('[calendar] Failed to fetch connection settings:', response.status, response.statusText);
+      throw new Error('Google Calendar not connected');
     }
-  ).then(res => res.json()).then(data => data.items?.[0]);
+    
+    const data = await response.json();
+    connectionSettings = data.items?.[0];
+  } catch (error) {
+    console.error('[calendar] Error fetching connection settings:', error);
+    throw new Error('Google Calendar not connected');
+  }
 
-  const accessToken = connectionSettings?.settings?.access_token || connectionSettings.settings?.oauth?.credentials?.access_token;
+  const accessToken = connectionSettings?.settings?.access_token || connectionSettings?.settings?.oauth?.credentials?.access_token;
 
   if (!connectionSettings || !accessToken) {
+    console.error('[calendar] No valid access token found in connection settings');
     throw new Error('Google Calendar not connected');
   }
   return accessToken;
@@ -52,16 +72,21 @@ export async function createCalendarEvent(booking: {
   serviceName: string;
   date: string;
   businessName?: string;
-  clientName?: string;
+  businessId?: string;
+  userId?: string;
 }) {
   const calendar = await getGoogleCalendarClient();
   
   const startTime = new Date(booking.date);
   const endTime = new Date(startTime.getTime() + 60 * 60 * 1000);
   
+  let description = `Booking ID: ${booking.id}`;
+  if (booking.businessId) description += `\nBusiness ID: ${booking.businessId}`;
+  if (booking.userId) description += `\nSynced by: ${booking.userId}`;
+  
   const event = {
-    summary: `${booking.serviceName}${booking.businessName ? ` at ${booking.businessName}` : ''}`,
-    description: `Booking ID: ${booking.id}${booking.clientName ? `\nClient: ${booking.clientName}` : ''}`,
+    summary: `${booking.serviceName}${booking.businessName ? ` - ${booking.businessName}` : ''}`,
+    description,
     start: {
       dateTime: startTime.toISOString(),
       timeZone: 'UTC',
@@ -72,6 +97,8 @@ export async function createCalendarEvent(booking: {
     },
   };
 
+  console.log('[calendar] Creating event:', event.summary, 'for user:', booking.userId);
+  
   const result = await calendar.events.insert({
     calendarId: 'primary',
     requestBody: event,

@@ -78,6 +78,15 @@ Preferred communication style: Simple, everyday language.
 - API endpoints: GET /api/notifications, GET /api/notifications/unread-count, PATCH /api/notifications/:id/read, PATCH /api/notifications/read-all
 - Scheduler file: `server/notificationScheduler.ts`
 
+### Google Calendar Integration
+- Calendar view on the Bookings page showing month view with events
+- Users can create custom events directly in Google Calendar
+- Bookings can be synced to Google Calendar with one click
+- Shows both local bookings (amber dots) and Google Calendar events (blue dots)
+- API endpoints: GET /api/calendar/events, POST /api/calendar/events, DELETE /api/calendar/events/:id, POST /api/calendar/sync-booking/:bookingId
+- Service file: `server/services/googleCalendar.ts`
+- UI component: `client/src/components/BookingsCalendar.tsx`
+
 ### Authentication & Authorization
 - Session-based authentication with PostgreSQL persistence
 - Role-based access control (client, business_owner, admin)

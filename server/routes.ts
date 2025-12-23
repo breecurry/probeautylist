@@ -1895,6 +1895,10 @@ export async function registerRoutes(
 
   app.get("/api/calendar/events", requireAuth, async (req, res, next) => {
     try {
+      if (req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can view calendar events" });
+      }
+
       const timeMin = req.query.timeMin ? new Date(req.query.timeMin as string) : undefined;
       const timeMax = req.query.timeMax ? new Date(req.query.timeMax as string) : undefined;
       const events = await listCalendarEvents(timeMin, timeMax);
@@ -1909,31 +1913,39 @@ export async function registerRoutes(
 
   app.post("/api/calendar/sync-booking/:bookingId", requireAuth, async (req, res, next) => {
     try {
+      if (req.user!.role !== 'business_owner' && req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Only business owners can sync bookings to calendar" });
+      }
+
       const booking = await storage.getBooking(req.params.bookingId);
       if (!booking) {
         return res.status(404).json({ message: "Booking not found" });
       }
 
-      const isClient = booking.clientId === req.user!.id;
       const business = await storage.getBusiness(booking.businessId);
       const isBusinessOwner = business && business.ownerId === req.user!.id;
+      const isAdmin = req.user!.role === 'admin';
       
-      if (!isClient && !isBusinessOwner) {
-        return res.status(403).json({ message: "Forbidden" });
+      if (!isBusinessOwner && !isAdmin) {
+        return res.status(403).json({ message: "You can only sync bookings for your own business" });
       }
 
-      const client = await storage.getUser(booking.clientId);
+      const bookingDate = typeof booking.date === 'string' ? booking.date : new Date(booking.date).toISOString();
+      
+      console.log('[calendar] User', req.user!.id, '(', req.user!.role, ') syncing booking:', req.params.bookingId);
       
       const event = await createCalendarEvent({
         id: booking.id,
         serviceName: booking.serviceName,
-        date: booking.date.toISOString(),
+        date: bookingDate,
         businessName: business?.name,
-        clientName: client?.username,
+        businessId: booking.businessId,
+        userId: req.user!.id,
       });
 
       res.json({ message: "Booking synced to calendar", event });
     } catch (error: any) {
+      console.error('[calendar] Sync booking error:', error);
       if (error.message === 'Google Calendar not connected') {
         return res.status(400).json({ message: "Google Calendar is not connected. Please connect your calendar in settings." });
       }
@@ -1943,20 +1955,28 @@ export async function registerRoutes(
 
   app.post("/api/calendar/events", requireAuth, async (req, res, next) => {
     try {
+      if (req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can create calendar events" });
+      }
+
       const { title, date, duration } = req.body;
       
       if (!title || !date) {
         return res.status(400).json({ message: "Title and date are required" });
       }
 
+      console.log('[calendar] User', req.user!.id, '(', req.user!.role, ') creating event:', title);
+      
       const event = await createCalendarEvent({
         id: crypto.randomUUID(),
         serviceName: title,
         date: date,
+        userId: req.user!.id,
       });
 
       res.json({ message: "Event created", event });
     } catch (error: any) {
+      console.error('[calendar] Create event error:', error);
       if (error.message === 'Google Calendar not connected') {
         return res.status(400).json({ message: "Google Calendar is not connected. Please connect your calendar in settings." });
       }
@@ -1966,9 +1986,15 @@ export async function registerRoutes(
 
   app.delete("/api/calendar/events/:eventId", requireAuth, async (req, res, next) => {
     try {
+      if (req.user!.role !== 'admin') {
+        return res.status(403).json({ message: "Only admins can delete calendar events" });
+      }
+
+      console.log('[calendar] User', req.user!.id, '(', req.user!.role, ') deleting event:', req.params.eventId);
       await deleteCalendarEvent(req.params.eventId);
       res.json({ message: "Event deleted" });
     } catch (error: any) {
+      console.error('[calendar] Delete event error:', error);
       if (error.message === 'Google Calendar not connected') {
         return res.status(400).json({ message: "Google Calendar is not connected. Please connect your calendar in settings." });
       }
