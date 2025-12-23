@@ -55,6 +55,9 @@ export const bookings = pgTable("bookings", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   priority: boolean("priority").notNull().default(false),
   noShow: boolean("no_show").notNull().default(false),
+  notes: text("notes"),
+  clientName: text("client_name"),
+  clientPhone: text("client_phone"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
