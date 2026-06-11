@@ -25,7 +25,21 @@ export async function attachCurrentUser(req: Request, _res: Response, next: Next
       return next();
     }
 
-    const [user] = await db.select().from(users).where(eq(users.id, req.session.userId)).limit(1);
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      passwordHash: users.passwordHash,
+      role: users.role,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phone: users.phone,
+      avatarUrl: users.avatarUrl,
+      emailVerified: users.emailVerified,
+      isActive: users.isActive,
+      lastLoginAt: users.lastLoginAt,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).where(eq(users.id, req.session.userId)).limit(1);
     if (!user || !user.isActive) {
       req.session.destroy(() => undefined);
       return next();

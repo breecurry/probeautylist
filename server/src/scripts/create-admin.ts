@@ -9,7 +9,7 @@ if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD) {
   process.exit(1);
 }
 
-const existing = await db.select().from(users).where(sql`lower(${users.email}) = ${env.ADMIN_EMAIL.toLowerCase()}`).limit(1);
+const existing = await db.select({ id: users.id }).from(users).where(sql`lower(${users.email}) = ${env.ADMIN_EMAIL.toLowerCase()}`).limit(1);
 if (existing.length) {
   console.error('An account with ADMIN_EMAIL already exists.');
   await pool.end();
