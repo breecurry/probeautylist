@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { desc, eq } from 'drizzle-orm';
+import { count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
 import { adminActions, bookings, professionalProfiles, reviews, users } from '../../db/schema.js';
@@ -17,13 +17,19 @@ const moderationNoteSchema = z.object({
 
 adminRouter.get('/stats', async (_req, res, next) => {
   try {
-    const [userRows, profileRows, bookingRows, reviewRows] = await Promise.all([
-      db.select().from(users),
-      db.select().from(professionalProfiles),
-      db.select().from(bookings),
-      db.select().from(reviews),
+    const [userCount, professionalCount, bookingCount, reviewCount] = await Promise.all([
+      db.select({ value: count() }).from(users),
+      db.select({ value: count() }).from(professionalProfiles),
+      db.select({ value: count() }).from(bookings),
+      db.select({ value: count() }).from(reviews),
     ]);
-    res.json({ users: userRows.length, professionals: profileRows.length, bookings: bookingRows.length, reviews: reviewRows.length });
+
+    res.json({
+      users: userCount[0]?.value ?? 0,
+      professionals: professionalCount[0]?.value ?? 0,
+      bookings: bookingCount[0]?.value ?? 0,
+      reviews: reviewCount[0]?.value ?? 0,
+    });
   } catch (error) {
     next(error);
   }

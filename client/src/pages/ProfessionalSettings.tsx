@@ -2,14 +2,14 @@ import { FormEvent, useEffect, useState } from 'react';
 import { serviceCategories } from '@shared/types';
 import { apiFetch } from '@/lib/api';
 import { StatusPill } from '@/components/StatusPill';
-import type { ProfessionalProfile } from '@/types';
+import type { PrivateProfessionalProfile } from '@/types';
 
 export function ProfessionalSettings() {
-  const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
+  const [profile, setProfile] = useState<PrivateProfessionalProfile | null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => { void apiFetch<ProfessionalProfile | null>('/api/professionals/me').then(setProfile); }, []);
+  useEffect(() => { void apiFetch<PrivateProfessionalProfile | null>('/api/professionals/me').then(setProfile); }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,7 +33,7 @@ export function ProfessionalSettings() {
       licenseLabel: String(form.get('licenseLabel') || ''),
     };
     try {
-      const saved = await apiFetch<ProfessionalProfile>('/api/professionals/me', { method: profile ? 'PATCH' : 'POST', body: JSON.stringify(body) });
+      const saved = await apiFetch<PrivateProfessionalProfile>('/api/professionals/me', { method: profile ? 'PATCH' : 'POST', body: JSON.stringify(body) });
       setProfile(saved);
       setMessage('Profile saved and submitted for review.');
     } catch (err) {

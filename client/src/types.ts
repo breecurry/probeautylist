@@ -30,8 +30,6 @@ export type ProfessionalSummary = {
 export type ProfessionalProfile = ProfessionalSummary & {
   userId: string;
   bio: string;
-  addressLine1?: string | null;
-  postalCode?: string | null;
   licenseLabel?: string | null;
   instagramUrl?: string | null;
   websiteUrl?: string | null;
@@ -39,6 +37,11 @@ export type ProfessionalProfile = ProfessionalSummary & {
   ownerLastName?: string;
   status?: string;
   isVisible?: boolean;
+};
+
+export type PrivateProfessionalProfile = ProfessionalProfile & {
+  addressLine1?: string | null;
+  postalCode?: string | null;
 };
 
 export type Service = {

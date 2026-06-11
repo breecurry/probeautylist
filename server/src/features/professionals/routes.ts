@@ -115,12 +115,3 @@ professionalsRouter.get('/:slug', async (req, res, next) => {
   }
 });
 
-
-professionalsRouter.get('/admin/pending/list', requireRole('admin'), async (_req, res, next) => {
-  try {
-    const rows = await db.select().from(professionalProfiles).where(eq(professionalProfiles.status, 'pending_review'));
-    res.json(rows);
-  } catch (error) {
-    next(error);
-  }
-});
