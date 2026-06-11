@@ -9,8 +9,31 @@ import { portfolioSchema } from './schemas.js';
 
 export const portfolioRouter = Router();
 
+async function findOwnProfile(userId: string) {
+  const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, userId)).limit(1);
+  return profile;
+}
+
+async function getOwnProfile(userId: string, message = 'Professional profile not found') {
+  const profile = await findOwnProfile(userId);
+  if (!profile) throw new HttpError(404, message);
+  return profile;
+}
+
+async function requireVisibleProfile(professionalId: string) {
+  const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles)
+    .where(and(
+      eq(professionalProfiles.id, professionalId),
+      eq(professionalProfiles.status, 'approved'),
+      eq(professionalProfiles.isVisible, true),
+    ))
+    .limit(1);
+  if (!profile) throw new HttpError(404, 'Professional portfolio not found');
+}
+
 portfolioRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
+    await requireVisibleProfile(req.params.professionalId);
     const rows = await db.select().from(portfolioItems)
       .where(and(eq(portfolioItems.professionalId, req.params.professionalId), eq(portfolioItems.isVisible, true)))
       .orderBy(desc(portfolioItems.createdAt));
@@ -22,7 +45,7 @@ portfolioRouter.get('/professional/:professionalId', async (req, res, next) => {
 
 portfolioRouter.get('/me', requireRole('professional', 'admin'), async (req, res, next) => {
   try {
-    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, req.currentUser!.id)).limit(1);
+    const profile = await findOwnProfile(req.currentUser!.id);
     if (!profile) return res.json([]);
     const rows = await db.select().from(portfolioItems).where(eq(portfolioItems.professionalId, profile.id)).orderBy(desc(portfolioItems.createdAt));
     res.json(rows);
@@ -33,8 +56,7 @@ portfolioRouter.get('/me', requireRole('professional', 'admin'), async (req, res
 
 portfolioRouter.post('/me', requireRole('professional', 'admin'), validateBody(portfolioSchema), async (req, res, next) => {
   try {
-    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, req.currentUser!.id)).limit(1);
-    if (!profile) throw new HttpError(404, 'Create a profile before adding portfolio work');
+    const profile = await getOwnProfile(req.currentUser!.id, 'Create a profile before adding portfolio work');
     const [created] = await db.insert(portfolioItems).values({ ...req.body, professionalId: profile.id }).returning();
     sendCreated(res, created);
   } catch (error) {
@@ -44,8 +66,7 @@ portfolioRouter.post('/me', requireRole('professional', 'admin'), validateBody(p
 
 portfolioRouter.delete('/:id', requireRole('professional', 'admin'), async (req, res, next) => {
   try {
-    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, req.currentUser!.id)).limit(1);
-    if (!profile) throw new HttpError(404, 'Professional profile not found');
+    const profile = await getOwnProfile(req.currentUser!.id);
     const [deleted] = await db.delete(portfolioItems).where(and(eq(portfolioItems.id, req.params.id), eq(portfolioItems.professionalId, profile.id))).returning();
     if (!deleted) throw new HttpError(404, 'Portfolio item not found');
     res.json({ message: 'Portfolio item deleted' });

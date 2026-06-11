@@ -15,8 +15,20 @@ async function getOwnProfile(userId: string) {
   return profile;
 }
 
+async function requireVisibleProfile(professionalId: string) {
+  const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles)
+    .where(and(
+      eq(professionalProfiles.id, professionalId),
+      eq(professionalProfiles.status, 'approved'),
+      eq(professionalProfiles.isVisible, true),
+    ))
+    .limit(1);
+  if (!profile) throw new HttpError(404, 'Professional services not found');
+}
+
 servicesRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
+    await requireVisibleProfile(req.params.professionalId);
     const rows = await db.select().from(services)
       .where(and(eq(services.professionalId, req.params.professionalId), eq(services.isActive, true)));
     res.json(rows);
