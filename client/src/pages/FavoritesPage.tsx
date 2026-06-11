@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '@/lib/api';
+import { safeBackgroundImageStyle } from '@/lib/safety';
 import type { Favorite, ProfessionalSummary } from '@/types';
 
 export function FavoritesPage() {
@@ -71,13 +72,9 @@ function FavoritesGrid({ favorites, loading, removingId, onRemove }: { favorites
 }
 
 function FavoriteCard({ professional, removing, onRemove }: { professional: ProfessionalSummary; removing: boolean; onRemove: (professionalId: string) => void }) {
-  const coverStyle = professional.coverImageUrl
-    ? { backgroundImage: `url(${professional.coverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-    : undefined;
-
   return (
     <div className="card overflow-hidden">
-      <div className="h-36 bg-gradient-to-br from-blush to-rosewood/20" style={coverStyle} />
+      <div className="h-36 bg-gradient-to-br from-blush to-rosewood/20" style={safeBackgroundImageStyle(professional.coverImageUrl)} />
       <div className="p-6">
         <p className="text-sm font-bold text-berry">{professional.category}</p>
         <h2 className="mt-2 text-2xl font-black text-ink">{professional.displayName}</h2>
@@ -85,7 +82,7 @@ function FavoriteCard({ professional, removing, onRemove }: { professional: Prof
         <p className="mt-4 text-sm font-bold text-ink/60">{professional.city}, {professional.state}</p>
         <div className="mt-5 flex flex-wrap gap-2">
           <Link className="primary-button" to={`/pros/${professional.slug}`}>View profile</Link>
-          <button className="secondary-button" onClick={() => onRemove(professional.id)} disabled={removing}>
+          <button className="secondary-button" type="button" onClick={() => onRemove(professional.id)} disabled={removing}>
             {removing ? 'Removing...' : 'Remove'}
           </button>
         </div>

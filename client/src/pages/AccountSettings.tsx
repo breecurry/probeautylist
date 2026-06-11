@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
+import { formText, optionalFormText } from '@/lib/forms';
 import type { User } from '@/types';
 
 type NoticeTone = 'success' | 'error';
@@ -48,10 +49,10 @@ export function AccountSettings() {
       await apiFetch<User>('/api/auth/me', {
         method: 'PATCH',
         body: JSON.stringify({
-          firstName: form.get('firstName'),
-          lastName: form.get('lastName'),
-          phone: form.get('phone'),
-          avatarUrl: form.get('avatarUrl'),
+          firstName: formText(form, 'firstName'),
+          lastName: formText(form, 'lastName'),
+          phone: optionalFormText(form, 'phone'),
+          avatarUrl: optionalFormText(form, 'avatarUrl'),
         }),
       });
       await refresh();
@@ -119,10 +120,10 @@ export function AccountSettings() {
           </div>
           {profileError && <Notice message={profileError} tone="error" />}
           {profileSuccess && <Notice message={profileSuccess} tone="success" />}
-          <input className="input" name="firstName" defaultValue={user?.firstName ?? ''} placeholder="First name" required disabled={savingProfile} />
-          <input className="input" name="lastName" defaultValue={user?.lastName ?? ''} placeholder="Last name" required disabled={savingProfile} />
-          <input className="input" name="phone" defaultValue={user?.phone ?? ''} placeholder="Phone" disabled={savingProfile} />
-          <input className="input" name="avatarUrl" defaultValue={user?.avatarUrl ?? ''} placeholder="Avatar image URL" disabled={savingProfile} />
+          <label className="label">First name<input className="input mt-2" name="firstName" defaultValue={user?.firstName ?? ''} minLength={1} maxLength={80} required disabled={savingProfile} /></label>
+          <label className="label">Last name<input className="input mt-2" name="lastName" defaultValue={user?.lastName ?? ''} minLength={1} maxLength={80} required disabled={savingProfile} /></label>
+          <label className="label">Phone<input className="input mt-2" name="phone" defaultValue={user?.phone ?? ''} autoComplete="tel" maxLength={40} disabled={savingProfile} /></label>
+          <label className="label">Avatar image URL<input className="input mt-2" name="avatarUrl" type="url" defaultValue={user?.avatarUrl ?? ''} disabled={savingProfile} /></label>
           <SubmitButton pending={savingProfile}>Save account</SubmitButton>
         </form>
 
@@ -133,9 +134,9 @@ export function AccountSettings() {
           </div>
           {passwordError && <Notice message={passwordError} tone="error" />}
           {passwordSuccess && <Notice message={passwordSuccess} tone="success" />}
-          <input className="input" name="currentPassword" type="password" placeholder="Current password" required disabled={savingPassword} />
-          <input className="input" name="newPassword" type="password" minLength={10} placeholder="New password" required disabled={savingPassword} />
-          <input className="input" name="confirmPassword" type="password" minLength={10} placeholder="Confirm new password" required disabled={savingPassword} />
+          <label className="label">Current password<input className="input mt-2" name="currentPassword" type="password" autoComplete="current-password" required disabled={savingPassword} /></label>
+          <label className="label">New password<input className="input mt-2" name="newPassword" type="password" minLength={10} autoComplete="new-password" required disabled={savingPassword} /></label>
+          <label className="label">Confirm new password<input className="input mt-2" name="confirmPassword" type="password" minLength={10} autoComplete="new-password" required disabled={savingPassword} /></label>
           <SubmitButton pending={savingPassword}>Update password</SubmitButton>
         </form>
       </div>

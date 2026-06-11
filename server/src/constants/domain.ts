@@ -38,19 +38,8 @@ export const notificationTypes = [
   'system',
 ] as const;
 
-export const adminTargetTypes = ['professional_profile', 'booking', 'review', 'user'] as const;
-
-export const adminActionTypes = ['approve', 'request-changes', 'suspend', 'resolve', 'system'] as const;
-
 export type ServiceCategory = (typeof serviceCategories)[number];
 export type BookingStatus = (typeof bookingStatuses)[number];
 export type UserRole = (typeof userRoles)[number];
 export type ProfessionalStatus = (typeof professionalStatuses)[number];
 export type NotificationType = (typeof notificationTypes)[number];
-export type AdminTargetType = (typeof adminTargetTypes)[number];
-export type AdminActionType = (typeof adminActionTypes)[number];
-
-export type ApiError = {
-  message: string;
-  issues?: unknown;
-};

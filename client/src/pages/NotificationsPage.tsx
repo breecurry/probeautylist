@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch, formatDateTime } from '@/lib/api';
+import { safeInternalPath } from '@/lib/safety';
 import type { Notification } from '@/types';
 
 export function NotificationsPage() {
@@ -72,7 +73,7 @@ function NotificationsHeader({ unreadCount, markingAll, onMarkAllRead }: { unrea
         <p className="mt-3 text-ink/65">Booking requests, status changes, reviews, messages, and account updates live here.</p>
       </div>
       {unreadCount > 0 && (
-        <button className="secondary-button" onClick={onMarkAllRead} disabled={markingAll}>
+        <button className="secondary-button" type="button" onClick={onMarkAllRead} disabled={markingAll}>
           {markingAll ? 'Marking...' : 'Mark all read'}
         </button>
       )}
@@ -104,9 +105,9 @@ function NotificationCard({ item, marking, onMarkRead }: { item: Notification; m
           <p className="mt-3 text-xs font-bold text-ink/40">{formatDateTime(item.createdAt)}</p>
         </div>
         <div className="flex shrink-0 flex-col gap-2">
-          {item.actionUrl && <Link className="secondary-button px-4 py-2" to={item.actionUrl}>Open</Link>}
+          {item.actionUrl && <Link className="secondary-button px-4 py-2" to={safeInternalPath(item.actionUrl, '/notifications')}>Open</Link>}
           {!item.readAt && (
-            <button className="primary-button px-4 py-2" onClick={() => onMarkRead(item.id)} disabled={marking}>
+            <button className="primary-button px-4 py-2" type="button" onClick={() => onMarkRead(item.id)} disabled={marking}>
               {marking ? 'Marking...' : 'Mark read'}
             </button>
           )}

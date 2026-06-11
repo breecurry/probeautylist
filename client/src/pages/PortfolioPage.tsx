@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { serviceCategories } from '@shared/types';
 import { apiFetch } from '@/lib/api';
+import { safeImageUrl } from '@/lib/safety';
 
 type PortfolioItem = {
   id: string;
@@ -36,13 +37,28 @@ export function PortfolioPage() {
     setSaving(true);
 
     const form = new FormData(event.currentTarget);
+    const imageUrl = String(form.get('imageUrl') || '').trim();
+    const caption = String(form.get('caption') || '').trim();
+    const category = String(form.get('category') || '').trim();
+
+    if (!safeImageUrl(imageUrl)) {
+      setError('Use a valid HTTPS image URL.');
+      setSaving(false);
+      return;
+    }
+    if (caption.length < 2 || caption.length > 160) {
+      setError('Captions must be between 2 and 160 characters.');
+      setSaving(false);
+      return;
+    }
+
     try {
       await apiFetch<PortfolioItem>('/api/portfolio/me', {
         method: 'POST',
         body: JSON.stringify({
-          imageUrl: String(form.get('imageUrl')),
-          caption: String(form.get('caption')),
-          category: String(form.get('category')),
+          imageUrl,
+          caption,
+          category,
           isVisible: true,
           sortOrder: 0,
         }),
@@ -100,7 +116,7 @@ function PortfolioForm({ onSubmit, saving }: { onSubmit: (event: FormEvent<HTMLF
     <form onSubmit={onSubmit} className="card grid h-fit gap-4 p-6">
       <h2 className="text-2xl font-black text-ink">Add work</h2>
       <input className="input" name="imageUrl" type="url" placeholder="Image URL" required />
-      <textarea className="input min-h-28" name="caption" placeholder="Caption" required />
+      <textarea className="input min-h-28" name="caption" placeholder="Caption" minLength={2} maxLength={160} required />
       <select className="input" name="category">
         {serviceCategories.map((item) => <option key={item}>{item}</option>)}
       </select>
@@ -124,14 +140,16 @@ function PortfolioGrid({ items, loading, deletingId, onRemove }: { items: Portfo
 }
 
 function PortfolioCard({ item, deleting, onRemove }: { item: PortfolioItem; deleting: boolean; onRemove: (id: string) => void }) {
+  const imageUrl = safeImageUrl(item.imageUrl);
+
   return (
     <div className="card overflow-hidden">
-      <img src={item.imageUrl} alt={item.caption} className="h-56 w-full object-cover" />
+      {imageUrl ? <img src={imageUrl} alt={item.caption} className="h-56 w-full object-cover" /> : <div className="h-56 bg-gradient-to-r from-rosewood to-berry" />}
       <div className="p-5">
         <p className="text-xs font-black uppercase tracking-wide text-berry">{item.category}</p>
         <p className="mt-2 leading-6 text-ink/70">{item.caption}</p>
         {!item.isVisible && <p className="mt-3 rounded-full bg-blush px-3 py-1 text-xs font-bold text-rosewood">Hidden from public profile</p>}
-        <button className="secondary-button mt-4" onClick={() => onRemove(item.id)} disabled={deleting}>
+        <button className="secondary-button mt-4" type="button" onClick={() => onRemove(item.id)} disabled={deleting}>
           {deleting ? 'Removing...' : 'Remove'}
         </button>
       </div>

@@ -1,6 +1,7 @@
 import { relations, sql } from 'drizzle-orm';
 import {
   boolean,
+  check,
   date,
   index,
   integer,
@@ -104,6 +105,9 @@ export const services = pgTable('services', {
 }, (table) => ({
   professionalIdx: index('services_professional_idx').on(table.professionalId),
   activeIdx: index('services_active_idx').on(table.isActive),
+  durationPositiveCheck: check('services_duration_positive_check', sql`${table.durationMinutes} > 0`),
+  priceNonNegativeCheck: check('services_price_non_negative_check', sql`${table.priceCents} >= 0`),
+  depositRangeCheck: check('services_deposit_range_check', sql`${table.depositCents} >= 0 AND ${table.depositCents} <= ${table.priceCents}`),
 }));
 
 export const availabilityRules = pgTable('availability_rules', {
@@ -116,6 +120,8 @@ export const availabilityRules = pgTable('availability_rules', {
   ...timestamps,
 }, (table) => ({
   professionalWeekdayIdx: index('availability_rules_professional_weekday_idx').on(table.professionalId, table.weekday),
+  weekdayRangeCheck: check('availability_rules_weekday_range_check', sql`${table.weekday} BETWEEN 0 AND 6`),
+  timeOrderCheck: check('availability_rules_time_order_check', sql`${table.startTime} < ${table.endTime}`),
 }));
 
 export const availabilityExceptions = pgTable('availability_exceptions', {
@@ -129,6 +135,7 @@ export const availabilityExceptions = pgTable('availability_exceptions', {
   ...timestamps,
 }, (table) => ({
   professionalDateIdx: index('availability_exceptions_professional_date_idx').on(table.professionalId, table.date),
+  timePairCheck: check('availability_exceptions_time_pair_check', sql`(${table.startTime} IS NULL AND ${table.endTime} IS NULL) OR (${table.startTime} IS NOT NULL AND ${table.endTime} IS NOT NULL AND ${table.startTime} < ${table.endTime})`),
 }));
 
 export const bookings = pgTable('bookings', {
@@ -150,6 +157,9 @@ export const bookings = pgTable('bookings', {
   clientIdx: index('bookings_client_idx').on(table.clientId, table.startsAt),
   professionalIdx: index('bookings_professional_idx').on(table.professionalId, table.startsAt),
   statusIdx: index('bookings_status_idx').on(table.status),
+  timeOrderCheck: check('bookings_time_order_check', sql`${table.startsAt} < ${table.endsAt}`),
+  priceNonNegativeCheck: check('bookings_price_non_negative_check', sql`${table.priceCents} >= 0`),
+  depositRangeCheck: check('bookings_deposit_range_check', sql`${table.depositCents} >= 0 AND ${table.depositCents} <= ${table.priceCents}`),
 }));
 
 export const reviews = pgTable('reviews', {
@@ -164,6 +174,7 @@ export const reviews = pgTable('reviews', {
 }, (table) => ({
   bookingUnique: uniqueIndex('reviews_booking_unique').on(table.bookingId),
   professionalIdx: index('reviews_professional_idx').on(table.professionalId),
+  ratingRangeCheck: check('reviews_rating_range_check', sql`${table.rating} BETWEEN 1 AND 5`),
 }));
 
 export const portfolioItems = pgTable('portfolio_items', {

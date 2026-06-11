@@ -1,17 +1,6 @@
 import { z } from 'zod';
 
-const serviceCategories = [
-  'Hair Stylist',
-  'Nail Artist',
-  'Esthetician',
-  'Barber',
-  'Makeup Artist',
-  'Lash Artist',
-  'Brow Artist',
-  'Massage Therapist',
-  'Waxing Specialist',
-  'Other Beauty Professional',
-] as const;
+import { serviceCategories } from '../../constants/domain.js';
 
 export const professionalProfileSchema = z.object({
   displayName: z.string().min(2).max(120).trim(),
@@ -31,8 +20,8 @@ export const professionalProfileSchema = z.object({
 });
 
 export const professionalSearchSchema = z.object({
-  q: z.string().optional(),
-  category: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
+  q: z.string().trim().max(120).optional(),
+  category: z.string().trim().max(80).optional(),
+  city: z.string().trim().max(100).optional(),
+  state: z.string().trim().max(80).optional(),
 });

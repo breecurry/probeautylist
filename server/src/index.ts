@@ -39,9 +39,9 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },
   referrerPolicy: { policy: 'no-referrer' },
 }));
-app.use(cors({ origin: env.APP_ORIGIN, credentials: true, methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'X-CSRF-Token'] }));
+app.use(cors({ origin: env.APP_ORIGIN, credentials: true, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'X-CSRF-Token'] }));
 app.use(express.json({ limit: '512kb' }));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 app.use(cookieParser());
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,

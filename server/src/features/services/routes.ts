@@ -1,27 +1,23 @@
 import { Router } from 'express';
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
-import { professionalProfiles, services } from '../../db/schema.js';
+import { services } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { HttpError, sendCreated } from '../../utils/http.js';
-import { requireVisibleProfile } from '../../utils/profile.js';
+import { requireOwnProfile, requireVisibleProfile } from '../../utils/profile.js';
 import { serviceSchema } from './schemas.js';
 
 export const servicesRouter = Router();
 
-async function getOwnProfile(userId: string) {
-  const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, userId)).limit(1);
-  if (!profile) throw new HttpError(404, 'Create a professional profile before managing services');
-  return profile;
-}
-
+const serviceOrder = [asc(services.category), asc(services.name), asc(services.createdAt)];
 
 servicesRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
     await requireVisibleProfile(req.params.professionalId, 'Professional services not found');
     const rows = await db.select().from(services)
-      .where(and(eq(services.professionalId, req.params.professionalId), eq(services.isActive, true)));
+      .where(and(eq(services.professionalId, req.params.professionalId), eq(services.isActive, true)))
+      .orderBy(...serviceOrder);
     res.json(rows);
   } catch (error) {
     next(error);
@@ -30,8 +26,8 @@ servicesRouter.get('/professional/:professionalId', async (req, res, next) => {
 
 servicesRouter.get('/me', requireRole('professional', 'admin'), async (req, res, next) => {
   try {
-    const profile = await getOwnProfile(req.currentUser!.id);
-    const rows = await db.select().from(services).where(eq(services.professionalId, profile.id));
+    const profile = await requireOwnProfile(req.currentUser!.id, 'Create a professional profile before managing services');
+    const rows = await db.select().from(services).where(eq(services.professionalId, profile.id)).orderBy(...serviceOrder);
     res.json(rows);
   } catch (error) {
     next(error);
@@ -40,7 +36,7 @@ servicesRouter.get('/me', requireRole('professional', 'admin'), async (req, res,
 
 servicesRouter.post('/me', requireRole('professional', 'admin'), validateBody(serviceSchema), async (req, res, next) => {
   try {
-    const profile = await getOwnProfile(req.currentUser!.id);
+    const profile = await requireOwnProfile(req.currentUser!.id, 'Create a professional profile before managing services');
     const [created] = await db.insert(services).values({ ...req.body, professionalId: profile.id }).returning();
     sendCreated(res, created);
   } catch (error) {
@@ -50,7 +46,7 @@ servicesRouter.post('/me', requireRole('professional', 'admin'), validateBody(se
 
 servicesRouter.patch('/:id', requireRole('professional', 'admin'), validateBody(serviceSchema.partial()), async (req, res, next) => {
   try {
-    const profile = await getOwnProfile(req.currentUser!.id);
+    const profile = await requireOwnProfile(req.currentUser!.id, 'Create a professional profile before managing services');
     const [updated] = await db.update(services)
       .set({ ...req.body, updatedAt: new Date() })
       .where(and(eq(services.id, req.params.id), eq(services.professionalId, profile.id)))

@@ -1,0 +1,10 @@
+ALTER TABLE "availability_exceptions" ADD CONSTRAINT "availability_exceptions_time_pair_check" CHECK (("availability_exceptions"."start_time" IS NULL AND "availability_exceptions"."end_time" IS NULL) OR ("availability_exceptions"."start_time" IS NOT NULL AND "availability_exceptions"."end_time" IS NOT NULL AND "availability_exceptions"."start_time" < "availability_exceptions"."end_time"));--> statement-breakpoint
+ALTER TABLE "availability_rules" ADD CONSTRAINT "availability_rules_weekday_range_check" CHECK ("availability_rules"."weekday" BETWEEN 0 AND 6);--> statement-breakpoint
+ALTER TABLE "availability_rules" ADD CONSTRAINT "availability_rules_time_order_check" CHECK ("availability_rules"."start_time" < "availability_rules"."end_time");--> statement-breakpoint
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_time_order_check" CHECK ("bookings"."starts_at" < "bookings"."ends_at");--> statement-breakpoint
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_price_non_negative_check" CHECK ("bookings"."price_cents" >= 0);--> statement-breakpoint
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_deposit_range_check" CHECK ("bookings"."deposit_cents" >= 0 AND "bookings"."deposit_cents" <= "bookings"."price_cents");--> statement-breakpoint
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_rating_range_check" CHECK ("reviews"."rating" BETWEEN 1 AND 5);--> statement-breakpoint
+ALTER TABLE "services" ADD CONSTRAINT "services_duration_positive_check" CHECK ("services"."duration_minutes" > 0);--> statement-breakpoint
+ALTER TABLE "services" ADD CONSTRAINT "services_price_non_negative_check" CHECK ("services"."price_cents" >= 0);--> statement-breakpoint
+ALTER TABLE "services" ADD CONSTRAINT "services_deposit_range_check" CHECK ("services"."deposit_cents" >= 0 AND "services"."deposit_cents" <= "services"."price_cents");

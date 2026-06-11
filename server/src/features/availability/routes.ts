@@ -64,9 +64,11 @@ availabilityRouter.post('/me', requireRole('professional', 'admin'), validateBod
 availabilityRouter.put('/me', requireRole('professional', 'admin'), validateBody(replaceAvailabilityRulesSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
-    await db.delete(availabilityRules).where(eq(availabilityRules.professionalId, profile.id));
-    if (req.body.rules.length === 0) return res.json([]);
-    const rows = await db.insert(availabilityRules).values(req.body.rules.map((rule: AvailabilityRuleInput) => ({ ...rule, professionalId: profile.id }))).returning();
+    const rows = await db.transaction(async (tx) => {
+      await tx.delete(availabilityRules).where(eq(availabilityRules.professionalId, profile.id));
+      if (req.body.rules.length === 0) return [];
+      return tx.insert(availabilityRules).values(req.body.rules.map((rule: AvailabilityRuleInput) => ({ ...rule, professionalId: profile.id }))).returning();
+    });
     res.json(rows);
   } catch (error) {
     next(error);

@@ -26,7 +26,8 @@ The project is intentionally structured as a single deployable full-stack applic
 | `server/src` | Express API, authentication middleware, feature modules, database client, and admin script. |
 | `server/src/db/schema.ts` | Fresh database schema for users, professionals, services, availability, bookings, reviews, portfolio, notifications, and sessions. |
 | `shared/types.ts` | Shared domain constants and TypeScript types used by the client. |
-| `REBUILD_ARCHITECTURE.md` | Architecture contract that guided the clean rebuild. |
+| `docs/audits/REBUILD_ARCHITECTURE.md` | Architecture contract that guided the clean rebuild. |
+| `docs/audits/` | Historical publication-readiness, security, and audit pass records. |
 | `DEPLOYMENT.md` | Self-hosting instructions for running the rebuilt application on your own server. |
 
 ## Local development
@@ -48,7 +49,7 @@ npm run dev:client
 
 ## Quality commands
 
-The rebuilt app includes scripts for type checking, linting, production build validation, database migration generation, migration execution, and admin bootstrapping.
+The rebuilt app includes scripts for type checking, linting, production build validation, database migration generation, migration execution, compiled-server smoke testing, full release verification, and admin bootstrapping.
 
 | Command | Purpose |
 |---|---|
@@ -58,11 +59,13 @@ The rebuilt app includes scripts for type checking, linting, production build va
 | `npm run start` | Starts the compiled production server from `dist/server/index.js`. |
 | `npm run db:generate` | Generates Drizzle migration files from the schema. |
 | `npm run db:migrate` | Applies pending database migrations. |
+| `npm run smoke:health` | Verifies a running compiled server responds successfully at `/api/health`. |
+| `npm run verify` | Runs strict linting, full build validation, and a high-severity production dependency audit. |
 | `npm run admin:create` | Creates or updates the initial admin account using environment variables. |
 
 ## Validation status
 
-The rebuilt application has been validated with linting, TypeScript checks, production build generation, and a high-severity production dependency audit. At the time this README was written, those checks passed successfully.
+The rebuilt application has been validated with linting, TypeScript checks, production build generation, compiled-server health smoke testing, and a high-severity production dependency audit. At the time this README was written, those checks passed successfully.
 
 | Check | Result |
 |---|---|
@@ -70,6 +73,7 @@ The rebuilt application has been validated with linting, TypeScript checks, prod
 | `npm run check` | Passed. |
 | `npm run build` | Passed. |
 | `npm audit --omit=dev --audit-level=high` | Passed with zero high-severity production vulnerabilities. |
+| `npm run verify` | Passed. |
 
 ## References
 

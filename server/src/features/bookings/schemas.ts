@@ -1,14 +1,6 @@
 import { z } from 'zod';
 
-const bookingStatuses = [
-  'pending',
-  'confirmed',
-  'declined',
-  'cancelled_by_client',
-  'cancelled_by_professional',
-  'completed',
-  'no_show',
-] as const;
+import { bookingStatuses } from '../../constants/domain.js';
 
 export const createBookingSchema = z.object({
   professionalId: z.string().uuid(),

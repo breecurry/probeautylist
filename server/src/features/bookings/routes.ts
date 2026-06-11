@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { and, desc, eq, gt, inArray, lt } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
+import { z } from 'zod';
 import { db } from '../../db/client.js';
 import { availabilityExceptions, availabilityRules, bookings, professionalProfiles, services, users } from '../../db/schema.js';
 import { requireAuth } from '../../middleware/auth.js';
-import { validateBody } from '../../middleware/validate.js';
+import { validateBody, validateQuery } from '../../middleware/validate.js';
 import { createNotification } from '../notifications/service.js';
 import { HttpError, sendCreated } from '../../utils/http.js';
 import { createBookingSchema, updateBookingStatusSchema } from './schemas.js';
@@ -21,6 +22,10 @@ const transitions: Record<string, string[]> = {
 };
 
 const activeBookingStatuses = ['pending', 'confirmed'] as const;
+
+const bookingListQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
 
 function minutesFromTime(value: string) {
   const [hours, minutes] = value.split(':').map(Number);
@@ -65,8 +70,14 @@ async function isBlockedByException(professionalId: string, startsAt: Date, ends
   });
 }
 
-async function enrichBooking(booking: typeof bookings.$inferSelect) {
-  const [[service], [profile], [client]] = await Promise.all([
+async function enrichBookings(rows: Array<typeof bookings.$inferSelect>) {
+  if (rows.length === 0) return [];
+
+  const serviceIds = [...new Set(rows.map((booking) => booking.serviceId))];
+  const professionalIds = [...new Set(rows.map((booking) => booking.professionalId))];
+  const clientIds = [...new Set(rows.map((booking) => booking.clientId))];
+
+  const [serviceRows, profileRows, clientRows] = await Promise.all([
     db.select({
       id: services.id,
       name: services.name,
@@ -74,54 +85,75 @@ async function enrichBooking(booking: typeof bookings.$inferSelect) {
       durationMinutes: services.durationMinutes,
       priceCents: services.priceCents,
       depositCents: services.depositCents,
-    }).from(services).where(eq(services.id, booking.serviceId)).limit(1),
+    }).from(services).where(inArray(services.id, serviceIds)),
     db.select({
       id: professionalProfiles.id,
       displayName: professionalProfiles.displayName,
       slug: professionalProfiles.slug,
       city: professionalProfiles.city,
       state: professionalProfiles.state,
-    }).from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1),
-    db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email }).from(users).where(eq(users.id, booking.clientId)).limit(1),
+    }).from(professionalProfiles).where(inArray(professionalProfiles.id, professionalIds)),
+    db.select({
+      id: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      email: users.email,
+    }).from(users).where(inArray(users.id, clientIds)),
   ]);
 
-  return {
-    ...booking,
-    service: service ? {
-      id: service.id,
-      name: service.name,
-      category: service.category,
-      durationMinutes: service.durationMinutes,
-      priceCents: service.priceCents,
-      depositCents: service.depositCents,
-    } : null,
-    professional: profile ? {
-      id: profile.id,
-      displayName: profile.displayName,
-      slug: profile.slug,
-      city: profile.city,
-      state: profile.state,
-    } : null,
-    client: client ? {
-      id: client.id,
-      name: `${client.firstName} ${client.lastName}`.trim(),
-      email: client.email,
-    } : null,
-  };
+  const servicesById = new Map(serviceRows.map((service) => [service.id, service]));
+  const profilesById = new Map(profileRows.map((profile) => [profile.id, profile]));
+  const clientsById = new Map(clientRows.map((client) => [client.id, client]));
+
+  return rows.map((booking) => {
+    const service = servicesById.get(booking.serviceId);
+    const profile = profilesById.get(booking.professionalId);
+    const client = clientsById.get(booking.clientId);
+
+    return {
+      ...booking,
+      service: service ? {
+        id: service.id,
+        name: service.name,
+        category: service.category,
+        durationMinutes: service.durationMinutes,
+        priceCents: service.priceCents,
+        depositCents: service.depositCents,
+      } : null,
+      professional: profile ? {
+        id: profile.id,
+        displayName: profile.displayName,
+        slug: profile.slug,
+        city: profile.city,
+        state: profile.state,
+      } : null,
+      client: client ? {
+        id: client.id,
+        name: `${client.firstName} ${client.lastName}`.trim(),
+        email: client.email,
+      } : null,
+    };
+  });
 }
 
-bookingsRouter.get('/', requireAuth, async (req, res, next) => {
+async function enrichBooking(booking: typeof bookings.$inferSelect) {
+  const [enriched] = await enrichBookings([booking]);
+  return enriched;
+}
+
+bookingsRouter.get('/', requireAuth, validateQuery(bookingListQuerySchema), async (req, res, next) => {
   try {
     const user = req.currentUser!;
+    const { limit } = req.query as unknown as z.infer<typeof bookingListQuerySchema>;
     if (user.role === 'professional') {
       const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles).where(eq(professionalProfiles.userId, user.id)).limit(1);
       if (!profile) return res.json([]);
-      const rows = await db.select().from(bookings).where(eq(bookings.professionalId, profile.id)).orderBy(desc(bookings.startsAt));
-      return res.json(await Promise.all(rows.map(enrichBooking)));
+      const rows = await db.select().from(bookings).where(eq(bookings.professionalId, profile.id)).orderBy(desc(bookings.startsAt)).limit(limit);
+      return res.json(await enrichBookings(rows));
     }
 
-    const rows = await db.select().from(bookings).where(eq(bookings.clientId, user.id)).orderBy(desc(bookings.startsAt));
-    res.json(await Promise.all(rows.map(enrichBooking)));
+    const rows = await db.select().from(bookings).where(eq(bookings.clientId, user.id)).orderBy(desc(bookings.startsAt)).limit(limit);
+    res.json(await enrichBookings(rows));
   } catch (error) {
     next(error);
   }
@@ -147,31 +179,36 @@ bookingsRouter.post('/', requireAuth, validateBody(createBookingSchema), async (
     const blocked = await isBlockedByException(profile.id, startsAt, endsAt);
     if (blocked) throw new HttpError(409, 'Requested time is blocked by this professional’s availability exceptions');
 
-    const [conflict] = await db.select({ id: bookings.id }).from(bookings).where(and(
-      eq(bookings.professionalId, profile.id),
-      inArray(bookings.status, activeBookingStatuses),
-      lt(bookings.startsAt, endsAt),
-      gt(bookings.endsAt, startsAt),
-    )).limit(1);
-    if (conflict) throw new HttpError(409, 'That time is already requested or booked');
+    const created = await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${profile.id}))`);
+      const [conflict] = await tx.select({ id: bookings.id }).from(bookings).where(and(
+        eq(bookings.professionalId, profile.id),
+        inArray(bookings.status, activeBookingStatuses),
+        lt(bookings.startsAt, endsAt),
+        gt(bookings.endsAt, startsAt),
+      )).limit(1);
+      if (conflict) throw new HttpError(409, 'That time is already requested or booked');
 
-    const [created] = await db.insert(bookings).values({
-      clientId: req.currentUser!.id,
-      professionalId: profile.id,
-      serviceId: service.id,
-      startsAt,
-      endsAt,
-      priceCents: service.priceCents,
-      depositCents: service.depositCents,
-      clientNote: req.body.clientNote,
-    }).returning();
+      const [createdBooking] = await tx.insert(bookings).values({
+        clientId: req.currentUser!.id,
+        professionalId: profile.id,
+        serviceId: service.id,
+        startsAt,
+        endsAt,
+        priceCents: service.priceCents,
+        depositCents: service.depositCents,
+        clientNote: req.body.clientNote,
+      }).returning();
 
-    await createNotification({
-      userId: profile.userId,
-      type: 'booking_requested',
-      title: 'New booking request',
-      body: `${req.currentUser!.firstName} requested ${service.name}.`,
-      actionUrl: '/professional/bookings',
+      await createNotification({
+        userId: profile.userId,
+        type: 'booking_requested',
+        title: 'New booking request',
+        body: `${req.currentUser!.firstName} requested ${service.name}.`,
+        actionUrl: '/professional/bookings',
+      }, tx);
+
+      return createdBooking;
     });
 
     sendCreated(res, await enrichBooking(created));
@@ -213,21 +250,26 @@ bookingsRouter.patch('/:id/status', requireAuth, validateBody(updateBookingStatu
       throw new HttpError(403, 'Only the professional can set this status');
     }
 
-    const [updated] = await db.update(bookings).set({
-      status: requested,
-      professionalNote: req.body.professionalNote,
-      cancelledAt: requested.startsWith('cancelled') ? new Date() : booking.cancelledAt,
-      completedAt: requested === 'completed' ? new Date() : booking.completedAt,
-      updatedAt: new Date(),
-    }).where(eq(bookings.id, booking.id)).returning();
-
     const targetUserId = isClient ? profile.userId : booking.clientId;
-    await createNotification({
-      userId: targetUserId,
-      type: requested === 'confirmed' ? 'booking_confirmed' : requested === 'declined' ? 'booking_declined' : requested === 'completed' ? 'booking_completed' : requested.startsWith('cancelled') ? 'booking_cancelled' : 'system',
-      title: 'Booking updated',
-      body: `Your booking status is now ${requested.replaceAll('_', ' ')}.`,
-      actionUrl: isClient ? '/professional/bookings' : '/client/bookings',
+    const updated = await db.transaction(async (tx) => {
+      const [updatedBooking] = await tx.update(bookings).set({
+        status: requested,
+        ...(req.body.professionalNote !== undefined ? { professionalNote: req.body.professionalNote } : {}),
+        cancelledAt: requested.startsWith('cancelled') ? new Date() : booking.cancelledAt,
+        completedAt: requested === 'completed' ? new Date() : booking.completedAt,
+        updatedAt: new Date(),
+      }).where(and(eq(bookings.id, booking.id), eq(bookings.status, booking.status))).returning();
+      if (!updatedBooking) throw new HttpError(409, 'Booking status changed. Refresh and try again.');
+
+      await createNotification({
+        userId: targetUserId,
+        type: requested === 'confirmed' ? 'booking_confirmed' : requested === 'declined' ? 'booking_declined' : requested === 'completed' ? 'booking_completed' : requested.startsWith('cancelled') ? 'booking_cancelled' : 'system',
+        title: 'Booking updated',
+        body: `Your booking status is now ${requested.replaceAll('_', ' ')}.`,
+        actionUrl: isClient ? '/professional/bookings' : '/client/bookings',
+      }, tx);
+
+      return updatedBooking;
     });
 
     res.json(await enrichBooking(updated));

@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { formText, isTimeRange, optionalFormText } from '@/lib/forms';
 import type { AvailabilityException, AvailabilityRule } from '@/types';
 
 const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -39,7 +40,7 @@ function BlockedTimeForm({ onSubmit, isSaving }: { onSubmit: (event: FormEvent<H
         <label className="label">Start<input className="input mt-2" name="startTime" type="time" /></label>
         <label className="label">End<input className="input mt-2" name="endTime" type="time" /></label>
       </div>
-      <input className="input" name="reason" placeholder="Reason, optional" />
+      <label className="label">Reason optional<input className="input mt-2" name="reason" maxLength={120} /></label>
       <p className="text-xs font-semibold text-ink/50">Leave start and end blank to block the entire day.</p>
       <button className="secondary-button disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={isSaving}>{isSaving ? 'Saving block...' : 'Add blocked time'}</button>
     </form>
@@ -58,7 +59,7 @@ function WeeklySchedule({ rules, actionId, onToggle }: { rules: AvailabilityRule
               <p className="text-xl font-black text-ink">{weekdays[rule.weekday]}</p>
               <p className="mt-1 text-sm font-semibold text-ink/60">{rule.startTime} to {rule.endTime}</p>
             </div>
-            <button className={`${rule.isActive ? 'secondary-button' : 'primary-button'} disabled:cursor-not-allowed disabled:opacity-60`} onClick={() => onToggle(rule)} disabled={isWorking}>
+            <button className={`${rule.isActive ? 'secondary-button' : 'primary-button'} disabled:cursor-not-allowed disabled:opacity-60`} type="button" onClick={() => onToggle(rule)} disabled={isWorking}>
               {isWorking ? 'Saving...' : rule.isActive ? 'Disable' : 'Enable'}
             </button>
           </div>
@@ -81,7 +82,7 @@ function BlockedDates({ exceptions, actionId, onRemove }: { exceptions: Availabi
               <p className="text-xl font-black text-ink">{exception.date}</p>
               <p className="mt-1 text-sm font-semibold text-ink/60">{exception.startTime && exception.endTime ? `${exception.startTime} to ${exception.endTime}` : 'Full day'}{exception.reason ? ` · ${exception.reason}` : ''}</p>
             </div>
-            <button className="secondary-button disabled:cursor-not-allowed disabled:opacity-60" onClick={() => onRemove(exception)} disabled={isWorking}>{isWorking ? 'Removing...' : 'Remove'}</button>
+            <button className="secondary-button disabled:cursor-not-allowed disabled:opacity-60" type="button" onClick={() => onRemove(exception)} disabled={isWorking}>{isWorking ? 'Removing...' : 'Remove'}</button>
           </div>
         );
       })}
@@ -115,13 +116,22 @@ export function AvailabilityPage() {
     setError('');
     setSavingAction('add-rule');
     const form = new FormData(event.currentTarget);
+    const startTime = formText(form, 'startTime');
+    const endTime = formText(form, 'endTime');
+
+    if (!isTimeRange(startTime, endTime)) {
+      setError('Weekly hours need a valid start time before the end time.');
+      setSavingAction('');
+      return;
+    }
+
     try {
       await apiFetch<AvailabilityRule>('/api/availability/me', {
         method: 'POST',
         body: JSON.stringify({
           weekday: Number(form.get('weekday')),
-          startTime: String(form.get('startTime')),
-          endTime: String(form.get('endTime')),
+          startTime,
+          endTime,
           isActive: true,
         }),
       });
@@ -139,16 +149,23 @@ export function AvailabilityPage() {
     setError('');
     setSavingAction('add-exception');
     const form = new FormData(event.currentTarget);
-    const startTime = String(form.get('startTime') || '');
-    const endTime = String(form.get('endTime') || '');
+    const startTime = optionalFormText(form, 'startTime');
+    const endTime = optionalFormText(form, 'endTime');
+
+    if ((startTime || endTime) && !isTimeRange(startTime, endTime)) {
+      setError('Blocked time needs both a start and end time, with start before end.');
+      setSavingAction('');
+      return;
+    }
+
     try {
       await apiFetch<AvailabilityException>('/api/availability/exceptions/me', {
         method: 'POST',
         body: JSON.stringify({
-          date: String(form.get('date')),
+          date: formText(form, 'date'),
           startTime: startTime || null,
           endTime: endTime || null,
-          reason: String(form.get('reason') || ''),
+          reason: optionalFormText(form, 'reason'),
           isBlocked: true,
         }),
       });

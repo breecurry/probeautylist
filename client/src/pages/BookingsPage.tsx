@@ -16,6 +16,8 @@ export function BookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [sendingMessageFor, setSendingMessageFor] = useState<string | null>(null);
+  const [reviewingBookingId, setReviewingBookingId] = useState<string | null>(null);
 
   async function load() {
     const rows = await apiFetch<Booking[]>('/api/bookings');
@@ -55,14 +57,21 @@ export function BookingsPage() {
     setError('');
     const form = new FormData(event.currentTarget);
     const body = String(form.get('body') || '').trim();
-    if (!body) return;
+    if (!body || sendingMessageFor) return;
+    if (body.length > 1000) {
+      setError('Messages must be 1,000 characters or fewer.');
+      return;
+    }
 
+    setSendingMessageFor(bookingId);
     try {
       await apiFetch(`/api/messages/booking/${bookingId}`, { method: 'POST', body: JSON.stringify({ body }) });
       event.currentTarget.reset();
       await loadMessages(bookingId);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Message could not be sent');
+    } finally {
+      setSendingMessageFor(null);
     }
   }
 
@@ -71,16 +80,31 @@ export function BookingsPage() {
     setError('');
     setNotice('');
     const form = new FormData(event.currentTarget);
+    const rating = Number(form.get('rating'));
+    const comment = String(form.get('comment') || '').trim();
 
+    if (reviewingBookingId) return;
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      setError('Choose a rating from 1 to 5 stars.');
+      return;
+    }
+    if (comment.length < 3 || comment.length > 1000) {
+      setError('Reviews must be between 3 and 1,000 characters.');
+      return;
+    }
+
+    setReviewingBookingId(bookingId);
     try {
       await apiFetch('/api/reviews', {
         method: 'POST',
-        body: JSON.stringify({ bookingId, rating: Number(form.get('rating')), comment: String(form.get('comment')) }),
+        body: JSON.stringify({ bookingId, rating, comment }),
       });
       event.currentTarget.reset();
       setNotice('Review submitted. Thank you for helping other clients choose confidently.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Review could not be saved');
+    } finally {
+      setReviewingBookingId(null);
     }
   }
 
@@ -104,6 +128,8 @@ export function BookingsPage() {
             onLoadMessages={loadMessages}
             onSendMessage={sendMessage}
             onSubmitReview={submitReview}
+            reviewing={reviewingBookingId === booking.id}
+            sendingMessage={sendingMessageFor === booking.id}
           />
         ))}
       </div>
@@ -130,6 +156,8 @@ function BookingCard({
   onLoadMessages,
   onSendMessage,
   onSubmitReview,
+  reviewing,
+  sendingMessage,
 }: {
   booking: Booking;
   currentUserId?: string;
@@ -140,6 +168,8 @@ function BookingCard({
   onLoadMessages: (bookingId: string) => Promise<void>;
   onSendMessage: (event: FormEvent<HTMLFormElement>, bookingId: string) => Promise<void>;
   onSubmitReview: (event: FormEvent<HTMLFormElement>, bookingId: string) => Promise<void>;
+  reviewing: boolean;
+  sendingMessage: boolean;
 }) {
   const serviceName = booking.service?.name ?? `Service ${booking.serviceId.slice(0, 8)}`;
   const otherParty = role === 'professional' ? booking.client?.name : booking.professional?.displayName;
@@ -150,8 +180,8 @@ function BookingCard({
         <BookingSummary booking={booking} serviceName={serviceName} otherParty={otherParty} role={role} />
         <BookingActions booking={booking} role={role} messagesOpen={messagesOpen} onStatus={onStatus} onLoadMessages={onLoadMessages} />
       </div>
-      {messagesOpen && <MessagesPanel bookingId={booking.id} currentUserId={currentUserId} messages={messages} onSendMessage={onSendMessage} />}
-      {role === 'client' && booking.status === 'completed' && <ReviewForm bookingId={booking.id} onSubmitReview={onSubmitReview} />}
+      {messagesOpen && <MessagesPanel bookingId={booking.id} currentUserId={currentUserId} messages={messages} onSendMessage={onSendMessage} sending={sendingMessage} />}
+      {role === 'client' && booking.status === 'completed' && <ReviewForm bookingId={booking.id} onSubmitReview={onSubmitReview} reviewing={reviewing} />}
     </div>
   );
 }
@@ -186,21 +216,21 @@ function BookingActions({
       <StatusPill status={booking.status} />
       {role === 'professional' && booking.status === 'pending' && (
         <>
-          <button className="primary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'confirmed')}>Accept</button>
-          <button className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'declined')}>Decline</button>
+          <button type="button" className="primary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'confirmed')}>Accept</button>
+          <button type="button" className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'declined')}>Decline</button>
         </>
       )}
       {role === 'professional' && booking.status === 'confirmed' && (
         <>
-          <button className="primary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'completed')}>Complete</button>
-          <button className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'cancelled_by_professional')}>Cancel</button>
-          <button className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'no_show')}>No-show</button>
+          <button type="button" className="primary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'completed')}>Complete</button>
+          <button type="button" className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'cancelled_by_professional')}>Cancel</button>
+          <button type="button" className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'no_show')}>No-show</button>
         </>
       )}
       {role === 'client' && ['pending', 'confirmed'].includes(booking.status) && (
-        <button className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'cancelled_by_client')}>Cancel</button>
+        <button type="button" className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'cancelled_by_client')}>Cancel</button>
       )}
-      <button className="secondary-button px-4 py-2" onClick={() => void onLoadMessages(booking.id)}>{messagesOpen ? 'Refresh messages' : 'Messages'}</button>
+      <button type="button" className="secondary-button px-4 py-2" onClick={() => void onLoadMessages(booking.id)}>{messagesOpen ? 'Refresh messages' : 'Messages'}</button>
     </div>
   );
 }
@@ -210,11 +240,13 @@ function MessagesPanel({
   currentUserId,
   messages,
   onSendMessage,
+  sending,
 }: {
   bookingId: string;
   currentUserId?: string;
   messages: Message[];
   onSendMessage: (event: FormEvent<HTMLFormElement>, bookingId: string) => Promise<void>;
+  sending: boolean;
 }) {
   return (
     <div className="mt-5 rounded-3xl bg-cream p-4">
@@ -226,21 +258,21 @@ function MessagesPanel({
         {messages.length === 0 && <p className="text-sm text-ink/55">No messages yet.</p>}
       </div>
       <form onSubmit={(event) => void onSendMessage(event, bookingId)} className="mt-3 flex gap-2">
-        <input className="input" name="body" placeholder="Write a message about this appointment" />
-        <button className="primary-button" type="submit">Send</button>
+        <input className="input" name="body" placeholder="Write a message about this appointment" maxLength={1000} disabled={sending} required />
+        <button className="primary-button" type="submit" disabled={sending}>{sending ? 'Sending...' : 'Send'}</button>
       </form>
     </div>
   );
 }
 
-function ReviewForm({ bookingId, onSubmitReview }: { bookingId: string; onSubmitReview: (event: FormEvent<HTMLFormElement>, bookingId: string) => Promise<void> }) {
+function ReviewForm({ bookingId, onSubmitReview, reviewing }: { bookingId: string; onSubmitReview: (event: FormEvent<HTMLFormElement>, bookingId: string) => Promise<void>; reviewing: boolean }) {
   return (
     <form onSubmit={(event) => void onSubmitReview(event, bookingId)} className="mt-5 grid gap-3 rounded-3xl bg-cream p-4 sm:grid-cols-[120px_1fr_auto]">
-      <select className="input" name="rating" defaultValue="5">
+      <select className="input" name="rating" defaultValue="5" disabled={reviewing}>
         {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}
       </select>
-      <input className="input" name="comment" placeholder="Leave a review for this completed appointment" required />
-      <button className="primary-button" type="submit">Review</button>
+      <input className="input" name="comment" placeholder="Leave a review for this completed appointment" minLength={3} maxLength={1000} disabled={reviewing} required />
+      <button className="primary-button" type="submit" disabled={reviewing}>{reviewing ? 'Submitting...' : 'Review'}</button>
     </form>
   );
 }

@@ -48,14 +48,21 @@ favoritesRouter.post('/:professionalId', requireRole('client', 'admin'), async (
     )).limit(1);
     if (!profile) throw new HttpError(404, 'Professional not found');
 
+    const [created] = await db.insert(favorites)
+      .values({ clientId: req.currentUser!.id, professionalId: profile.id })
+      .onConflictDoNothing({ target: [favorites.clientId, favorites.professionalId] })
+      .returning();
+
+    if (created) {
+      res.status(201).json(created);
+      return;
+    }
+
     const [existing] = await db.select().from(favorites).where(and(
       eq(favorites.clientId, req.currentUser!.id),
       eq(favorites.professionalId, profile.id),
     )).limit(1);
-    if (existing) return res.json(existing);
-
-    const [created] = await db.insert(favorites).values({ clientId: req.currentUser!.id, professionalId: profile.id }).returning();
-    res.status(201).json(created);
+    res.json(existing);
   } catch (error) {
     next(error);
   }

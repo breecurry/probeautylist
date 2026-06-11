@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { serviceCategories } from '@shared/types';
 import { apiFetch } from '@/lib/api';
+import { formCsv, formText, optionalFormText } from '@/lib/forms';
 import { StatusPill } from '@/components/StatusPill';
 import type { PrivateProfessionalProfile } from '@/types';
 
@@ -9,6 +10,7 @@ export function ProfessionalSettings() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     void apiFetch<PrivateProfessionalProfile | null>('/api/professionals/me')
@@ -19,8 +21,11 @@ export function ProfessionalSettings() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
+
     setMessage('');
     setError('');
+    setSaving(true);
 
     const form = new FormData(event.currentTarget);
     const body = buildProfilePayload(form);
@@ -34,6 +39,8 @@ export function ProfessionalSettings() {
       setMessage('Profile saved and submitted for review.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Profile could not be saved');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -48,7 +55,7 @@ export function ProfessionalSettings() {
           <MediaFields profile={profile} />
           <PrivateDetailsFields profile={profile} />
           <FormMessages message={message} error={error} />
-          <button className="primary-button w-fit" type="submit">Save profile</button>
+          <button className="primary-button w-fit disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={saving}>{saving ? 'Saving profile...' : 'Save profile'}</button>
         </form>
       )}
     </section>
@@ -57,20 +64,20 @@ export function ProfessionalSettings() {
 
 function buildProfilePayload(form: FormData) {
   return {
-    displayName: String(form.get('displayName')),
-    headline: String(form.get('headline')),
-    bio: String(form.get('bio')),
-    category: String(form.get('category')),
-    specialties: String(form.get('specialties') || '').split(',').map((item) => item.trim()).filter(Boolean),
-    city: String(form.get('city')),
-    state: String(form.get('state')),
-    addressLine1: String(form.get('addressLine1') || ''),
-    postalCode: String(form.get('postalCode') || ''),
-    profileImageUrl: String(form.get('profileImageUrl') || ''),
-    coverImageUrl: String(form.get('coverImageUrl') || ''),
-    instagramUrl: String(form.get('instagramUrl') || ''),
-    websiteUrl: String(form.get('websiteUrl') || ''),
-    licenseLabel: String(form.get('licenseLabel') || ''),
+    displayName: formText(form, 'displayName'),
+    headline: formText(form, 'headline'),
+    bio: formText(form, 'bio'),
+    category: formText(form, 'category'),
+    specialties: formCsv(form, 'specialties'),
+    city: formText(form, 'city'),
+    state: formText(form, 'state'),
+    addressLine1: optionalFormText(form, 'addressLine1'),
+    postalCode: optionalFormText(form, 'postalCode'),
+    profileImageUrl: optionalFormText(form, 'profileImageUrl'),
+    coverImageUrl: optionalFormText(form, 'coverImageUrl'),
+    instagramUrl: optionalFormText(form, 'instagramUrl'),
+    websiteUrl: optionalFormText(form, 'websiteUrl'),
+    licenseLabel: optionalFormText(form, 'licenseLabel'),
   };
 }
 
@@ -163,5 +170,6 @@ function FormMessages({ message, error }: { message: string; error: string }) {
 }
 
 function Field({ label, name, defaultValue, required = false }: { label: string; name: string; defaultValue?: string | null; required?: boolean }) {
-  return <label className="label">{label}<input className="input mt-2" name={name} defaultValue={defaultValue ?? ''} required={required} /></label>;
+  const type = name.toLowerCase().includes('url') ? 'url' : 'text';
+  return <label className="label">{label}<input className="input mt-2" name={name} type={type} defaultValue={defaultValue ?? ''} required={required} /></label>;
 }

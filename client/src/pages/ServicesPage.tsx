@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { serviceCategories } from '@shared/types';
 import { apiFetch, formatMoney } from '@/lib/api';
+import { formInteger, formText, parseMoneyToCents } from '@/lib/forms';
 import type { Service } from '@/types';
 
 function ErrorNotice({ message }: { message: string }) {
@@ -12,12 +13,12 @@ function ServiceForm({ error, isSaving, onSubmit }: { error: string; isSaving: b
   return (
     <form onSubmit={onSubmit} className="card grid gap-4 p-6">
       <h2 className="text-xl font-black text-ink">Add service</h2>
-      <input className="input" name="name" placeholder="Service name" required />
-      <textarea className="input min-h-28" name="description" placeholder="Description" required />
-      <select className="input" name="category">{serviceCategories.map((item) => <option key={item}>{item}</option>)}</select>
-      <input className="input" name="durationMinutes" type="number" min="15" step="15" placeholder="Duration minutes" required />
-      <input className="input" name="price" type="number" min="0" step="0.01" placeholder="Price" required />
-      <input className="input" name="deposit" type="number" min="0" step="0.01" placeholder="Deposit optional" />
+      <label className="label">Service name<input className="input mt-2" name="name" minLength={2} maxLength={80} required /></label>
+      <label className="label">Description<textarea className="input mt-2 min-h-28" name="description" minLength={10} maxLength={400} required /></label>
+      <label className="label">Category<select className="input mt-2" name="category">{serviceCategories.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label className="label">Duration minutes<input className="input mt-2" name="durationMinutes" type="number" min="15" max="720" step="15" required /></label>
+      <label className="label">Price<input className="input mt-2" name="price" type="number" min="0" step="0.01" inputMode="decimal" required /></label>
+      <label className="label">Deposit optional<input className="input mt-2" name="deposit" type="number" min="0" step="0.01" inputMode="decimal" /></label>
       <button className="primary-button disabled:cursor-not-allowed disabled:opacity-60" type="submit" disabled={isSaving}>{isSaving ? 'Saving service...' : 'Add service'}</button>
       <ErrorNotice message={error} />
     </form>
@@ -38,7 +39,7 @@ function ServiceCard({ service, isSaving, onToggle }: { service: Service; isSavi
         </div>
         <div className="text-right">
           <p className="font-black text-berry">{formatMoney(service.priceCents)}</p>
-          <button className="secondary-button mt-4 disabled:cursor-not-allowed disabled:opacity-60" onClick={() => onToggle(service)} disabled={isSaving}>{isSaving ? 'Saving...' : service.isActive ? 'Disable' : 'Enable'}</button>
+          <button className="secondary-button mt-4 disabled:cursor-not-allowed disabled:opacity-60" type="button" onClick={() => onToggle(service)} disabled={isSaving}>{isSaving ? 'Saving...' : service.isActive ? 'Disable' : 'Enable'}</button>
         </div>
       </div>
     </div>
@@ -79,16 +80,31 @@ export function ServicesPage() {
     setError('');
     setSavingAction('add-service');
     const form = new FormData(event.currentTarget);
+    const durationMinutes = formInteger(form, 'durationMinutes');
+    const priceCents = parseMoneyToCents(form.get('price'));
+    const depositCents = parseMoneyToCents(form.get('deposit'));
+
+    if (!Number.isFinite(durationMinutes) || durationMinutes < 15) {
+      setError('Enter a valid duration of at least 15 minutes.');
+      setSavingAction('');
+      return;
+    }
+    if (!Number.isFinite(priceCents) || !Number.isFinite(depositCents) || depositCents > priceCents) {
+      setError('Enter a valid price and deposit. Deposits cannot exceed the price.');
+      setSavingAction('');
+      return;
+    }
+
     try {
       await apiFetch<Service>('/api/services/me', {
         method: 'POST',
         body: JSON.stringify({
-          name: String(form.get('name')),
-          description: String(form.get('description')),
-          category: String(form.get('category')),
-          durationMinutes: Number(form.get('durationMinutes')),
-          priceCents: Math.round(Number(form.get('price')) * 100),
-          depositCents: Math.round(Number(form.get('deposit') || 0) * 100),
+          name: formText(form, 'name'),
+          description: formText(form, 'description'),
+          category: formText(form, 'category'),
+          durationMinutes,
+          priceCents,
+          depositCents,
           isActive: true,
         }),
       });

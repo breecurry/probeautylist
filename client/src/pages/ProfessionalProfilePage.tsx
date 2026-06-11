@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { CalendarPlus, Clock, Heart, MapPin, ShieldCheck, Star } from 'lucide-react';
 import { apiFetch, formatMoney } from '@/lib/api';
+import { safeBackgroundImageStyle, safeImageUrl } from '@/lib/safety';
 import { useAuth } from '@/context/AuthContext';
 import type { AvailabilityException, AvailabilityRule, PortfolioItem, ProfessionalProfile, Review, Service } from '@/types';
 
@@ -9,6 +10,7 @@ const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 type BookingPanelProps = {
   error: string;
+  bookingSaving: boolean;
   message: string;
   minimumBookingTime: string;
   onBook: (event: FormEvent<HTMLFormElement>) => Promise<void>;
@@ -30,6 +32,7 @@ export function ProfessionalProfilePage() {
   const [selectedService, setSelectedService] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [bookingSaving, setBookingSaving] = useState(false);
 
   const minimumBookingTime = useMemo(() => {
     const nextHour = new Date();
@@ -84,21 +87,36 @@ export function ProfessionalProfilePage() {
     setError('');
     const form = new FormData(event.currentTarget);
     const startsAt = String(form.get('startsAt') || '');
+    const startsAtDate = new Date(startsAt);
+    const clientNote = String(form.get('clientNote') || '').trim();
 
+    if (Number.isNaN(startsAtDate.getTime())) {
+      setError('Choose a valid appointment date and time.');
+      return;
+    }
+    if (clientNote.length > 1000) {
+      setError('Booking notes must be 1,000 characters or fewer.');
+      return;
+    }
+    if (bookingSaving) return;
+
+    setBookingSaving(true);
     try {
       await apiFetch('/api/bookings', {
         method: 'POST',
         body: JSON.stringify({
           professionalId: profile.id,
           serviceId: selectedService,
-          startsAt: new Date(startsAt).toISOString(),
-          clientNote: String(form.get('clientNote') || ''),
+          startsAt: startsAtDate.toISOString(),
+          clientNote,
         }),
       });
       setMessage('Booking request sent. You will receive an in-app notification when it is updated.');
       event.currentTarget.reset();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Booking request failed');
+    } finally {
+      setBookingSaving(false);
     }
   }
 
@@ -117,6 +135,7 @@ export function ProfessionalProfilePage() {
         <div className="grid gap-8 p-8 lg:grid-cols-[1fr_380px]">
           <ProfileIntro profile={profile} canSave={user?.role === 'client'} onSave={() => void saveFavorite()} />
           <BookingPanel
+            bookingSaving={bookingSaving}
             error={error}
             message={message}
             minimumBookingTime={minimumBookingTime}
@@ -147,7 +166,7 @@ function CoverImage({ url }: { url?: string | null }) {
   return (
     <div
       className="h-56 bg-gradient-to-r from-rosewood to-berry"
-      style={url ? { backgroundImage: `url(${url})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+      style={safeBackgroundImageStyle(url)}
     />
   );
 }
@@ -168,12 +187,12 @@ function ProfileIntro({ canSave, onSave, profile }: { canSave: boolean; onSave: 
           {profile.specialties.map((item) => <span key={item} className="rounded-full bg-blush px-3 py-1 text-sm font-bold text-rosewood">{item}</span>)}
         </div>
       )}
-      {canSave && <button className="secondary-button mt-6" onClick={onSave}><Heart className="mr-2" size={16} />Save professional</button>}
+      {canSave && <button className="secondary-button mt-6" type="button" onClick={onSave}><Heart className="mr-2" size={16} />Save professional</button>}
     </div>
   );
 }
 
-function BookingPanel({ error, message, minimumBookingTime, onBook, selectedService, services, setSelectedService, userRole }: BookingPanelProps) {
+function BookingPanel({ bookingSaving, error, message, minimumBookingTime, onBook, selectedService, services, setSelectedService, userRole }: BookingPanelProps) {
   const canRequestBooking = userRole === 'client' && services.length > 0;
 
   return (
@@ -193,11 +212,11 @@ function BookingPanel({ error, message, minimumBookingTime, onBook, selectedServ
       <p className="mt-2 text-xs font-semibold text-ink/50">Requests are checked against the professional’s weekly schedule, blocked dates, and existing pending or confirmed bookings.</p>
 
       <label className="label mt-4 block">Notes</label>
-      <textarea className="input mt-2 min-h-28" name="clientNote" placeholder="Share style goals, timing needs, or questions." disabled={!canRequestBooking} />
+      <textarea className="input mt-2 min-h-28" name="clientNote" placeholder="Share style goals, timing needs, or questions." disabled={!canRequestBooking || bookingSaving} maxLength={1000} />
 
       {message && <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</p>}
       {error && <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
-      <button className="primary-button mt-5 w-full" disabled={!canRequestBooking}>Send booking request</button>
+      <button className="primary-button mt-5 w-full" type="submit" disabled={!canRequestBooking || bookingSaving}>{bookingSaving ? 'Sending...' : 'Send booking request'}</button>
     </form>
   );
 }
@@ -236,15 +255,21 @@ function PortfolioSection({ portfolio }: { portfolio: PortfolioItem[] }) {
     <section>
       <h2 className="mb-4 mt-10 text-2xl font-black text-ink">Portfolio</h2>
       <div className="grid gap-4 sm:grid-cols-2">
-        {portfolio.map((item) => (
-          <figure key={item.id} className="card overflow-hidden">
-            <img src={item.imageUrl} alt={item.caption} className="h-48 w-full object-cover" />
-            <figcaption className="p-4 text-sm font-semibold text-ink/70">{item.caption}</figcaption>
-          </figure>
-        ))}
+        {portfolio.map((item) => <PortfolioFigure key={item.id} item={item} />)}
         {portfolio.length === 0 && <div className="card p-5 text-sm text-ink/60">No portfolio items yet.</div>}
       </div>
     </section>
+  );
+}
+
+function PortfolioFigure({ item }: { item: PortfolioItem }) {
+  const imageUrl = safeImageUrl(item.imageUrl);
+
+  return (
+    <figure className="card overflow-hidden">
+      {imageUrl ? <img src={imageUrl} alt={item.caption} className="h-48 w-full object-cover" /> : <div className="h-48 bg-gradient-to-r from-rosewood to-berry" />}
+      <figcaption className="p-4 text-sm font-semibold text-ink/70">{item.caption}</figcaption>
+    </figure>
   );
 }
 

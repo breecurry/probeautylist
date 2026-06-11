@@ -1,7 +1,12 @@
 import { ArrowRight, CalendarCheck, CheckCircle2, HeartHandshake, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const categories = ['Hair Stylists', 'Nail Artists', 'Estheticians', 'Barbers', 'Makeup Artists', 'Lash Artists'];
+import { serviceCategories, type ServiceCategory } from '@shared/types';
+
+const featuredCategories = serviceCategories.slice(0, 6).map((category) => ({
+  label: `${category}s`,
+  value: category,
+})) satisfies Array<{ label: string; value: ServiceCategory }>;
 
 export function Home() {
   return (
@@ -51,7 +56,7 @@ export function Home() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-black text-ink">Built for the whole beauty industry.</h2>
           <div className="mt-8 flex flex-wrap gap-3">
-            {categories.map((category) => <Link to={`/search?category=${encodeURIComponent(category.replace(/s$/, ''))}`} key={category} className="rounded-full bg-blush px-5 py-3 font-bold text-rosewood hover:bg-berry hover:text-white">{category}</Link>)}
+            {featuredCategories.map((category) => <Link to={`/search?category=${encodeURIComponent(category.value)}`} key={category.value} className="rounded-full bg-blush px-5 py-3 font-bold text-rosewood hover:bg-berry hover:text-white">{category.label}</Link>)}
           </div>
         </div>
       </section>

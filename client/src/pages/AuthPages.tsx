@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { formText, optionalFormText } from '@/lib/forms';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -18,8 +19,8 @@ export function LoginPage() {
     const form = new FormData(event.currentTarget);
     try {
       await login({
-        email: String(form.get('email')),
-        password: String(form.get('password')),
+        email: formText(form, 'email').toLowerCase(),
+        password: String(form.get('password') ?? ''),
       });
       navigate('/');
     } catch (err) {
@@ -32,8 +33,8 @@ export function LoginPage() {
   return (
     <AuthShell title="Welcome back" subtitle="Log in to manage bookings, notifications, and profile details.">
       <form onSubmit={onSubmit} className="space-y-4">
-        <input className="input" name="email" type="email" placeholder="Email" autoComplete="email" required />
-        <input className="input" name="password" type="password" placeholder="Password" autoComplete="current-password" required />
+        <label className="label">Email<input className="input mt-2" name="email" type="email" autoComplete="email" required /></label>
+        <label className="label">Password<input className="input mt-2" name="password" type="password" autoComplete="current-password" required /></label>
         {error && <FormError message={error} />}
         <button className="primary-button w-full" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Logging in...' : 'Log in'}
@@ -64,11 +65,11 @@ export function RegisterPage() {
 
     try {
       await register({
-        firstName: String(form.get('firstName')),
-        lastName: String(form.get('lastName')),
-        email: String(form.get('email')),
-        phone: String(form.get('phone') || ''),
-        password: String(form.get('password')),
+        firstName: formText(form, 'firstName'),
+        lastName: formText(form, 'lastName'),
+        email: formText(form, 'email').toLowerCase(),
+        phone: optionalFormText(form, 'phone'),
+        password: String(form.get('password') ?? ''),
         role,
       });
       navigate(role === 'professional' ? '/professional/profile' : '/client');
@@ -83,16 +84,16 @@ export function RegisterPage() {
     <AuthShell title="Create your account" subtitle="Clients can book online. Professionals can build a profile and manage bookings.">
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <input className="input" name="firstName" placeholder="First name" autoComplete="given-name" required />
-          <input className="input" name="lastName" placeholder="Last name" autoComplete="family-name" required />
+          <label className="label">First name<input className="input mt-2" name="firstName" autoComplete="given-name" minLength={1} maxLength={80} required /></label>
+          <label className="label">Last name<input className="input mt-2" name="lastName" autoComplete="family-name" minLength={1} maxLength={80} required /></label>
         </div>
-        <input className="input" name="email" type="email" placeholder="Email" autoComplete="email" required />
-        <input className="input" name="phone" placeholder="Phone optional" autoComplete="tel" />
-        <select className="input" name="role" defaultValue="client">
+        <label className="label">Email<input className="input mt-2" name="email" type="email" autoComplete="email" required /></label>
+        <label className="label">Phone optional<input className="input mt-2" name="phone" autoComplete="tel" maxLength={40} /></label>
+        <label className="label">Account type<select className="input mt-2" name="role" defaultValue="client">
           <option value="client">I am booking services</option>
           <option value="professional">I am a beauty professional</option>
-        </select>
-        <input className="input" name="password" type="password" minLength={10} placeholder="Password" autoComplete="new-password" required />
+        </select></label>
+        <label className="label">Password<input className="input mt-2" name="password" type="password" minLength={10} autoComplete="new-password" required /></label>
         {error && <FormError message={error} />}
         <button className="primary-button w-full" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Creating account...' : 'Create account'}

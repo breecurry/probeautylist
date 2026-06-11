@@ -76,12 +76,13 @@ authRouter.post('/login', authWriteLimit, validateBody(loginSchema), async (req,
       throw new HttpError(401, 'Invalid email or password');
     }
 
-    await db.update(users).set({ lastLoginAt: new Date(), updatedAt: new Date() }).where(eq(users.id, user.id));
+    const loggedInAt = new Date();
+    await db.update(users).set({ lastLoginAt: loggedInAt, updatedAt: loggedInAt }).where(eq(users.id, user.id));
     req.session.regenerate((error) => {
       if (error) return next(error);
       req.session.userId = user.id;
       ensureCsrfToken(req);
-      res.json(publicUser(user));
+      res.json(publicUser({ ...user, lastLoginAt: loggedInAt, updatedAt: loggedInAt }));
     });
   } catch (error) {
     next(error);
@@ -124,8 +125,14 @@ authRouter.patch('/password', authWriteLimit, requireAuth, validateBody(password
     if (!valid) throw new HttpError(401, 'Current password is incorrect');
 
     const passwordHash = await argon2.hash(req.body.newPassword, { type: argon2.argon2id });
-    await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, req.currentUser!.id));
-    res.json({ message: 'Password updated' });
+    const userId = req.currentUser!.id;
+    await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
+    req.session.regenerate((error) => {
+      if (error) return next(error);
+      req.session.userId = userId;
+      ensureCsrfToken(req);
+      res.json({ message: 'Password updated' });
+    });
   } catch (error) {
     next(error);
   }

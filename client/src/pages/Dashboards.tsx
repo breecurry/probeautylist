@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch, formatDateTime, formatMoney } from '@/lib/api';
+import { safeInternalPath } from '@/lib/safety';
 import { useAuth } from '@/context/AuthContext';
 import { StatusPill } from '@/components/StatusPill';
 import type { Booking, Favorite, Notification } from '@/types';
@@ -140,7 +141,7 @@ function NotificationsPreview({ notifications }: { notifications: Notification[]
       <h2 className="text-2xl font-black text-ink">Notifications</h2>
       <div className="mt-5 space-y-3">
         {notifications.map((item) => (
-          <Link key={item.id} to={item.actionUrl || '/notifications'} className="block rounded-2xl border border-rosewood/10 p-4 hover:bg-cream">
+          <Link key={item.id} to={safeInternalPath(item.actionUrl, '/notifications')} className="block rounded-2xl border border-rosewood/10 p-4 hover:bg-cream">
             <p className="font-bold text-ink">{item.title}</p>
             <p className="mt-1 text-sm leading-6 text-ink/60">{item.body}</p>
           </Link>

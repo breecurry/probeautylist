@@ -84,34 +84,36 @@ async function moderateProfile(params: {
   notificationBody: string;
   note?: string;
 }) {
-  const [profile] = await db.update(professionalProfiles)
-    .set({
-      status: params.status,
-      isVisible: params.isVisible,
-      approvedAt: params.status === 'approved' ? new Date() : null,
-      updatedAt: new Date(),
-    })
-    .where(eq(professionalProfiles.id, params.profileId))
-    .returning();
-  if (!profile) throw new HttpError(404, 'Professional profile not found');
+  return db.transaction(async (tx) => {
+    const [profile] = await tx.update(professionalProfiles)
+      .set({
+        status: params.status,
+        isVisible: params.isVisible,
+        approvedAt: params.status === 'approved' ? new Date() : null,
+        updatedAt: new Date(),
+      })
+      .where(eq(professionalProfiles.id, params.profileId))
+      .returning();
+    if (!profile) throw new HttpError(404, 'Professional profile not found');
 
-  await db.insert(adminActions).values({
-    adminId: params.adminId,
-    targetType: 'professional_profile',
-    targetId: profile.id,
-    action: params.action,
-    note: params.note || `${params.action} profile ${profile.displayName}`,
+    await tx.insert(adminActions).values({
+      adminId: params.adminId,
+      targetType: 'professional_profile',
+      targetId: profile.id,
+      action: params.action,
+      note: params.note || `${params.action} profile ${profile.displayName}`,
+    });
+
+    await createNotification({
+      userId: profile.userId,
+      type: params.status === 'approved' ? 'profile_approved' : params.status === 'suspended' ? 'profile_suspended' : 'system',
+      title: params.notificationTitle,
+      body: params.notificationBody,
+      actionUrl: '/professional/profile',
+    }, tx);
+
+    return profile;
   });
-
-  await createNotification({
-    userId: profile.userId,
-    type: params.status === 'approved' ? 'profile_approved' : params.status === 'suspended' ? 'profile_suspended' : 'system',
-    title: params.notificationTitle,
-    body: params.notificationBody,
-    actionUrl: '/professional/profile',
-  });
-
-  return profile;
 }
 
 adminRouter.post('/professionals/:id/approve', validateBody(moderationNoteSchema), async (req, res, next) => {

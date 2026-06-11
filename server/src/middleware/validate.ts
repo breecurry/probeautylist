@@ -11,3 +11,25 @@ export function validateBody<T>(schema: ZodSchema<T>) {
     }
   };
 }
+
+export function validateQuery<T>(schema: ZodSchema<T>) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      req.query = schema.parse(req.query) as Request['query'];
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}
+
+export function validateParams<T>(schema: ZodSchema<T>) {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    try {
+      req.params = schema.parse(req.params) as Request['params'];
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+}

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { serviceCategories } from '@shared/types';
 import { apiFetch } from '@/lib/api';
+import { safeBackgroundImageStyle } from '@/lib/safety';
 import type { ProfessionalSummary } from '@/types';
 
 const searchableFields = ['q', 'category', 'city', 'state'] as const;
@@ -16,21 +17,25 @@ export function SearchPage() {
   const hasActiveFilters = useMemo(() => searchableFields.some((key) => Boolean(params.get(key))), [params]);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     async function load() {
       setLoading(true);
       setError('');
 
       try {
         const query = params.toString();
-        setPros(await apiFetch<ProfessionalSummary[]>(`/api/professionals${query ? `?${query}` : ''}`));
+        setPros(await apiFetch<ProfessionalSummary[]>(`/api/professionals${query ? `?${query}` : ''}`, { signal: controller.signal }));
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : 'Search failed');
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     }
 
     void load();
+    return () => controller.abort();
   }, [params]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -95,7 +100,7 @@ function ProfessionalCard({ pro }: { pro: ProfessionalSummary }) {
     <Link to={`/pros/${pro.slug}`} className="card overflow-hidden transition hover:-translate-y-1">
       <div
         className="h-36 bg-gradient-to-br from-blush to-rosewood/20"
-        style={pro.coverImageUrl ? { backgroundImage: `url(${pro.coverImageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+        style={safeBackgroundImageStyle(pro.coverImageUrl)}
       />
       <div className="p-6">
         <p className="text-sm font-bold text-berry">{pro.category}</p>

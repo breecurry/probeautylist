@@ -3,24 +3,31 @@ import { and, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { professionalProfiles, users } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
-import { validateBody } from '../../middleware/validate.js';
+import { validateBody, validateQuery } from '../../middleware/validate.js';
 import { HttpError, sendCreated } from '../../utils/http.js';
 import { slugify } from '../../utils/slug.js';
-import { professionalProfileSchema } from './schemas.js';
+import { professionalProfileSchema, professionalSearchSchema } from './schemas.js';
 
 export const professionalsRouter = Router();
 
-professionalsRouter.get('/', async (req, res, next) => {
+const MAX_SLUG_ATTEMPTS = 25;
+
+function candidateSlug(baseSlug: string, attempt: number) {
+  return attempt === 0 ? baseSlug : `${baseSlug}-${attempt + 1}`;
+}
+
+professionalsRouter.get('/', validateQuery(professionalSearchSchema), async (req, res, next) => {
   try {
+    const { category, city, state, q } = req.query as { category?: string; city?: string; state?: string; q?: string };
     const filters = [eq(professionalProfiles.status, 'approved'), eq(professionalProfiles.isVisible, true)];
-    if (typeof req.query.category === 'string' && req.query.category) filters.push(eq(professionalProfiles.category, req.query.category));
-    if (typeof req.query.city === 'string' && req.query.city) filters.push(ilike(professionalProfiles.city, `%${req.query.city}%`));
-    if (typeof req.query.state === 'string' && req.query.state) filters.push(ilike(professionalProfiles.state, `%${req.query.state}%`));
-    if (typeof req.query.q === 'string' && req.query.q) {
+    if (category) filters.push(eq(professionalProfiles.category, category));
+    if (city) filters.push(ilike(professionalProfiles.city, `%${city}%`));
+    if (state) filters.push(ilike(professionalProfiles.state, `%${state}%`));
+    if (q) {
       filters.push(or(
-        ilike(professionalProfiles.displayName, `%${req.query.q}%`),
-        ilike(professionalProfiles.headline, `%${req.query.q}%`),
-        ilike(professionalProfiles.bio, `%${req.query.q}%`),
+        ilike(professionalProfiles.displayName, `%${q}%`),
+        ilike(professionalProfiles.headline, `%${q}%`),
+        ilike(professionalProfiles.bio, `%${q}%`),
       )!);
     }
 
@@ -57,15 +64,23 @@ professionalsRouter.post('/me', requireRole('professional', 'admin'), validateBo
     if (existing) throw new HttpError(409, 'Professional profile already exists');
 
     const baseSlug = slugify(req.body.displayName);
-    const suffix = Math.random().toString(36).slice(2, 7);
-    const [profile] = await db.insert(professionalProfiles).values({
-      ...req.body,
-      slug: `${baseSlug}-${suffix}`,
-      userId: req.currentUser!.id,
-      status: 'pending_review',
-      isVisible: false,
-    }).returning();
-    sendCreated(res, profile);
+    for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt += 1) {
+      const [profile] = await db.insert(professionalProfiles).values({
+        ...req.body,
+        slug: candidateSlug(baseSlug, attempt),
+        userId: req.currentUser!.id,
+        status: 'pending_review',
+        isVisible: false,
+      })
+        .onConflictDoNothing({ target: professionalProfiles.slug })
+        .returning();
+      if (profile) {
+        sendCreated(res, profile);
+        return;
+      }
+    }
+
+    throw new HttpError(409, 'A similar professional profile slug already exists. Please adjust the display name.');
   } catch (error) {
     next(error);
   }

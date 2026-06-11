@@ -1,17 +1,6 @@
 import { z } from 'zod';
 
-const serviceCategories = [
-  'Hair Stylist',
-  'Nail Artist',
-  'Esthetician',
-  'Barber',
-  'Makeup Artist',
-  'Lash Artist',
-  'Brow Artist',
-  'Massage Therapist',
-  'Waxing Specialist',
-  'Other Beauty Professional',
-] as const;
+import { serviceCategories } from '../../constants/domain.js';
 
 export const serviceSchema = z.object({
   name: z.string().min(2).max(120).trim(),

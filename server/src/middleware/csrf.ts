@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+
 import type { NextFunction, Request, Response } from 'express';
 import { HttpError } from '../utils/http.js';
 
@@ -18,9 +19,15 @@ export function csrfProtection(req: Request, _res: Response, next: NextFunction)
 
   const expected = req.session.csrfToken;
   const received = req.get('x-csrf-token');
-  if (!expected || !received || received !== expected) {
+  if (!expected || !received || !isSameToken(received, expected)) {
     return next(new HttpError(403, 'Security token is missing or expired. Please refresh and try again.'));
   }
 
   next();
+}
+
+function isSameToken(received: string, expected: string) {
+  const receivedBuffer = Buffer.from(received, 'utf8');
+  const expectedBuffer = Buffer.from(expected, 'utf8');
+  return receivedBuffer.length === expectedBuffer.length && crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
 }

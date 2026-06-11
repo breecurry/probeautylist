@@ -30,15 +30,14 @@ Copy `.env.example` to `.env` on the server and replace every placeholder. Do no
 | `UPLOAD_DIR` | Yes | Local directory for uploaded profile and portfolio assets. |
 | `MAX_UPLOAD_MB` | Yes | Maximum upload size in megabytes. |
 | `ADMIN_EMAIL` | Only for bootstrap | Email for the initial admin bootstrap command. |
-| `ADMIN_PASSWORD` | Only for bootstrap | Temporary bootstrap password for the initial admin account. |
+| `ADMIN_PASSWORD` | Only for bootstrap | One-time temporary bootstrap password for the initial admin account. Remove it from production after bootstrap. |
 
 ## First deployment
 
-Install dependencies, generate or apply migrations, build the app, and create the first admin account. Run these commands from the project root after `.env` has been configured.
+Install dependencies, apply the committed migrations, build the app, and create the first admin account. Run these commands from the project root after `.env` has been configured. Do not generate new migrations on the production server; migration generation is a development workflow only.
 
 ```bash
 npm ci
-npm run db:generate
 npm run db:migrate
 npm run build
 npm run admin:create
@@ -127,6 +126,12 @@ sudo systemctl status probeautylist
 | Admin access | Initial admin account was created, login works, and the bootstrap password was removed from the environment. |
 | Health check | `GET /api/health` returns a healthy response through the public domain. |
 
+You can verify a running deployment with the built-in health probe:
+
+```bash
+APP_HEALTH_URL=https://yourdomain.com/api/health npm run smoke:health
+```
+
 ## Updating the app
 
 For a normal update, pull the latest code, install dependencies with the lockfile, run migrations, rebuild, and restart the process.
@@ -142,10 +147,7 @@ sudo systemctl restart probeautylist
 Run the quality checks before deploying updates whenever possible:
 
 ```bash
-npm run lint
-npm run check
-npm run build
-npm audit --omit=dev --audit-level=high
+npm run verify
 ```
 
 ## References

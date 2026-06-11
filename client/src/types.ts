@@ -1,4 +1,4 @@
-import type { BookingStatus, UserRole } from '@shared/types';
+import type { AdminActionType, AdminTargetType, BookingStatus, NotificationType, ProfessionalStatus, ServiceCategory, UserRole } from '@shared/types';
 
 export type User = {
   id: string;
@@ -19,7 +19,7 @@ export type ProfessionalSummary = {
   displayName: string;
   slug: string;
   headline: string;
-  category: string;
+  category: ServiceCategory;
   specialties: string[];
   city: string;
   state: string;
@@ -35,7 +35,7 @@ export type ProfessionalProfile = ProfessionalSummary & {
   websiteUrl?: string | null;
   ownerFirstName?: string;
   ownerLastName?: string;
-  status?: string;
+  status?: ProfessionalStatus;
   isVisible?: boolean;
 };
 
@@ -49,7 +49,7 @@ export type Service = {
   professionalId: string;
   name: string;
   description: string;
-  category: string;
+  category: ServiceCategory;
   durationMinutes: number;
   priceCents: number;
   depositCents: number;
@@ -75,7 +75,7 @@ export type Booking = {
 
 export type Notification = {
   id: string;
-  type: string;
+  type: NotificationType;
   title: string;
   body: string;
   actionUrl?: string | null;
@@ -94,7 +94,7 @@ export type PortfolioItem = {
   id: string;
   imageUrl: string;
   caption: string;
-  category: string;
+  category: ServiceCategory;
 };
 
 export type AvailabilityRule = {
@@ -133,9 +133,9 @@ export type Message = {
 export type AdminAction = {
   id: string;
   adminId: string;
-  targetType: string;
+  targetType: AdminTargetType;
   targetId: string;
-  action: string;
+  action: AdminActionType;
   note?: string | null;
   createdAt: string;
 };
