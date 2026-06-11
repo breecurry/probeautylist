@@ -25,18 +25,27 @@ export type ProfessionalSummary = {
   state: string;
   profileImageUrl?: string | null;
   coverImageUrl?: string | null;
+  licenseLabel?: string | null;
+  isVerified?: boolean;
+  verifiedAt?: string | null;
+  trustScore?: number;
+  profileCompletionPercent?: number;
+  averageRating?: number | null;
+  reviewCount?: number;
+  startingPriceCents?: number | null;
+  portfolioCount?: number;
 };
 
 export type ProfessionalProfile = ProfessionalSummary & {
   userId: string;
   bio: string;
-  licenseLabel?: string | null;
   instagramUrl?: string | null;
   websiteUrl?: string | null;
   ownerFirstName?: string;
   ownerLastName?: string;
   status?: ProfessionalStatus;
   isVisible?: boolean;
+  onboardingStep?: string;
 };
 
 export type PrivateProfessionalProfile = ProfessionalProfile & {
@@ -146,6 +155,12 @@ export type Notification = {
 export type Review = {
   id: string;
   rating: number;
+  cleanlinessRating?: number;
+  communicationRating?: number;
+  valueRating?: number;
+  wouldRecommend?: boolean;
+  photoUrls?: string[];
+  helpfulCount?: number;
   comment: string;
   createdAt: string;
 };
@@ -153,8 +168,26 @@ export type Review = {
 export type PortfolioItem = {
   id: string;
   imageUrl: string;
+  beforeImageUrl?: string | null;
+  afterImageUrl?: string | null;
   caption: string;
   category: ServiceCategory;
+  serviceTags?: string[];
+  transformationNotes?: string | null;
+  sortOrder?: number;
+};
+
+export type ProfessionalOnboardingStatus = {
+  profile: PrivateProfessionalProfile | null;
+  completionPercent: number;
+  nextStep: 'profile' | 'services' | 'availability' | 'portfolio' | 'review';
+  checklist: {
+    profile: boolean;
+    services: boolean;
+    availability: boolean;
+    portfolio: boolean;
+    review: boolean;
+  };
 };
 
 export type AvailabilityRule = {

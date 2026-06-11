@@ -72,7 +72,7 @@ export function RegisterPage() {
         password: String(form.get('password') ?? ''),
         role,
       });
-      navigate(role === 'professional' ? '/professional/profile' : '/client');
+      navigate(role === 'professional' ? '/professional/onboarding' : '/client');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

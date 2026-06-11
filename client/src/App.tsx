@@ -12,6 +12,7 @@ import { Home } from '@/pages/Home';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { PortfolioPage } from '@/pages/PortfolioPage';
 import { ProfessionalProfilePage } from '@/pages/ProfessionalProfilePage';
+import { ProfessionalOnboarding } from '@/pages/ProfessionalOnboarding';
 import { ProfessionalOperations } from '@/pages/ProfessionalOperations';
 import { ProfessionalSettings } from '@/pages/ProfessionalSettings';
 import { SearchPage } from '@/pages/SearchPage';
@@ -34,6 +35,7 @@ export function App() {
           </Route>
           <Route element={<RequireAuth roles={['professional', 'admin']} />}>
             <Route path="professional" element={<ProfessionalDashboard />} />
+            <Route path="professional/onboarding" element={<ProfessionalOnboarding />} />
             <Route path="professional/profile" element={<ProfessionalSettings />} />
             <Route path="professional/services" element={<ServicesPage />} />
             <Route path="professional/availability" element={<AvailabilityPage />} />

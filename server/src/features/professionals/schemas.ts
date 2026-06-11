@@ -24,6 +24,12 @@ export const professionalSearchSchema = z.object({
   category: z.string().trim().max(80).optional(),
   city: z.string().trim().max(100).optional(),
   state: z.string().trim().max(80).optional(),
+  specialty: z.string().trim().max(80).optional(),
+  minRating: z.coerce.number().min(1).max(5).optional(),
+  maxPriceCents: z.coerce.number().int().min(0).max(1000000).optional(),
+  verified: z.coerce.boolean().optional(),
+  hasPortfolio: z.coerce.boolean().optional(),
+  sort: z.enum(['recommended', 'rating', 'price_low', 'newest']).default('recommended'),
 });
 
 

@@ -6,8 +6,12 @@ import { safeImageUrl } from '@/lib/safety';
 type PortfolioItem = {
   id: string;
   imageUrl: string;
+  beforeImageUrl?: string | null;
+  afterImageUrl?: string | null;
   caption: string;
   category: string;
+  serviceTags?: string[];
+  transformationNotes?: string | null;
   isVisible: boolean;
 };
 
@@ -38,16 +42,23 @@ export function PortfolioPage() {
 
     const form = new FormData(event.currentTarget);
     const imageUrl = String(form.get('imageUrl') || '').trim();
+    const beforeImageUrl = String(form.get('beforeImageUrl') || '').trim();
+    const afterImageUrl = String(form.get('afterImageUrl') || '').trim();
     const caption = String(form.get('caption') || '').trim();
     const category = String(form.get('category') || '').trim();
+    const serviceTags = String(form.get('serviceTags') || '')
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+    const transformationNotes = String(form.get('transformationNotes') || '').trim();
 
-    if (!safeImageUrl(imageUrl)) {
-      setError('Use a valid HTTPS image URL.');
+    if (!safeImageUrl(imageUrl) || (beforeImageUrl && !safeImageUrl(beforeImageUrl)) || (afterImageUrl && !safeImageUrl(afterImageUrl))) {
+      setError('Use valid HTTPS image URLs.');
       setSaving(false);
       return;
     }
-    if (caption.length < 2 || caption.length > 160) {
-      setError('Captions must be between 2 and 160 characters.');
+    if (caption.length > 500 || transformationNotes.length > 1000) {
+      setError('Captions must be 500 characters or fewer and notes must be 1,000 characters or fewer.');
       setSaving(false);
       return;
     }
@@ -57,8 +68,12 @@ export function PortfolioPage() {
         method: 'POST',
         body: JSON.stringify({
           imageUrl,
+          beforeImageUrl,
+          afterImageUrl,
           caption,
           category,
+          serviceTags,
+          transformationNotes,
           isVisible: true,
           sortOrder: 0,
         }),
@@ -115,8 +130,14 @@ function PortfolioForm({ onSubmit, saving }: { onSubmit: (event: FormEvent<HTMLF
   return (
     <form onSubmit={onSubmit} className="card grid h-fit gap-4 p-6">
       <h2 className="text-2xl font-black text-ink">Add work</h2>
-      <input className="input" name="imageUrl" type="url" placeholder="Image URL" required />
-      <textarea className="input min-h-28" name="caption" placeholder="Caption" minLength={2} maxLength={160} required />
+      <input className="input" name="imageUrl" type="url" placeholder="Primary image URL" required />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <input className="input" name="beforeImageUrl" type="url" placeholder="Before image URL optional" />
+        <input className="input" name="afterImageUrl" type="url" placeholder="After image URL optional" />
+      </div>
+      <textarea className="input min-h-28" name="caption" placeholder="Caption" maxLength={500} />
+      <input className="input" name="serviceTags" placeholder="Service tags, comma-separated" maxLength={500} />
+      <textarea className="input min-h-24" name="transformationNotes" placeholder="Transformation notes optional" maxLength={1000} />
       <select className="input" name="category">
         {serviceCategories.map((item) => <option key={item}>{item}</option>)}
       </select>
@@ -147,7 +168,10 @@ function PortfolioCard({ item, deleting, onRemove }: { item: PortfolioItem; dele
       {imageUrl ? <img src={imageUrl} alt={item.caption} className="h-56 w-full object-cover" /> : <div className="h-56 bg-gradient-to-r from-rosewood to-berry" />}
       <div className="p-5">
         <p className="text-xs font-black uppercase tracking-wide text-berry">{item.category}</p>
-        <p className="mt-2 leading-6 text-ink/70">{item.caption}</p>
+        <p className="mt-2 leading-6 text-ink/70">{item.caption || 'Portfolio item'}</p>
+        {item.transformationNotes && <p className="mt-2 text-sm leading-6 text-ink/55">{item.transformationNotes}</p>}
+        {item.serviceTags && item.serviceTags.length > 0 && <p className="mt-3 flex flex-wrap gap-2">{item.serviceTags.map((tag) => <span key={tag} className="rounded-full bg-blush px-2 py-1 text-xs font-bold text-rosewood">{tag}</span>)}</p>}
+        {item.beforeImageUrl && item.afterImageUrl && <p className="mt-3 text-xs font-bold text-ink/45">Before-and-after pair attached</p>}
         {!item.isVisible && <p className="mt-3 rounded-full bg-blush px-3 py-1 text-xs font-bold text-rosewood">Hidden from public profile</p>}
         <button className="secondary-button mt-4" type="button" onClick={() => onRemove(item.id)} disabled={deleting}>
           {deleting ? 'Removing...' : 'Remove'}

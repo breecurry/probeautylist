@@ -137,15 +137,28 @@ export function BookingsPage() {
     setNotice('');
     const form = new FormData(event.currentTarget);
     const rating = Number(form.get('rating'));
+    const cleanlinessRating = Number(form.get('cleanlinessRating'));
+    const communicationRating = Number(form.get('communicationRating'));
+    const valueRating = Number(form.get('valueRating'));
+    const wouldRecommend = form.get('wouldRecommend') === 'on';
+    const photoUrls = String(form.get('photoUrls') || '')
+      .split(',')
+      .map((url) => url.trim())
+      .filter(Boolean);
     const comment = String(form.get('comment') || '').trim();
 
     if (reviewingBookingId) return;
-    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      setError('Choose a rating from 1 to 5 stars.');
+    const ratings = [rating, cleanlinessRating, communicationRating, valueRating];
+    if (ratings.some((value) => !Number.isInteger(value) || value < 1 || value > 5)) {
+      setError('Choose all ratings from 1 to 5 stars.');
       return;
     }
-    if (comment.length < 3 || comment.length > 1000) {
-      setError('Reviews must be between 3 and 1,000 characters.');
+    if (photoUrls.some((url) => !url.startsWith('https://'))) {
+      setError('Review photo URLs must use HTTPS.');
+      return;
+    }
+    if (comment.length < 5 || comment.length > 1200) {
+      setError('Reviews must be between 5 and 1,200 characters.');
       return;
     }
 
@@ -153,7 +166,7 @@ export function BookingsPage() {
     try {
       await apiFetch('/api/reviews', {
         method: 'POST',
-        body: JSON.stringify({ bookingId, rating, comment }),
+        body: JSON.stringify({ bookingId, rating, cleanlinessRating, communicationRating, valueRating, wouldRecommend, photoUrls, comment }),
       });
       event.currentTarget.reset();
       setNotice('Review submitted. Thank you for helping other clients choose confidently.');
@@ -397,12 +410,26 @@ function MessagesPanel({
 
 function ReviewForm({ bookingId, onSubmitReview, reviewing }: { bookingId: string; onSubmitReview: (event: FormEvent<HTMLFormElement>, bookingId: string) => Promise<void>; reviewing: boolean }) {
   return (
-    <form onSubmit={(event) => void onSubmitReview(event, bookingId)} className="mt-5 grid gap-3 rounded-3xl bg-cream p-4 sm:grid-cols-[120px_1fr_auto]">
-      <select className="input" name="rating" defaultValue="5" disabled={reviewing}>
-        {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} stars</option>)}
+    <form onSubmit={(event) => void onSubmitReview(event, bookingId)} className="mt-5 grid gap-3 rounded-3xl bg-cream p-4 md:grid-cols-4">
+      <select className="input" name="rating" defaultValue="5" disabled={reviewing} aria-label="Overall rating">
+        {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} overall</option>)}
       </select>
-      <input className="input" name="comment" placeholder="Leave a review for this completed appointment" minLength={3} maxLength={1000} disabled={reviewing} required />
+      <select className="input" name="cleanlinessRating" defaultValue="5" disabled={reviewing} aria-label="Cleanliness rating">
+        {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} cleanliness</option>)}
+      </select>
+      <select className="input" name="communicationRating" defaultValue="5" disabled={reviewing} aria-label="Communication rating">
+        {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} communication</option>)}
+      </select>
+      <select className="input" name="valueRating" defaultValue="5" disabled={reviewing} aria-label="Value rating">
+        {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} value</option>)}
+      </select>
+      <input className="input md:col-span-2" name="photoUrls" placeholder="Optional HTTPS review photo URLs, comma-separated" maxLength={1500} disabled={reviewing} />
+      <label className="flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-bold text-ink/70">
+        <input name="wouldRecommend" type="checkbox" defaultChecked disabled={reviewing} />
+        I would recommend this professional
+      </label>
       <button className="primary-button" type="submit" disabled={reviewing}>{reviewing ? 'Submitting...' : 'Review'}</button>
+      <input className="input md:col-span-4" name="comment" placeholder="Leave a review for this completed appointment" minLength={5} maxLength={1200} disabled={reviewing} required />
     </form>
   );
 }

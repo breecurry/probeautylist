@@ -103,6 +103,10 @@ export const professionalProfiles = pgTable('professional_profiles', {
   status: professionalStatusEnum('status').default('draft').notNull(),
   isVisible: boolean('is_visible').default(false).notNull(),
   approvedAt: timestamp('approved_at', { withTimezone: true }),
+  verifiedAt: timestamp('verified_at', { withTimezone: true }),
+  trustScore: integer('trust_score').default(0).notNull(),
+  onboardingStep: text('onboarding_step').default('profile').notNull(),
+  profileCompletionPercent: integer('profile_completion_percent').default(0).notNull(),
   ...timestamps,
 }, (table) => ({
   userIdx: uniqueIndex('professional_profiles_user_unique').on(table.userId),
@@ -274,20 +278,33 @@ export const reviews = pgTable('reviews', {
   professionalId: uuid('professional_id').notNull().references(() => professionalProfiles.id, { onDelete: 'cascade' }),
   rating: integer('rating').notNull(),
   comment: text('comment').notNull(),
+  cleanlinessRating: integer('cleanliness_rating').default(5).notNull(),
+  communicationRating: integer('communication_rating').default(5).notNull(),
+  valueRating: integer('value_rating').default(5).notNull(),
+  wouldRecommend: boolean('would_recommend').default(true).notNull(),
+  photoUrls: text('photo_urls').array().default(sql`ARRAY[]::text[]`).notNull(),
+  helpfulCount: integer('helpful_count').default(0).notNull(),
   isVisible: boolean('is_visible').default(true).notNull(),
   ...timestamps,
 }, (table) => ({
   bookingUnique: uniqueIndex('reviews_booking_unique').on(table.bookingId),
   professionalIdx: index('reviews_professional_idx').on(table.professionalId),
   ratingRangeCheck: check('reviews_rating_range_check', sql`${table.rating} BETWEEN 1 AND 5`),
+  cleanlinessRatingRangeCheck: check('reviews_cleanliness_rating_range_check', sql`${table.cleanlinessRating} BETWEEN 1 AND 5`),
+  communicationRatingRangeCheck: check('reviews_communication_rating_range_check', sql`${table.communicationRating} BETWEEN 1 AND 5`),
+  valueRatingRangeCheck: check('reviews_value_rating_range_check', sql`${table.valueRating} BETWEEN 1 AND 5`),
 }));
 
 export const portfolioItems = pgTable('portfolio_items', {
   id: uuid('id').defaultRandom().primaryKey(),
   professionalId: uuid('professional_id').notNull().references(() => professionalProfiles.id, { onDelete: 'cascade' }),
   imageUrl: text('image_url').notNull(),
+  beforeImageUrl: text('before_image_url'),
+  afterImageUrl: text('after_image_url'),
   caption: text('caption').notNull(),
   category: text('category').notNull(),
+  serviceTags: text('service_tags').array().default(sql`ARRAY[]::text[]`).notNull(),
+  transformationNotes: text('transformation_notes'),
   isVisible: boolean('is_visible').default(true).notNull(),
   sortOrder: integer('sort_order').default(0).notNull(),
   ...timestamps,
@@ -380,5 +397,7 @@ export type BookingReminder = typeof bookingReminders.$inferSelect;
 export type NewBookingReminder = typeof bookingReminders.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
+export type PortfolioItem = typeof portfolioItems.$inferSelect;
+export type NewPortfolioItem = typeof portfolioItems.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;

@@ -40,6 +40,11 @@ reviewsRouter.post('/', requireAuth, validateBody(reviewSchema), async (req, res
         professionalId: booking.professionalId,
         rating: req.body.rating,
         comment: req.body.comment,
+        cleanlinessRating: req.body.cleanlinessRating,
+        communicationRating: req.body.communicationRating,
+        valueRating: req.body.valueRating,
+        wouldRecommend: req.body.wouldRecommend,
+        photoUrls: req.body.photoUrls,
       })
         .onConflictDoNothing({ target: reviews.bookingId })
         .returning();

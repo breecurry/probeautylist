@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { CalendarPlus, Clock, Heart, MapPin, ShieldCheck, Star } from 'lucide-react';
+import { CalendarPlus, Clock, Heart, MapPin, ShieldCheck, Star, ThumbsUp } from 'lucide-react';
 import { apiFetch, formatMoney } from '@/lib/api';
 import { safeBackgroundImageStyle, safeImageUrl } from '@/lib/safety';
 import { useAuth } from '@/context/AuthContext';
@@ -193,6 +193,13 @@ function ProfileIntro({ canSave, onSave, profile }: { canSave: boolean; onSave: 
       <div className="mt-4 flex flex-wrap gap-3 text-sm font-bold text-ink/55">
         <span className="inline-flex items-center"><MapPin size={16} className="mr-1" />{profile.city}, {profile.state}</span>
         {profile.licenseLabel && <span className="inline-flex items-center"><ShieldCheck size={16} className="mr-1" />{profile.licenseLabel}</span>}
+        {profile.isVerified && <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><ShieldCheck size={16} className="mr-1" />Verified profile</span>}
+        {profile.averageRating && <span className="inline-flex items-center"><Star size={16} fill="currentColor" className="mr-1 text-gold" />{profile.averageRating.toFixed(1)} from {profile.reviewCount ?? 0} reviews</span>}
+      </div>
+      <div className="mt-4 grid gap-3 text-sm font-bold text-ink/60 sm:grid-cols-3">
+        <span className="rounded-2xl bg-cream p-3">Trust score<br /><strong className="text-lg text-ink">{profile.trustScore ?? 0}/100</strong></span>
+        <span className="rounded-2xl bg-cream p-3">Starting price<br /><strong className="text-lg text-ink">{profile.startingPriceCents !== undefined && profile.startingPriceCents !== null ? formatMoney(profile.startingPriceCents) : 'Ask pro'}</strong></span>
+        <span className="rounded-2xl bg-cream p-3">Portfolio<br /><strong className="text-lg text-ink">{profile.portfolioCount ?? 0} examples</strong></span>
       </div>
       <p className="mt-6 leading-8 text-ink/70">{profile.bio}</p>
       {profile.specialties.length > 0 && (
@@ -304,8 +311,17 @@ function PortfolioFigure({ item }: { item: PortfolioItem }) {
 
   return (
     <figure className="card overflow-hidden">
-      {imageUrl ? <img src={imageUrl} alt={item.caption} className="h-48 w-full object-cover" /> : <div className="h-48 bg-gradient-to-r from-rosewood to-berry" />}
-      <figcaption className="p-4 text-sm font-semibold text-ink/70">{item.caption}</figcaption>
+      {item.beforeImageUrl && item.afterImageUrl ? (
+        <div className="grid grid-cols-2">
+          <img src={safeImageUrl(item.beforeImageUrl) ?? imageUrl ?? ''} alt={`Before ${item.caption}`} className="h-48 w-full object-cover" />
+          <img src={safeImageUrl(item.afterImageUrl) ?? imageUrl ?? ''} alt={`After ${item.caption}`} className="h-48 w-full object-cover" />
+        </div>
+      ) : imageUrl ? <img src={imageUrl} alt={item.caption} className="h-48 w-full object-cover" /> : <div className="h-48 bg-gradient-to-r from-rosewood to-berry" />}
+      <figcaption className="p-4 text-sm font-semibold text-ink/70">
+        <p>{item.caption}</p>
+        {item.transformationNotes && <p className="mt-2 text-xs leading-5 text-ink/55">{item.transformationNotes}</p>}
+        {item.serviceTags && item.serviceTags.length > 0 && <p className="mt-3 flex flex-wrap gap-2">{item.serviceTags.map((tag) => <span key={tag} className="rounded-full bg-blush px-2 py-1 text-xs text-rosewood">{tag}</span>)}</p>}
+      </figcaption>
     </figure>
   );
 }
@@ -333,8 +349,18 @@ function ReviewsSection({ reviews }: { reviews: Review[] }) {
       <div className="space-y-4">
         {reviews.map((review) => (
           <div key={review.id} className="card p-5">
-            <p className="flex text-gold">{Array.from({ length: review.rating }).map((_, index) => <Star key={index} size={16} fill="currentColor" />)}</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="flex text-gold">{Array.from({ length: review.rating }).map((_, index) => <Star key={index} size={16} fill="currentColor" />)}</p>
+              {review.wouldRecommend && <span className="inline-flex items-center text-xs font-black text-emerald-700"><ThumbsUp size={14} className="mr-1" />Would recommend</span>}
+            </div>
             <p className="mt-3 text-sm leading-6 text-ink/70">{review.comment}</p>
+            <dl className="mt-3 grid grid-cols-3 gap-2 text-xs font-bold text-ink/55">
+              <div><dt>Cleanliness</dt><dd>{review.cleanlinessRating ?? review.rating}/5</dd></div>
+              <div><dt>Communication</dt><dd>{review.communicationRating ?? review.rating}/5</dd></div>
+              <div><dt>Value</dt><dd>{review.valueRating ?? review.rating}/5</dd></div>
+            </dl>
+            {review.photoUrls && review.photoUrls.length > 0 && <div className="mt-3 grid grid-cols-3 gap-2">{review.photoUrls.map((url) => <img key={url} src={safeImageUrl(url) ?? ''} alt="Review attachment" className="h-16 rounded-xl object-cover" />)}</div>}
+            {review.helpfulCount !== undefined && <p className="mt-3 text-xs font-bold text-ink/45">{review.helpfulCount} clients found this helpful</p>}
           </div>
         ))}
         {reviews.length === 0 && <div className="card p-5 text-sm text-ink/60">No reviews yet.</div>}
