@@ -10,8 +10,20 @@ import { reviewSchema } from './schemas.js';
 
 export const reviewsRouter = Router();
 
+async function requireVisibleProfile(professionalId: string) {
+  const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles)
+    .where(and(
+      eq(professionalProfiles.id, professionalId),
+      eq(professionalProfiles.status, 'approved'),
+      eq(professionalProfiles.isVisible, true),
+    ))
+    .limit(1);
+  if (!profile) throw new HttpError(404, 'Professional reviews not found');
+}
+
 reviewsRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
+    await requireVisibleProfile(req.params.professionalId);
     const rows = await db.select().from(reviews)
       .where(and(eq(reviews.professionalId, req.params.professionalId), eq(reviews.isVisible, true)))
       .orderBy(desc(reviews.createdAt));

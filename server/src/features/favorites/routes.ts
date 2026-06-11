@@ -27,7 +27,11 @@ favoritesRouter.get('/', requireRole('client', 'admin'), async (req, res, next) 
     })
       .from(favorites)
       .innerJoin(professionalProfiles, eq(professionalProfiles.id, favorites.professionalId))
-      .where(eq(favorites.clientId, req.currentUser!.id))
+      .where(and(
+        eq(favorites.clientId, req.currentUser!.id),
+        eq(professionalProfiles.status, 'approved'),
+        eq(professionalProfiles.isVisible, true),
+      ))
       .orderBy(desc(favorites.createdAt));
     res.json(rows);
   } catch (error) {
