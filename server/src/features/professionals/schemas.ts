@@ -23,10 +23,10 @@ export const professionalProfileSchema = z.object({
   state: z.string().min(2).max(80).trim(),
   addressLine1: z.string().max(160).optional(),
   postalCode: z.string().max(20).optional(),
-  profileImageUrl: z.string().url().optional().or(z.literal('')),
-  coverImageUrl: z.string().url().optional().or(z.literal('')),
-  instagramUrl: z.string().url().optional().or(z.literal('')),
-  websiteUrl: z.string().url().optional().or(z.literal('')),
+  profileImageUrl: z.string().url().refine((value) => value.startsWith('https://'), 'Profile image URL must use HTTPS').optional().or(z.literal('')),
+  coverImageUrl: z.string().url().refine((value) => value.startsWith('https://'), 'Cover image URL must use HTTPS').optional().or(z.literal('')),
+  instagramUrl: z.string().url().refine((value) => value.startsWith('https://'), 'Instagram URL must use HTTPS').optional().or(z.literal('')),
+  websiteUrl: z.string().url().refine((value) => value.startsWith('https://'), 'Website URL must use HTTPS').optional().or(z.literal('')),
   licenseLabel: z.string().max(140).optional(),
 });
 

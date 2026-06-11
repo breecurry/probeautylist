@@ -1,5 +1,6 @@
 import argon2 from 'argon2';
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { users } from '../../db/schema.js';
@@ -11,11 +12,20 @@ import { accountUpdateSchema, loginSchema, passwordChangeSchema, registerSchema 
 
 export const authRouter = Router();
 
+const authWriteLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many authentication attempts. Please wait and try again.' },
+});
+
+
 authRouter.get('/csrf', (req, res) => {
   res.json({ csrfToken: ensureCsrfToken(req) });
 });
 
-authRouter.post('/register', validateBody(registerSchema), async (req, res, next) => {
+authRouter.post('/register', authWriteLimit, validateBody(registerSchema), async (req, res, next) => {
   try {
     const existing = await db.select({ id: users.id }).from(users).where(sql`lower(${users.email}) = ${req.body.email}`).limit(1);
     if (existing.length) {
@@ -40,7 +50,7 @@ authRouter.post('/register', validateBody(registerSchema), async (req, res, next
   }
 });
 
-authRouter.post('/login', validateBody(loginSchema), async (req, res, next) => {
+authRouter.post('/login', authWriteLimit, validateBody(loginSchema), async (req, res, next) => {
   try {
     const [user] = await db.select().from(users).where(sql`lower(${users.email}) = ${req.body.email}`).limit(1);
     if (!user || !user.isActive) {
@@ -94,7 +104,7 @@ authRouter.patch('/me', requireAuth, validateBody(accountUpdateSchema), async (r
   }
 });
 
-authRouter.patch('/password', requireAuth, validateBody(passwordChangeSchema), async (req, res, next) => {
+authRouter.patch('/password', authWriteLimit, requireAuth, validateBody(passwordChangeSchema), async (req, res, next) => {
   try {
     const valid = await argon2.verify(req.currentUser!.passwordHash, req.body.currentPassword);
     if (!valid) throw new HttpError(401, 'Current password is incorrect');

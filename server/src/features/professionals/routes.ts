@@ -103,8 +103,6 @@ professionalsRouter.get('/:slug', async (req, res, next) => {
       websiteUrl: professionalProfiles.websiteUrl,
       ownerFirstName: users.firstName,
       ownerLastName: users.lastName,
-      addressLine1: professionalProfiles.addressLine1,
-      postalCode: professionalProfiles.postalCode,
       licenseLabel: professionalProfiles.licenseLabel,
     }).from(professionalProfiles)
       .innerJoin(users, eq(users.id, professionalProfiles.userId))

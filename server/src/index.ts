@@ -19,13 +19,37 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PgSession = connectPgSimple(session);
 
-app.set('trust proxy', isProduction ? 1 : 0);
-app.use(helmet({ crossOriginResourcePolicy: { policy: 'same-site' } }));
-app.use(cors({ origin: env.APP_ORIGIN, credentials: true }));
-app.use(express.json({ limit: '1mb' }));
+app.set('trust proxy', env.TRUST_PROXY);
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      baseUri: ["'self'"],
+      connectSrc: ["'self'", env.APP_ORIGIN],
+      fontSrc: ["'self'", 'data:'],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      imgSrc: ["'self'", 'data:', 'https:'],
+      objectSrc: ["'none'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      upgradeInsecureRequests: isProduction ? [] : null,
+    },
+  },
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  referrerPolicy: { policy: 'no-referrer' },
+}));
+app.use(cors({ origin: env.APP_ORIGIN, credentials: true, methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'X-CSRF-Token'] }));
+app.use(express.json({ limit: '512kb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false }));
+app.use(rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests. Please slow down and try again.' },
+}));
 
 app.use(session({
   name: 'pbl.sid',
@@ -37,7 +61,7 @@ app.use(session({
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
-    maxAge: 1000 * 60 * 60 * 24 * 30,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
   },
 }));
 

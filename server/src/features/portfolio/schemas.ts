@@ -1,21 +1,23 @@
 import { z } from 'zod';
 
-const serviceCategories = [
-  'Hair Stylist',
-  'Nail Artist',
-  'Esthetician',
-  'Barber',
-  'Makeup Artist',
-  'Lash Artist',
-  'Brow Artist',
-  'Massage Therapist',
-  'Waxing Specialist',
-  'Other Beauty Professional',
+const beautyCategories = [
+  'hair',
+  'nails',
+  'makeup',
+  'skincare',
+  'brows-lashes',
+  'barbering',
+  'massage',
+  'waxing',
+  'tattoo',
+  'other',
 ] as const;
 
+const httpsUrlSchema = z.string().url().refine((value) => value.startsWith('https://'), 'Image URL must use HTTPS');
+
 export const portfolioSchema = z.object({
-  imageUrl: z.string().min(1),
-  caption: z.string().min(2).max(300).trim(),
-  category: z.enum(serviceCategories),
+  imageUrl: httpsUrlSchema,
+  caption: z.string().max(500).optional().or(z.literal('')),
+  category: z.enum(beautyCategories).optional(),
   isVisible: z.boolean().default(true),
 });
