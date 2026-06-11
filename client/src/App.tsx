@@ -1,60 +1,49 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/use-auth";
-import NotFound from "@/pages/not-found";
-import Home from "@/pages/Home";
-import Auth from "@/pages/Auth";
-import ForgotPassword from "@/pages/ForgotPassword";
-import ResetPassword from "@/pages/ResetPassword";
-import Onboarding from "@/pages/Onboarding";
-import Search from "@/pages/Search";
-import Profile from "@/pages/Profile";
-import Admin from "@/pages/Admin";
-import MyBusinesses from "@/pages/MyBusinesses";
-import Bookings from "@/pages/Bookings";
-import CustomerProfile from "@/pages/CustomerProfile";
-import AccountSettings from "@/pages/AccountSettings";
-import BusinessAnalytics from "@/pages/BusinessAnalytics";
-import AdminSetup from "@/pages/AdminSetup";
-import SocialSharing from "@/pages/SocialSharing";
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { Layout } from '@/components/Layout';
+import { RequireAuth } from '@/components/RequireAuth';
+import { AdminPage } from '@/pages/AdminPage';
+import { LoginPage, RegisterPage } from '@/pages/AuthPages';
+import { AvailabilityPage } from '@/pages/AvailabilityPage';
+import { BookingsPage } from '@/pages/BookingsPage';
+import { ClientDashboard, ProfessionalDashboard } from '@/pages/Dashboards';
+import { Home } from '@/pages/Home';
+import { NotificationsPage } from '@/pages/NotificationsPage';
+import { PortfolioPage } from '@/pages/PortfolioPage';
+import { ProfessionalProfilePage } from '@/pages/ProfessionalProfilePage';
+import { ProfessionalSettings } from '@/pages/ProfessionalSettings';
+import { SearchPage } from '@/pages/SearchPage';
+import { ServicesPage } from '@/pages/ServicesPage';
 
-function Router() {
+export function App() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/auth" component={Auth} />
-      <Route path="/forgot-password" component={ForgotPassword} />
-      <Route path="/reset-password" component={ResetPassword} />
-      <Route path="/onboarding" component={Onboarding} />
-      <Route path="/search" component={Search} />
-      <Route path="/profile/:id" component={Profile} />
-      <Route path="/admin" component={Admin} />
-      <Route path="/my-businesses" component={MyBusinesses} />
-      <Route path="/bookings" component={Bookings} />
-      <Route path="/customer/:id" component={CustomerProfile} />
-      <Route path="/settings" component={AccountSettings} />
-      <Route path="/analytics" component={BusinessAnalytics} />
-      <Route path="/admin-setup" component={AdminSetup} />
-      <Route path="/social-sharing" component={SocialSharing} />
-      <Route component={NotFound} />
-    </Switch>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="search" element={<SearchPage />} />
+          <Route path="pros/:slug" element={<ProfessionalProfilePage />} />
+          <Route path="auth/login" element={<LoginPage />} />
+          <Route path="auth/register" element={<RegisterPage />} />
+          <Route element={<RequireAuth roles={['client', 'admin']} />}>
+            <Route path="client" element={<ClientDashboard />} />
+            <Route path="client/bookings" element={<BookingsPage />} />
+          </Route>
+          <Route element={<RequireAuth roles={['professional', 'admin']} />}>
+            <Route path="professional" element={<ProfessionalDashboard />} />
+            <Route path="professional/profile" element={<ProfessionalSettings />} />
+            <Route path="professional/services" element={<ServicesPage />} />
+            <Route path="professional/availability" element={<AvailabilityPage />} />
+            <Route path="professional/portfolio" element={<PortfolioPage />} />
+            <Route path="professional/bookings" element={<BookingsPage />} />
+          </Route>
+          <Route element={<RequireAuth roles={['client', 'professional', 'admin']} />}>
+            <Route path="notifications" element={<NotificationsPage />} />
+          </Route>
+          <Route element={<RequireAuth roles={['admin']} />}>
+            <Route path="admin" element={<AdminPage />} />
+          </Route>
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Router />
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-}
-
-export default App;

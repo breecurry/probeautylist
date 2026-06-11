@@ -1,0 +1,15 @@
+import { z } from 'zod';
+
+export const registerSchema = z.object({
+  email: z.string().email().trim().toLowerCase(),
+  password: z.string().min(10, 'Password must be at least 10 characters'),
+  firstName: z.string().min(1).max(80).trim(),
+  lastName: z.string().min(1).max(80).trim(),
+  phone: z.string().max(40).optional(),
+  role: z.enum(['client', 'professional']).default('client'),
+});
+
+export const loginSchema = z.object({
+  email: z.string().email().trim().toLowerCase(),
+  password: z.string().min(1),
+});

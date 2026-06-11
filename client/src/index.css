@@ -1,130 +1,43 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --font-sans: 'Montserrat', sans-serif;
-  --font-serif: 'Playfair Display', serif;
-
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-  
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-  
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-  
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-  
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-  
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-}
-
-/* Brown & Gold Luxury Theme */
 :root {
-  /* Soft Cream Background */
-  --background: 35 20% 95%; 
-  --foreground: 25 30% 15%; 
-
-  /* Rich Brown Primary */
-  --primary: 25 35% 35%; 
-  --primary-foreground: 40 30% 95%;
-
-  /* Warm Gold Accent for highlights */
-  --gold: 43 80% 50%;
-  --gold-dark: 38 70% 40%;
-
-  /* Light Warm Secondary */
-  --secondary: 35 15% 90%;
-  --secondary-foreground: 25 30% 20%;
-
-  /* Cream Cards */
-  --card: 35 18% 98%;
-  --card-foreground: 25 30% 15%;
-
-  --popover: 35 18% 98%;
-  --popover-foreground: 25 30% 15%;
-
-  --muted: 35 12% 90%;
-  --muted-foreground: 25 15% 45%;
-
-  /* Deep Brown Accent */
-  --accent: 25 40% 25%;
-  --accent-foreground: 40 30% 95%;
-
-  --destructive: 0 65% 50%;
-  --destructive-foreground: 0 0% 98%;
-
-  --border: 30 15% 82%;
-  --input: 30 15% 85%;
-  --ring: 43 70% 50%;
-
-  --radius: 1rem;
+  color: #1d171a;
+  background: #fff8f3;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.dark {
-  /* Dark mode with brown and gold tones */
-  --background: 25 15% 8%;
-  --foreground: 40 15% 90%;
-
-  --primary: 25 30% 45%;
-  --primary-foreground: 40 30% 95%;
-
-  --gold: 43 80% 55%;
-  --gold-dark: 38 70% 45%;
-
-  --secondary: 25 15% 15%;
-  --secondary-foreground: 35 15% 85%;
-
-  --card: 25 12% 12%;
-  --card-foreground: 40 15% 90%;
-
-  --popover: 25 12% 12%;
-  --popover-foreground: 40 15% 90%;
-
-  --muted: 25 10% 15%;
-  --muted-foreground: 30 8% 55%;
-
-  --accent: 25 20% 20%;
-  --accent-foreground: 35 15% 85%;
-
-  --destructive: 0 62% 30%;
-  --destructive-foreground: 0 0% 98%;
-
-  --border: 25 12% 20%;
-  --input: 25 12% 20%;
-  --ring: 43 70% 50%;
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply font-sans antialiased bg-background text-foreground;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-serif;
-  }
+button, input, textarea, select {
+  font: inherit;
+}
+
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-berry focus:ring-offset-2;
+}
+
+.card {
+  @apply rounded-3xl border border-rosewood/10 bg-white shadow-soft;
+}
+
+.input {
+  @apply w-full rounded-2xl border border-rosewood/15 bg-white px-4 py-3 text-sm text-ink placeholder:text-ink/40 focus-ring;
+}
+
+.label {
+  @apply text-sm font-semibold text-ink;
+}
+
+.primary-button {
+  @apply inline-flex items-center justify-center rounded-full bg-berry px-5 py-3 text-sm font-bold text-white transition hover:bg-rosewood focus-ring disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.secondary-button {
+  @apply inline-flex items-center justify-center rounded-full border border-rosewood/20 bg-white px-5 py-3 text-sm font-bold text-rosewood transition hover:bg-blush focus-ring disabled:cursor-not-allowed disabled:opacity-50;
 }
