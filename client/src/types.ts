@@ -30,6 +30,9 @@ export type ProfessionalSummary = {
 export type ProfessionalProfile = ProfessionalSummary & {
   userId: string;
   bio: string;
+  addressLine1?: string | null;
+  postalCode?: string | null;
+  licenseLabel?: string | null;
   instagramUrl?: string | null;
   websiteUrl?: string | null;
   ownerFirstName?: string;
@@ -62,6 +65,9 @@ export type Booking = {
   depositCents: number;
   clientNote?: string | null;
   professionalNote?: string | null;
+  service?: Pick<Service, 'id' | 'name' | 'category' | 'durationMinutes' | 'priceCents' | 'depositCents'> | null;
+  professional?: Pick<ProfessionalSummary, 'id' | 'displayName' | 'slug' | 'city' | 'state'> | null;
+  client?: { id: string; name: string; email: string } | null;
 };
 
 export type Notification = {
@@ -86,4 +92,47 @@ export type PortfolioItem = {
   imageUrl: string;
   caption: string;
   category: string;
+};
+
+export type AvailabilityRule = {
+  id: string;
+  weekday: number;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+};
+
+export type AvailabilityException = {
+  id: string;
+  date: string;
+  startTime?: string | null;
+  endTime?: string | null;
+  isBlocked: boolean;
+  reason?: string | null;
+};
+
+export type Favorite = {
+  id: string;
+  createdAt: string;
+  professional: ProfessionalSummary;
+};
+
+export type Message = {
+  id: string;
+  bookingId?: string | null;
+  senderId: string;
+  recipientId: string;
+  body: string;
+  readAt?: string | null;
+  createdAt: string;
+};
+
+export type AdminAction = {
+  id: string;
+  adminId: string;
+  targetType: string;
+  targetId: string;
+  action: string;
+  note?: string | null;
+  createdAt: string;
 };

@@ -1,11 +1,18 @@
 import { Router } from 'express';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
-import { availabilityRules, professionalProfiles } from '../../db/schema.js';
+import { availabilityExceptions, availabilityRules, professionalProfiles } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { HttpError } from '../../utils/http.js';
-import { availabilityRuleSchema, replaceAvailabilityRulesSchema, updateAvailabilityRuleSchema, type AvailabilityRuleInput } from './schemas.js';
+import {
+  availabilityExceptionSchema,
+  availabilityRuleSchema,
+  replaceAvailabilityRulesSchema,
+  updateAvailabilityExceptionSchema,
+  updateAvailabilityRuleSchema,
+  type AvailabilityRuleInput,
+} from './schemas.js';
 
 export const availabilityRouter = Router();
 
@@ -17,10 +24,13 @@ async function getOwnProfile(userId: string) {
 
 availabilityRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
-    const rows = await db.select().from(availabilityRules)
+    const rules = await db.select().from(availabilityRules)
       .where(and(eq(availabilityRules.professionalId, req.params.professionalId), eq(availabilityRules.isActive, true)))
       .orderBy(asc(availabilityRules.weekday), asc(availabilityRules.startTime));
-    res.json(rows);
+    const exceptions = await db.select().from(availabilityExceptions)
+      .where(and(eq(availabilityExceptions.professionalId, req.params.professionalId), eq(availabilityExceptions.isBlocked, true)))
+      .orderBy(asc(availabilityExceptions.date), asc(availabilityExceptions.startTime));
+    res.json({ rules, exceptions });
   } catch (error) {
     next(error);
   }
@@ -55,6 +65,55 @@ availabilityRouter.put('/me', requireRole('professional', 'admin'), validateBody
     if (req.body.rules.length === 0) return res.json([]);
     const rows = await db.insert(availabilityRules).values(req.body.rules.map((rule: AvailabilityRuleInput) => ({ ...rule, professionalId: profile.id }))).returning();
     res.json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+availabilityRouter.get('/exceptions/me', requireRole('professional', 'admin'), async (req, res, next) => {
+  try {
+    const profile = await getOwnProfile(req.currentUser!.id);
+    const rows = await db.select().from(availabilityExceptions)
+      .where(eq(availabilityExceptions.professionalId, profile.id))
+      .orderBy(asc(availabilityExceptions.date), asc(availabilityExceptions.startTime));
+    res.json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+availabilityRouter.post('/exceptions/me', requireRole('professional', 'admin'), validateBody(availabilityExceptionSchema), async (req, res, next) => {
+  try {
+    const profile = await getOwnProfile(req.currentUser!.id);
+    const [created] = await db.insert(availabilityExceptions).values({ ...req.body, professionalId: profile.id }).returning();
+    res.status(201).json(created);
+  } catch (error) {
+    next(error);
+  }
+});
+
+availabilityRouter.patch('/exceptions/:id', requireRole('professional', 'admin'), validateBody(updateAvailabilityExceptionSchema), async (req, res, next) => {
+  try {
+    const profile = await getOwnProfile(req.currentUser!.id);
+    const [updated] = await db.update(availabilityExceptions)
+      .set({ ...req.body, updatedAt: new Date() })
+      .where(and(eq(availabilityExceptions.id, req.params.id), eq(availabilityExceptions.professionalId, profile.id)))
+      .returning();
+    if (!updated) throw new HttpError(404, 'Availability exception not found');
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
+
+availabilityRouter.delete('/exceptions/:id', requireRole('professional', 'admin'), async (req, res, next) => {
+  try {
+    const profile = await getOwnProfile(req.currentUser!.id);
+    const [deleted] = await db.delete(availabilityExceptions)
+      .where(and(eq(availabilityExceptions.id, req.params.id), eq(availabilityExceptions.professionalId, profile.id)))
+      .returning();
+    if (!deleted) throw new HttpError(404, 'Availability exception not found');
+    res.json({ ok: true });
   } catch (error) {
     next(error);
   }

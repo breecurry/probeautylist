@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { count, desc, eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
-import { bookings, professionalProfiles, reviews, users } from '../../db/schema.js';
+import { adminActions, bookings, professionalProfiles, reviews, users } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { publicUser } from '../../middleware/auth.js';
 
@@ -36,6 +36,15 @@ adminRouter.get('/users', requireRole('admin'), async (_req, res, next) => {
 adminRouter.get('/professionals/pending', requireRole('admin'), async (_req, res, next) => {
   try {
     const rows = await db.select().from(professionalProfiles).where(eq(professionalProfiles.status, 'pending_review')).orderBy(desc(professionalProfiles.createdAt));
+    res.json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.get('/actions', requireRole('admin'), async (_req, res, next) => {
+  try {
+    const rows = await db.select().from(adminActions).orderBy(desc(adminActions.createdAt)).limit(100);
     res.json(rows);
   } catch (error) {
     next(error);

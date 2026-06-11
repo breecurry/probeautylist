@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { and, desc, eq, gt, inArray, lt } from 'drizzle-orm';
 import { db } from '../../db/client.js';
-import { availabilityRules, bookings, professionalProfiles, services } from '../../db/schema.js';
+import { availabilityExceptions, availabilityRules, bookings, professionalProfiles, services, users } from '../../db/schema.js';
 import { requireAuth } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { createNotification } from '../notifications/service.js';
@@ -31,6 +31,10 @@ function minutesFromDate(value: Date) {
   return value.getHours() * 60 + value.getMinutes();
 }
 
+function dateKey(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
 async function isWithinWorkingHours(professionalId: string, startsAt: Date, endsAt: Date) {
   const weekday = startsAt.getDay();
   const rules = await db.select().from(availabilityRules).where(and(
@@ -46,6 +50,53 @@ async function isWithinWorkingHours(professionalId: string, startsAt: Date, ends
   return rules.some((rule) => startMinutes >= minutesFromTime(rule.startTime) && endMinutes <= minutesFromTime(rule.endTime));
 }
 
+async function isBlockedByException(professionalId: string, startsAt: Date, endsAt: Date) {
+  const rows = await db.select().from(availabilityExceptions).where(and(
+    eq(availabilityExceptions.professionalId, professionalId),
+    eq(availabilityExceptions.date, dateKey(startsAt)),
+    eq(availabilityExceptions.isBlocked, true),
+  ));
+
+  const startMinutes = minutesFromDate(startsAt);
+  const endMinutes = minutesFromDate(endsAt);
+  return rows.some((exception) => {
+    if (!exception.startTime || !exception.endTime) return true;
+    return minutesFromTime(exception.startTime) < endMinutes && minutesFromTime(exception.endTime) > startMinutes;
+  });
+}
+
+async function enrichBooking(booking: typeof bookings.$inferSelect) {
+  const [[service], [profile], [client]] = await Promise.all([
+    db.select().from(services).where(eq(services.id, booking.serviceId)).limit(1),
+    db.select().from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1),
+    db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email }).from(users).where(eq(users.id, booking.clientId)).limit(1),
+  ]);
+
+  return {
+    ...booking,
+    service: service ? {
+      id: service.id,
+      name: service.name,
+      category: service.category,
+      durationMinutes: service.durationMinutes,
+      priceCents: service.priceCents,
+      depositCents: service.depositCents,
+    } : null,
+    professional: profile ? {
+      id: profile.id,
+      displayName: profile.displayName,
+      slug: profile.slug,
+      city: profile.city,
+      state: profile.state,
+    } : null,
+    client: client ? {
+      id: client.id,
+      name: `${client.firstName} ${client.lastName}`.trim(),
+      email: client.email,
+    } : null,
+  };
+}
+
 bookingsRouter.get('/', requireAuth, async (req, res, next) => {
   try {
     const user = req.currentUser!;
@@ -53,11 +104,11 @@ bookingsRouter.get('/', requireAuth, async (req, res, next) => {
       const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, user.id)).limit(1);
       if (!profile) return res.json([]);
       const rows = await db.select().from(bookings).where(eq(bookings.professionalId, profile.id)).orderBy(desc(bookings.startsAt));
-      return res.json(rows);
+      return res.json(await Promise.all(rows.map(enrichBooking)));
     }
 
     const rows = await db.select().from(bookings).where(eq(bookings.clientId, user.id)).orderBy(desc(bookings.startsAt));
-    res.json(rows);
+    res.json(await Promise.all(rows.map(enrichBooking)));
   } catch (error) {
     next(error);
   }
@@ -73,11 +124,15 @@ bookingsRouter.post('/', requireAuth, validateBody(createBookingSchema), async (
     if (!profile) throw new HttpError(404, 'Professional not available for booking');
 
     const startsAt = new Date(req.body.startsAt);
+    if (Number.isNaN(startsAt.getTime())) throw new HttpError(400, 'Booking start time is invalid');
     if (startsAt.getTime() <= Date.now()) throw new HttpError(400, 'Booking requests must be for a future date and time');
 
     const endsAt = new Date(startsAt.getTime() + service.durationMinutes * 60_000);
     const available = await isWithinWorkingHours(profile.id, startsAt, endsAt);
     if (!available) throw new HttpError(409, 'Requested time is outside this professional’s working hours');
+
+    const blocked = await isBlockedByException(profile.id, startsAt, endsAt);
+    if (blocked) throw new HttpError(409, 'Requested time is blocked by this professional’s availability exceptions');
 
     const [conflict] = await db.select().from(bookings).where(and(
       eq(bookings.professionalId, profile.id),
@@ -106,7 +161,7 @@ bookingsRouter.post('/', requireAuth, validateBody(createBookingSchema), async (
       actionUrl: '/professional/bookings',
     });
 
-    sendCreated(res, created);
+    sendCreated(res, await enrichBooking(created));
   } catch (error) {
     next(error);
   }
@@ -152,7 +207,7 @@ bookingsRouter.patch('/:id/status', requireAuth, validateBody(updateBookingStatu
       actionUrl: isClient ? '/professional/bookings' : '/client/bookings',
     });
 
-    res.json(updated);
+    res.json(await enrichBooking(updated));
   } catch (error) {
     next(error);
   }

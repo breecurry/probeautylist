@@ -1,14 +1,27 @@
-import { Bell, BriefcaseBusiness, CalendarDays, LogOut, Search, Sparkles, UserRound } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Bell, BriefcaseBusiness, CalendarDays, Heart, LogOut, Search, Sparkles, UserRound } from 'lucide-react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { apiFetch } from '@/lib/api';
 
 function navClass({ isActive }: { isActive: boolean }) {
-  return `rounded-full px-4 py-2 text-sm font-semibold transition ${isActive ? 'bg-berry text-white' : 'text-ink/70 hover:bg-blush hover:text-rosewood'}`;
+  return `relative rounded-full px-4 py-2 text-sm font-semibold transition ${isActive ? 'bg-berry text-white' : 'text-ink/70 hover:bg-blush hover:text-rosewood'}`;
 }
 
 export function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    void apiFetch<{ count: number }>('/api/notifications/unread-count')
+      .then((result) => setUnreadCount(result.count))
+      .catch(() => setUnreadCount(0));
+  }, [user]);
 
   async function onLogout() {
     await logout();
@@ -26,9 +39,10 @@ export function Layout() {
           <nav className="hidden items-center gap-2 md:flex">
             <NavLink to="/search" className={navClass}><Search className="mr-2 inline" size={16} />Find Pros</NavLink>
             {user?.role === 'client' && <NavLink to="/client" className={navClass}><CalendarDays className="mr-2 inline" size={16} />Client</NavLink>}
+            {user?.role === 'client' && <NavLink to="/client/favorites" className={navClass}><Heart className="mr-2 inline" size={16} />Saved</NavLink>}
             {user?.role === 'professional' && <NavLink to="/professional" className={navClass}><BriefcaseBusiness className="mr-2 inline" size={16} />Professional</NavLink>}
             {user?.role === 'admin' && <NavLink to="/admin" className={navClass}>Admin</NavLink>}
-            {user && <NavLink to="/notifications" className={navClass}><Bell className="mr-2 inline" size={16} />Notifications</NavLink>}
+            {user && <NavLink to="/notifications" className={navClass}><Bell className="mr-2 inline" size={16} />Notifications{unreadCount > 0 && <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-xs text-ink">{unreadCount}</span>}</NavLink>}
           </nav>
           <div className="flex items-center gap-2">
             {user ? (

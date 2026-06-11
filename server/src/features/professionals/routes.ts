@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { and, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db/client.js';
-import { professionalProfiles, users } from '../../db/schema.js';
+import { adminActions, professionalProfiles, users } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { createNotification } from '../notifications/service.js';
@@ -104,6 +104,9 @@ professionalsRouter.get('/:slug', async (req, res, next) => {
       websiteUrl: professionalProfiles.websiteUrl,
       ownerFirstName: users.firstName,
       ownerLastName: users.lastName,
+      addressLine1: professionalProfiles.addressLine1,
+      postalCode: professionalProfiles.postalCode,
+      licenseLabel: professionalProfiles.licenseLabel,
     }).from(professionalProfiles)
       .innerJoin(users, eq(users.id, professionalProfiles.userId))
       .where(and(eq(professionalProfiles.slug, req.params.slug), eq(professionalProfiles.status, 'approved'), eq(professionalProfiles.isVisible, true)))
@@ -122,6 +125,14 @@ professionalsRouter.post('/:id/approve', requireRole('admin'), async (req, res, 
       .where(eq(professionalProfiles.id, req.params.id))
       .returning();
     if (!profile) throw new HttpError(404, 'Professional not found');
+    await db.insert(adminActions).values({
+      adminId: req.currentUser!.id,
+      targetType: 'professional_profile',
+      targetId: profile.id,
+      action: 'approved',
+      note: `Approved profile ${profile.displayName}`,
+    });
+
     await createNotification({
       userId: profile.userId,
       type: 'profile_approved',

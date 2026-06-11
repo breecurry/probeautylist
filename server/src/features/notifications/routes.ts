@@ -29,6 +29,18 @@ notificationsRouter.get('/unread-count', requireAuth, async (req, res, next) => 
   }
 });
 
+notificationsRouter.patch('/read-all', requireAuth, async (req, res, next) => {
+  try {
+    const rows = await db.update(notifications)
+      .set({ readAt: new Date() })
+      .where(and(eq(notifications.userId, req.currentUser!.id), isNull(notifications.readAt)))
+      .returning({ id: notifications.id });
+    res.json({ count: rows.length });
+  } catch (error) {
+    next(error);
+  }
+});
+
 notificationsRouter.patch('/:id/read', requireAuth, async (req, res, next) => {
   try {
     const [updated] = await db.update(notifications)

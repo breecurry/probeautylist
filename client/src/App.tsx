@@ -6,6 +6,7 @@ import { LoginPage, RegisterPage } from '@/pages/AuthPages';
 import { AvailabilityPage } from '@/pages/AvailabilityPage';
 import { BookingsPage } from '@/pages/BookingsPage';
 import { ClientDashboard, ProfessionalDashboard } from '@/pages/Dashboards';
+import { FavoritesPage } from '@/pages/FavoritesPage';
 import { Home } from '@/pages/Home';
 import { NotificationsPage } from '@/pages/NotificationsPage';
 import { PortfolioPage } from '@/pages/PortfolioPage';
@@ -27,6 +28,7 @@ export function App() {
           <Route element={<RequireAuth roles={['client', 'admin']} />}>
             <Route path="client" element={<ClientDashboard />} />
             <Route path="client/bookings" element={<BookingsPage />} />
+            <Route path="client/favorites" element={<FavoritesPage />} />
           </Route>
           <Route element={<RequireAuth roles={['professional', 'admin']} />}>
             <Route path="professional" element={<ProfessionalDashboard />} />
