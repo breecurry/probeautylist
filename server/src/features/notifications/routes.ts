@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '../../db/client.js';
 import { notifications } from '../../db/schema.js';
 import { requireAuth } from '../../middleware/auth.js';
@@ -21,9 +21,9 @@ notificationsRouter.get('/', requireAuth, async (req, res, next) => {
 
 notificationsRouter.get('/unread-count', requireAuth, async (req, res, next) => {
   try {
-    const rows = await db.select({ id: notifications.id }).from(notifications)
+    const [unread] = await db.select({ value: count() }).from(notifications)
       .where(and(eq(notifications.userId, req.currentUser!.id), isNull(notifications.readAt)));
-    res.json({ count: rows.length });
+    res.json({ count: unread?.value ?? 0 });
   } catch (error) {
     next(error);
   }
@@ -31,11 +31,14 @@ notificationsRouter.get('/unread-count', requireAuth, async (req, res, next) => 
 
 notificationsRouter.patch('/read-all', requireAuth, async (req, res, next) => {
   try {
-    const rows = await db.update(notifications)
+    const [unread] = await db.select({ value: count() }).from(notifications)
+      .where(and(eq(notifications.userId, req.currentUser!.id), isNull(notifications.readAt)));
+
+    await db.update(notifications)
       .set({ readAt: new Date() })
-      .where(and(eq(notifications.userId, req.currentUser!.id), isNull(notifications.readAt)))
-      .returning({ id: notifications.id });
-    res.json({ count: rows.length });
+      .where(and(eq(notifications.userId, req.currentUser!.id), isNull(notifications.readAt)));
+
+    res.json({ count: unread?.value ?? 0 });
   } catch (error) {
     next(error);
   }
