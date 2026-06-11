@@ -1,4 +1,4 @@
-import type { AdminActionType, AdminTargetType, BookingStatus, CalendarConnectionStatus, NotificationType, PaymentStatus, ProfessionalStatus, ReminderStatus, RescheduleRequestStatus, ServiceCategory, UserRole } from '@shared/types';
+import type { AdminActionType, AdminTargetType, BookingStatus, CalendarConnectionStatus, DisputeStatus, NotificationType, PaymentStatus, ProfessionalStatus, ReminderStatus, RescheduleRequestStatus, ServiceCategory, UserRole } from '@shared/types';
 
 export type User = {
   id: string;
@@ -211,6 +211,56 @@ export type Favorite = {
   id: string;
   createdAt: string;
   professional: ProfessionalSummary;
+};
+
+export type SavedSearch = {
+  id: string;
+  clientId: string;
+  name: string;
+  query?: string | null;
+  category?: ServiceCategory | null;
+  city?: string | null;
+  state?: string | null;
+  maxPriceCents?: number | null;
+  notifyOnNewMatches: boolean;
+  lastViewedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BookingDispute = {
+  id: string;
+  bookingId: string;
+  clientId: string;
+  professionalId: string;
+  openedById: string;
+  status: DisputeStatus;
+  reason: string;
+  details: string;
+  resolutionNote?: string | null;
+  resolvedById?: string | null;
+  resolvedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  openedByName?: string | null;
+  resolvedByName?: string | null;
+  booking?: { id: string; startsAt: string; status: BookingStatus; serviceName: string; clientName: string; professionalName: string } | null;
+};
+
+export type AdminAnalytics = {
+  thirtyDayRevenueCents: number;
+  thirtyDayCompletedBookings: number;
+  pendingBookings: number;
+  openDisputes: number;
+  approvalBacklog: number;
+  thirtyDayAverageRating: number;
+  thirtyDayReviewCount: number;
+};
+
+export type AdminOperations = {
+  upcomingBookings: Array<{ id: string; startsAt: string; status: BookingStatus; serviceName: string; clientFirstName: string; clientLastName: string; professionalName: string }>;
+  openDisputes: BookingDispute[];
+  lowTrustProfiles: Array<{ id: string; displayName: string; status: ProfessionalStatus; trustScore: number; city: string; state: string }>;
 };
 
 export type Message = {

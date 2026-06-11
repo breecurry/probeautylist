@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { count, desc, eq } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lte, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
-import { adminActions, bookings, professionalProfiles, reviews, users } from '../../db/schema.js';
+import { adminActions, bookingDisputes, bookings, professionalProfiles, reviews, services, users } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { HttpError } from '../../utils/http.js';
@@ -30,6 +30,56 @@ adminRouter.get('/stats', async (_req, res, next) => {
       bookings: bookingCount[0]?.value ?? 0,
       reviews: reviewCount[0]?.value ?? 0,
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.get('/analytics', async (_req, res, next) => {
+  try {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60_000);
+    const [bookingRevenue, pendingBookings, openDisputes, approvalBacklog, recentReviews] = await Promise.all([
+      db.select({ totalRevenueCents: sql<number>`coalesce(sum(${bookings.priceCents}), 0)`, completedBookings: count() }).from(bookings).where(and(eq(bookings.status, 'completed'), gte(bookings.completedAt, thirtyDaysAgo))),
+      db.select({ value: count() }).from(bookings).where(eq(bookings.status, 'pending')),
+      db.select({ value: count() }).from(bookingDisputes).where(sql`${bookingDisputes.status} in ('open', 'under_review')`),
+      db.select({ value: count() }).from(professionalProfiles).where(eq(professionalProfiles.status, 'pending_review')),
+      db.select({ averageRating: sql<number>`coalesce(avg(${reviews.rating}), 0)`, reviewCount: count() }).from(reviews).where(gte(reviews.createdAt, thirtyDaysAgo)),
+    ]);
+    res.json({
+      thirtyDayRevenueCents: Number(bookingRevenue[0]?.totalRevenueCents ?? 0),
+      thirtyDayCompletedBookings: bookingRevenue[0]?.completedBookings ?? 0,
+      pendingBookings: pendingBookings[0]?.value ?? 0,
+      openDisputes: openDisputes[0]?.value ?? 0,
+      approvalBacklog: approvalBacklog[0]?.value ?? 0,
+      thirtyDayAverageRating: Number(recentReviews[0]?.averageRating ?? 0),
+      thirtyDayReviewCount: recentReviews[0]?.reviewCount ?? 0,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+adminRouter.get('/operations', async (_req, res, next) => {
+  try {
+    const now = new Date();
+    const soon = new Date(Date.now() + 48 * 60 * 60_000);
+    const [upcomingBookings, openDisputeRows, lowTrustProfiles] = await Promise.all([
+      db.select({ id: bookings.id, startsAt: bookings.startsAt, status: bookings.status, serviceName: services.name, clientFirstName: users.firstName, clientLastName: users.lastName, professionalName: professionalProfiles.displayName })
+        .from(bookings)
+        .innerJoin(services, eq(services.id, bookings.serviceId))
+        .innerJoin(users, eq(users.id, bookings.clientId))
+        .innerJoin(professionalProfiles, eq(professionalProfiles.id, bookings.professionalId))
+        .where(and(gte(bookings.startsAt, now), lte(bookings.startsAt, soon)))
+        .orderBy(bookings.startsAt)
+        .limit(12),
+      db.select().from(bookingDisputes).where(sql`${bookingDisputes.status} in ('open', 'under_review')`).orderBy(desc(bookingDisputes.createdAt)).limit(12),
+      db.select({ id: professionalProfiles.id, displayName: professionalProfiles.displayName, status: professionalProfiles.status, trustScore: professionalProfiles.trustScore, city: professionalProfiles.city, state: professionalProfiles.state })
+        .from(professionalProfiles)
+        .where(and(eq(professionalProfiles.status, 'approved'), lte(professionalProfiles.trustScore, 40)))
+        .orderBy(professionalProfiles.trustScore)
+        .limit(12),
+    ]);
+    res.json({ upcomingBookings, openDisputes: openDisputeRows, lowTrustProfiles });
   } catch (error) {
     next(error);
   }

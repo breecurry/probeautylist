@@ -42,12 +42,15 @@ export const notificationTypes = [
   'review_received',
   'profile_approved',
   'profile_suspended',
+  'dispute_opened',
+  'dispute_updated',
+  'saved_search_match',
   'system',
 ] as const;
 
-export const adminTargetTypes = ['professional_profile', 'booking', 'review', 'user'] as const;
+export const adminTargetTypes = ['professional_profile', 'booking', 'review', 'user', 'dispute'] as const;
 
-export const adminActionTypes = ['approve', 'request-changes', 'suspend', 'resolve', 'system'] as const;
+export const adminActionTypes = ['approve', 'request-changes', 'suspend', 'resolve', 'dismiss', 'review', 'system'] as const;
 
 export const paymentStatuses = ['not_required', 'deposit_due', 'deposit_recorded', 'paid', 'refunded', 'failed'] as const;
 
@@ -56,6 +59,8 @@ export const rescheduleRequestStatuses = ['pending', 'accepted', 'declined', 'ca
 export const reminderStatuses = ['scheduled', 'sent', 'cancelled'] as const;
 
 export const calendarConnectionStatuses = ['not_connected', 'connected', 'paused', 'error'] as const;
+
+export const disputeStatuses = ['open', 'under_review', 'resolved', 'dismissed'] as const;
 
 export type ServiceCategory = (typeof serviceCategories)[number];
 export type BookingStatus = (typeof bookingStatuses)[number];
@@ -68,6 +73,7 @@ export type PaymentStatus = (typeof paymentStatuses)[number];
 export type RescheduleRequestStatus = (typeof rescheduleRequestStatuses)[number];
 export type ReminderStatus = (typeof reminderStatuses)[number];
 export type CalendarConnectionStatus = (typeof calendarConnectionStatuses)[number];
+export type DisputeStatus = (typeof disputeStatuses)[number];
 
 export type ApiError = {
   message: string;

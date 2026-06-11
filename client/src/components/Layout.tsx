@@ -40,6 +40,7 @@ export function Layout() {
             <NavLink to="/search" className={navClass}><Search className="mr-2 inline" size={16} />Find Pros</NavLink>
             {user?.role === 'client' && <NavLink to="/client" className={navClass}><CalendarDays className="mr-2 inline" size={16} />Client</NavLink>}
             {user?.role === 'client' && <NavLink to="/client/favorites" className={navClass}><Heart className="mr-2 inline" size={16} />Saved</NavLink>}
+            {user?.role === 'client' && <NavLink to="/client/saved-searches" className={navClass}><Sparkles className="mr-2 inline" size={16} />Searches</NavLink>}
             {user?.role === 'professional' && <NavLink to="/professional" className={navClass}><BriefcaseBusiness className="mr-2 inline" size={16} />Professional</NavLink>}
             {user?.role === 'professional' && <NavLink to="/professional/operations" className={navClass}><WalletCards className="mr-2 inline" size={16} />Operations</NavLink>}
             {user?.role === 'admin' && <NavLink to="/admin" className={navClass}>Admin</NavLink>}

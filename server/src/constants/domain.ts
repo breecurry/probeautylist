@@ -42,6 +42,9 @@ export const notificationTypes = [
   'review_received',
   'profile_approved',
   'profile_suspended',
+  'dispute_opened',
+  'dispute_updated',
+  'saved_search_match',
   'system',
 ] as const;
 
@@ -57,8 +60,11 @@ export const reminderStatuses = ['scheduled', 'sent', 'cancelled'] as const;
 
 export const calendarConnectionStatuses = ['not_connected', 'connected', 'paused', 'error'] as const;
 
+export const disputeStatuses = ['open', 'under_review', 'resolved', 'dismissed'] as const;
+
 export type NotificationType = (typeof notificationTypes)[number];
 export type PaymentStatus = (typeof paymentStatuses)[number];
 export type RescheduleRequestStatus = (typeof rescheduleRequestStatuses)[number];
 export type ReminderStatus = (typeof reminderStatuses)[number];
 export type CalendarConnectionStatus = (typeof calendarConnectionStatuses)[number];
+export type DisputeStatus = (typeof disputeStatuses)[number];

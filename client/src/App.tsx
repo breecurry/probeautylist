@@ -15,6 +15,7 @@ import { ProfessionalProfilePage } from '@/pages/ProfessionalProfilePage';
 import { ProfessionalOnboarding } from '@/pages/ProfessionalOnboarding';
 import { ProfessionalOperations } from '@/pages/ProfessionalOperations';
 import { ProfessionalSettings } from '@/pages/ProfessionalSettings';
+import { SavedSearchesPage } from '@/pages/SavedSearchesPage';
 import { SearchPage } from '@/pages/SearchPage';
 import { ServicesPage } from '@/pages/ServicesPage';
 
@@ -32,6 +33,7 @@ export function App() {
             <Route path="client" element={<ClientDashboard />} />
             <Route path="client/bookings" element={<BookingsPage />} />
             <Route path="client/favorites" element={<FavoritesPage />} />
+            <Route path="client/saved-searches" element={<SavedSearchesPage />} />
           </Route>
           <Route element={<RequireAuth roles={['professional', 'admin']} />}>
             <Route path="professional" element={<ProfessionalDashboard />} />

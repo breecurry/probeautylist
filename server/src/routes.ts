@@ -3,6 +3,8 @@ import { adminRouter } from './features/admin/routes.js';
 import { availabilityRouter } from './features/availability/routes.js';
 import { authRouter } from './features/auth/routes.js';
 import { bookingsRouter } from './features/bookings/routes.js';
+import { discoveryRouter } from './features/discovery/routes.js';
+import { disputesRouter } from './features/disputes/routes.js';
 import { favoritesRouter } from './features/favorites/routes.js';
 import { messagesRouter } from './features/messages/routes.js';
 import { notificationsRouter } from './features/notifications/routes.js';
@@ -21,6 +23,8 @@ export function registerRoutes(app: Express) {
   app.use('/api/reviews', reviewsRouter);
   app.use('/api/portfolio', portfolioRouter);
   app.use('/api/favorites', favoritesRouter);
+  app.use('/api/discovery', discoveryRouter);
+  app.use('/api/disputes', disputesRouter);
   app.use('/api/messages', messagesRouter);
   app.use('/api/notifications', notificationsRouter);
   app.use('/api/admin', adminRouter);

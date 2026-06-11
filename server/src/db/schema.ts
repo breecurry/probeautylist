@@ -42,6 +42,9 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'review_received',
   'profile_approved',
   'profile_suspended',
+  'dispute_opened',
+  'dispute_updated',
+  'saved_search_match',
   'system',
 ]);
 
@@ -56,6 +59,7 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 export const rescheduleRequestStatusEnum = pgEnum('reschedule_request_status', ['pending', 'accepted', 'declined', 'cancelled']);
 export const reminderStatusEnum = pgEnum('reminder_status', ['scheduled', 'sent', 'cancelled']);
 export const calendarConnectionStatusEnum = pgEnum('calendar_connection_status', ['not_connected', 'connected', 'paused', 'error']);
+export const disputeStatusEnum = pgEnum('dispute_status', ['open', 'under_review', 'resolved', 'dismissed']);
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -271,6 +275,25 @@ export const bookingReminders = pgTable('booking_reminders', {
   scheduleIdx: index('booking_reminders_schedule_idx').on(table.status, table.scheduledFor),
 }));
 
+export const bookingDisputes = pgTable('booking_disputes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  bookingId: uuid('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  clientId: uuid('client_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  professionalId: uuid('professional_id').notNull().references(() => professionalProfiles.id, { onDelete: 'restrict' }),
+  openedById: uuid('opened_by_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
+  status: disputeStatusEnum('status').default('open').notNull(),
+  reason: text('reason').notNull(),
+  details: text('details').notNull(),
+  resolutionNote: text('resolution_note'),
+  resolvedById: uuid('resolved_by_id').references(() => users.id, { onDelete: 'set null' }),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  ...timestamps,
+}, (table) => ({
+  bookingIdx: index('booking_disputes_booking_idx').on(table.bookingId),
+  statusIdx: index('booking_disputes_status_idx').on(table.status, table.createdAt),
+  participantIdx: index('booking_disputes_participant_idx').on(table.clientId, table.professionalId),
+}));
+
 export const reviews = pgTable('reviews', {
   id: uuid('id').defaultRandom().primaryKey(),
   bookingId: uuid('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
@@ -321,6 +344,24 @@ export const favorites = pgTable('favorites', {
   uniqueFavorite: uniqueIndex('favorites_client_professional_unique').on(table.clientId, table.professionalId),
 }));
 
+export const savedSearches = pgTable('saved_searches', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  clientId: uuid('client_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  query: text('query'),
+  category: text('category'),
+  city: text('city'),
+  state: text('state'),
+  maxPriceCents: integer('max_price_cents'),
+  notifyOnNewMatches: boolean('notify_on_new_matches').default(true).notNull(),
+  lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }),
+  ...timestamps,
+}, (table) => ({
+  clientIdx: index('saved_searches_client_idx').on(table.clientId, table.updatedAt),
+  uniqueClientName: uniqueIndex('saved_searches_client_name_unique').on(table.clientId, sql`lower(${table.name})`),
+  maxPriceNonNegativeCheck: check('saved_searches_max_price_non_negative_check', sql`${table.maxPriceCents} IS NULL OR ${table.maxPriceCents} >= 0`),
+}));
+
 export const messages = pgTable('messages', {
   id: uuid('id').defaultRandom().primaryKey(),
   bookingId: uuid('booking_id').references(() => bookings.id, { onDelete: 'set null' }),
@@ -365,6 +406,8 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   clientBookings: many(bookings),
   notifications: many(notifications),
+  savedSearches: many(savedSearches),
+  openedDisputes: many(bookingDisputes),
 }));
 
 export const professionalProfilesRelations = relations(professionalProfiles, ({ one, many }) => ({
@@ -375,6 +418,7 @@ export const professionalProfilesRelations = relations(professionalProfiles, ({ 
   portfolioItems: many(portfolioItems),
   bookingPolicy: one(bookingPolicies),
   calendarConnections: many(calendarConnections),
+  disputes: many(bookingDisputes),
 }));
 
 export type User = typeof users.$inferSelect;
@@ -395,9 +439,13 @@ export type BookingRescheduleRequest = typeof bookingRescheduleRequests.$inferSe
 export type NewBookingRescheduleRequest = typeof bookingRescheduleRequests.$inferInsert;
 export type BookingReminder = typeof bookingReminders.$inferSelect;
 export type NewBookingReminder = typeof bookingReminders.$inferInsert;
+export type BookingDispute = typeof bookingDisputes.$inferSelect;
+export type NewBookingDispute = typeof bookingDisputes.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
 export type PortfolioItem = typeof portfolioItems.$inferSelect;
 export type NewPortfolioItem = typeof portfolioItems.$inferInsert;
+export type SavedSearch = typeof savedSearches.$inferSelect;
+export type NewSavedSearch = typeof savedSearches.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;
 export type NewNotification = typeof notifications.$inferInsert;
