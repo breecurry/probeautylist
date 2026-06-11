@@ -5,6 +5,7 @@ import { professionalProfiles, services } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { HttpError, sendCreated } from '../../utils/http.js';
+import { requireVisibleProfile } from '../../utils/profile.js';
 import { serviceSchema } from './schemas.js';
 
 export const servicesRouter = Router();
@@ -15,20 +16,10 @@ async function getOwnProfile(userId: string) {
   return profile;
 }
 
-async function requireVisibleProfile(professionalId: string) {
-  const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles)
-    .where(and(
-      eq(professionalProfiles.id, professionalId),
-      eq(professionalProfiles.status, 'approved'),
-      eq(professionalProfiles.isVisible, true),
-    ))
-    .limit(1);
-  if (!profile) throw new HttpError(404, 'Professional services not found');
-}
 
 servicesRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
-    await requireVisibleProfile(req.params.professionalId);
+    await requireVisibleProfile(req.params.professionalId, 'Professional services not found');
     const rows = await db.select().from(services)
       .where(and(eq(services.professionalId, req.params.professionalId), eq(services.isActive, true)));
     res.json(rows);

@@ -5,6 +5,7 @@ import { portfolioItems, professionalProfiles } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { HttpError, sendCreated } from '../../utils/http.js';
+import { requireVisibleProfile } from '../../utils/profile.js';
 import { portfolioSchema } from './schemas.js';
 
 export const portfolioRouter = Router();
@@ -20,20 +21,10 @@ async function getOwnProfile(userId: string, message = 'Professional profile not
   return profile;
 }
 
-async function requireVisibleProfile(professionalId: string) {
-  const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles)
-    .where(and(
-      eq(professionalProfiles.id, professionalId),
-      eq(professionalProfiles.status, 'approved'),
-      eq(professionalProfiles.isVisible, true),
-    ))
-    .limit(1);
-  if (!profile) throw new HttpError(404, 'Professional portfolio not found');
-}
 
 portfolioRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
-    await requireVisibleProfile(req.params.professionalId);
+    await requireVisibleProfile(req.params.professionalId, 'Professional portfolio not found');
     const rows = await db.select().from(portfolioItems)
       .where(and(eq(portfolioItems.professionalId, req.params.professionalId), eq(portfolioItems.isVisible, true)))
       .orderBy(desc(portfolioItems.createdAt));

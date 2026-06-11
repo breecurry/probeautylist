@@ -6,24 +6,15 @@ import { requireAuth } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { createNotification } from '../notifications/service.js';
 import { HttpError, sendCreated } from '../../utils/http.js';
+import { requireVisibleProfile } from '../../utils/profile.js';
 import { reviewSchema } from './schemas.js';
 
 export const reviewsRouter = Router();
 
-async function requireVisibleProfile(professionalId: string) {
-  const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles)
-    .where(and(
-      eq(professionalProfiles.id, professionalId),
-      eq(professionalProfiles.status, 'approved'),
-      eq(professionalProfiles.isVisible, true),
-    ))
-    .limit(1);
-  if (!profile) throw new HttpError(404, 'Professional reviews not found');
-}
 
 reviewsRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
-    await requireVisibleProfile(req.params.professionalId);
+    await requireVisibleProfile(req.params.professionalId, 'Professional reviews not found');
     const rows = await db.select().from(reviews)
       .where(and(eq(reviews.professionalId, req.params.professionalId), eq(reviews.isVisible, true)))
       .orderBy(desc(reviews.createdAt));
@@ -51,7 +42,7 @@ reviewsRouter.post('/', requireAuth, validateBody(reviewSchema), async (req, res
       comment: req.body.comment,
     }).returning();
 
-    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1);
+    const [profile] = await db.select({ userId: professionalProfiles.userId, slug: professionalProfiles.slug }).from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1);
     if (profile) {
       await createNotification({
         userId: profile.userId,

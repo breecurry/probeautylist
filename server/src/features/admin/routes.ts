@@ -3,7 +3,7 @@ import { count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../../db/client.js';
 import { adminActions, bookings, professionalProfiles, reviews, users } from '../../db/schema.js';
-import { requireRole, publicUser } from '../../middleware/auth.js';
+import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { HttpError } from '../../utils/http.js';
 import { createNotification } from '../notifications/service.js';
@@ -37,8 +37,20 @@ adminRouter.get('/stats', async (_req, res, next) => {
 
 adminRouter.get('/users', async (_req, res, next) => {
   try {
-    const rows = await db.select().from(users).orderBy(desc(users.createdAt)).limit(50);
-    res.json(rows.map(publicUser));
+    const rows = await db.select({
+      id: users.id,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phone: users.phone,
+      avatarUrl: users.avatarUrl,
+      role: users.role,
+      isActive: users.isActive,
+      lastLoginAt: users.lastLoginAt,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).orderBy(desc(users.createdAt)).limit(50);
+    res.json(rows);
   } catch (error) {
     next(error);
   }

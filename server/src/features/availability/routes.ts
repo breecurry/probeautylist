@@ -5,6 +5,7 @@ import { availabilityExceptions, availabilityRules, professionalProfiles } from 
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody } from '../../middleware/validate.js';
 import { HttpError } from '../../utils/http.js';
+import { requireVisibleProfile } from '../../utils/profile.js';
 import {
   availabilityExceptionSchema,
   availabilityRuleSchema,
@@ -22,20 +23,10 @@ async function getOwnProfile(userId: string) {
   return profile;
 }
 
-async function requireVisibleProfile(professionalId: string) {
-  const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles)
-    .where(and(
-      eq(professionalProfiles.id, professionalId),
-      eq(professionalProfiles.status, 'approved'),
-      eq(professionalProfiles.isVisible, true),
-    ))
-    .limit(1);
-  if (!profile) throw new HttpError(404, 'Professional availability not found');
-}
 
 availabilityRouter.get('/professional/:professionalId', async (req, res, next) => {
   try {
-    await requireVisibleProfile(req.params.professionalId);
+    await requireVisibleProfile(req.params.professionalId, 'Professional availability not found');
     const rules = await db.select().from(availabilityRules)
       .where(and(eq(availabilityRules.professionalId, req.params.professionalId), eq(availabilityRules.isActive, true)))
       .orderBy(asc(availabilityRules.weekday), asc(availabilityRules.startTime));

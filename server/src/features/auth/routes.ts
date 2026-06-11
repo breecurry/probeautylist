@@ -52,7 +52,21 @@ authRouter.post('/register', authWriteLimit, validateBody(registerSchema), async
 
 authRouter.post('/login', authWriteLimit, validateBody(loginSchema), async (req, res, next) => {
   try {
-    const [user] = await db.select().from(users).where(sql`lower(${users.email}) = ${req.body.email}`).limit(1);
+    const [user] = await db.select({
+      id: users.id,
+      email: users.email,
+      passwordHash: users.passwordHash,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      phone: users.phone,
+      avatarUrl: users.avatarUrl,
+      role: users.role,
+      emailVerified: users.emailVerified,
+      isActive: users.isActive,
+      lastLoginAt: users.lastLoginAt,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+    }).from(users).where(sql`lower(${users.email}) = ${req.body.email}`).limit(1);
     if (!user || !user.isActive) {
       throw new HttpError(401, 'Invalid email or password');
     }

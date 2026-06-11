@@ -37,7 +37,7 @@ function dateKey(value: Date) {
 
 async function isWithinWorkingHours(professionalId: string, startsAt: Date, endsAt: Date) {
   const weekday = startsAt.getDay();
-  const rules = await db.select().from(availabilityRules).where(and(
+  const rules = await db.select({ startTime: availabilityRules.startTime, endTime: availabilityRules.endTime }).from(availabilityRules).where(and(
     eq(availabilityRules.professionalId, professionalId),
     eq(availabilityRules.weekday, weekday),
     eq(availabilityRules.isActive, true),
@@ -51,7 +51,7 @@ async function isWithinWorkingHours(professionalId: string, startsAt: Date, ends
 }
 
 async function isBlockedByException(professionalId: string, startsAt: Date, endsAt: Date) {
-  const rows = await db.select().from(availabilityExceptions).where(and(
+  const rows = await db.select({ startTime: availabilityExceptions.startTime, endTime: availabilityExceptions.endTime }).from(availabilityExceptions).where(and(
     eq(availabilityExceptions.professionalId, professionalId),
     eq(availabilityExceptions.date, dateKey(startsAt)),
     eq(availabilityExceptions.isBlocked, true),
@@ -67,8 +67,21 @@ async function isBlockedByException(professionalId: string, startsAt: Date, ends
 
 async function enrichBooking(booking: typeof bookings.$inferSelect) {
   const [[service], [profile], [client]] = await Promise.all([
-    db.select().from(services).where(eq(services.id, booking.serviceId)).limit(1),
-    db.select().from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1),
+    db.select({
+      id: services.id,
+      name: services.name,
+      category: services.category,
+      durationMinutes: services.durationMinutes,
+      priceCents: services.priceCents,
+      depositCents: services.depositCents,
+    }).from(services).where(eq(services.id, booking.serviceId)).limit(1),
+    db.select({
+      id: professionalProfiles.id,
+      displayName: professionalProfiles.displayName,
+      slug: professionalProfiles.slug,
+      city: professionalProfiles.city,
+      state: professionalProfiles.state,
+    }).from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1),
     db.select({ id: users.id, firstName: users.firstName, lastName: users.lastName, email: users.email }).from(users).where(eq(users.id, booking.clientId)).limit(1),
   ]);
 
@@ -101,7 +114,7 @@ bookingsRouter.get('/', requireAuth, async (req, res, next) => {
   try {
     const user = req.currentUser!;
     if (user.role === 'professional') {
-      const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, user.id)).limit(1);
+      const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles).where(eq(professionalProfiles.userId, user.id)).limit(1);
       if (!profile) return res.json([]);
       const rows = await db.select().from(bookings).where(eq(bookings.professionalId, profile.id)).orderBy(desc(bookings.startsAt));
       return res.json(await Promise.all(rows.map(enrichBooking)));
@@ -117,10 +130,10 @@ bookingsRouter.get('/', requireAuth, async (req, res, next) => {
 bookingsRouter.post('/', requireAuth, validateBody(createBookingSchema), async (req, res, next) => {
   try {
     if (req.currentUser!.role !== 'client') throw new HttpError(403, 'Only client accounts can request bookings');
-    const [service] = await db.select().from(services).where(and(eq(services.id, req.body.serviceId), eq(services.professionalId, req.body.professionalId), eq(services.isActive, true))).limit(1);
+    const [service] = await db.select({ id: services.id, name: services.name, durationMinutes: services.durationMinutes, priceCents: services.priceCents, depositCents: services.depositCents }).from(services).where(and(eq(services.id, req.body.serviceId), eq(services.professionalId, req.body.professionalId), eq(services.isActive, true))).limit(1);
     if (!service) throw new HttpError(404, 'Service not found');
 
-    const [profile] = await db.select().from(professionalProfiles).where(and(eq(professionalProfiles.id, req.body.professionalId), eq(professionalProfiles.status, 'approved'), eq(professionalProfiles.isVisible, true))).limit(1);
+    const [profile] = await db.select({ id: professionalProfiles.id, userId: professionalProfiles.userId }).from(professionalProfiles).where(and(eq(professionalProfiles.id, req.body.professionalId), eq(professionalProfiles.status, 'approved'), eq(professionalProfiles.isVisible, true))).limit(1);
     if (!profile) throw new HttpError(404, 'Professional not available for booking');
 
     const startsAt = new Date(req.body.startsAt);
@@ -134,7 +147,7 @@ bookingsRouter.post('/', requireAuth, validateBody(createBookingSchema), async (
     const blocked = await isBlockedByException(profile.id, startsAt, endsAt);
     if (blocked) throw new HttpError(409, 'Requested time is blocked by this professional’s availability exceptions');
 
-    const [conflict] = await db.select().from(bookings).where(and(
+    const [conflict] = await db.select({ id: bookings.id }).from(bookings).where(and(
       eq(bookings.professionalId, profile.id),
       inArray(bookings.status, activeBookingStatuses),
       lt(bookings.startsAt, endsAt),
@@ -169,10 +182,20 @@ bookingsRouter.post('/', requireAuth, validateBody(createBookingSchema), async (
 
 bookingsRouter.patch('/:id/status', requireAuth, validateBody(updateBookingStatusSchema), async (req, res, next) => {
   try {
-    const [booking] = await db.select().from(bookings).where(eq(bookings.id, req.params.id)).limit(1);
+    const [booking] = await db.select({
+      id: bookings.id,
+      clientId: bookings.clientId,
+      professionalId: bookings.professionalId,
+      serviceId: bookings.serviceId,
+      startsAt: bookings.startsAt,
+      endsAt: bookings.endsAt,
+      status: bookings.status,
+      cancelledAt: bookings.cancelledAt,
+      completedAt: bookings.completedAt,
+    }).from(bookings).where(eq(bookings.id, req.params.id)).limit(1);
     if (!booking) throw new HttpError(404, 'Booking not found');
 
-    const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1);
+    const [profile] = await db.select({ userId: professionalProfiles.userId }).from(professionalProfiles).where(eq(professionalProfiles.id, booking.professionalId)).limit(1);
     if (!profile) throw new HttpError(404, 'Professional profile not found');
 
     const user = req.currentUser!;
