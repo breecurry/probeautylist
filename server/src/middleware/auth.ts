@@ -7,6 +7,7 @@ import { HttpError } from '../utils/http.js';
 declare module 'express-session' {
   interface SessionData {
     userId?: string;
+    csrfToken?: string;
   }
 }
 

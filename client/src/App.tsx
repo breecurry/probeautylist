@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Layout } from '@/components/Layout';
 import { RequireAuth } from '@/components/RequireAuth';
+import { AccountSettings } from '@/pages/AccountSettings';
 import { AdminPage } from '@/pages/AdminPage';
 import { LoginPage, RegisterPage } from '@/pages/AuthPages';
 import { AvailabilityPage } from '@/pages/AvailabilityPage';
@@ -40,6 +41,7 @@ export function App() {
           </Route>
           <Route element={<RequireAuth roles={['client', 'professional', 'admin']} />}>
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="account" element={<AccountSettings />} />
           </Route>
           <Route element={<RequireAuth roles={['admin']} />}>
             <Route path="admin" element={<AdminPage />} />

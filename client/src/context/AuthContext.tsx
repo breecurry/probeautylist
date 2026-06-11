@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, clearCsrfToken } from '@/lib/api';
 import type { User } from '@/types';
 
 type LoginInput = { email: string; password: string };
@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function logout() {
     await apiFetch<{ message: string }>('/api/auth/logout', { method: 'POST' });
+    clearCsrfToken();
     setUser(null);
   }
 

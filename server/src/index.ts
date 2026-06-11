@@ -10,6 +10,7 @@ import helmet from 'helmet';
 import { env, isProduction } from './config/env.js';
 import { pool } from './db/client.js';
 import { attachCurrentUser } from './middleware/auth.js';
+import { csrfProtection } from './middleware/csrf.js';
 import { normalizeError } from './utils/http.js';
 import { registerRoutes } from './routes.js';
 
@@ -41,6 +42,7 @@ app.use(session({
 }));
 
 app.use(attachCurrentUser);
+app.use(csrfProtection);
 app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR), { fallthrough: false, maxAge: isProduction ? '7d' : 0 }));
 registerRoutes(app);
 
