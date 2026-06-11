@@ -26,11 +26,18 @@ export const userRoles = ['client', 'professional', 'admin'] as const;
 export const professionalStatuses = ['draft', 'pending_review', 'approved', 'suspended'] as const;
 
 export const notificationTypes = [
-  'booking_created',
+  'booking_requested',
   'booking_confirmed',
   'booking_declined',
   'booking_cancelled',
   'booking_completed',
+  'booking_reschedule_requested',
+  'booking_reschedule_accepted',
+  'booking_reschedule_declined',
+  'payment_required',
+  'payment_recorded',
+  'reminder_scheduled',
+  'calendar_sync_status',
   'message_received',
   'review_received',
   'profile_approved',
@@ -42,6 +49,14 @@ export const adminTargetTypes = ['professional_profile', 'booking', 'review', 'u
 
 export const adminActionTypes = ['approve', 'request-changes', 'suspend', 'resolve', 'system'] as const;
 
+export const paymentStatuses = ['not_required', 'deposit_due', 'deposit_recorded', 'paid', 'refunded', 'failed'] as const;
+
+export const rescheduleRequestStatuses = ['pending', 'accepted', 'declined', 'cancelled'] as const;
+
+export const reminderStatuses = ['scheduled', 'sent', 'cancelled'] as const;
+
+export const calendarConnectionStatuses = ['not_connected', 'connected', 'paused', 'error'] as const;
+
 export type ServiceCategory = (typeof serviceCategories)[number];
 export type BookingStatus = (typeof bookingStatuses)[number];
 export type UserRole = (typeof userRoles)[number];
@@ -49,6 +64,10 @@ export type ProfessionalStatus = (typeof professionalStatuses)[number];
 export type NotificationType = (typeof notificationTypes)[number];
 export type AdminTargetType = (typeof adminTargetTypes)[number];
 export type AdminActionType = (typeof adminActionTypes)[number];
+export type PaymentStatus = (typeof paymentStatuses)[number];
+export type RescheduleRequestStatus = (typeof rescheduleRequestStatuses)[number];
+export type ReminderStatus = (typeof reminderStatuses)[number];
+export type CalendarConnectionStatus = (typeof calendarConnectionStatuses)[number];
 
 export type ApiError = {
   message: string;

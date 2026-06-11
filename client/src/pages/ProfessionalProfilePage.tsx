@@ -4,7 +4,7 @@ import { CalendarPlus, Clock, Heart, MapPin, ShieldCheck, Star } from 'lucide-re
 import { apiFetch, formatMoney } from '@/lib/api';
 import { safeBackgroundImageStyle, safeImageUrl } from '@/lib/safety';
 import { useAuth } from '@/context/AuthContext';
-import type { AvailabilityException, AvailabilityRule, PortfolioItem, ProfessionalProfile, Review, Service } from '@/types';
+import type { AvailabilityException, AvailabilityRule, BookingPolicy, PortfolioItem, ProfessionalProfile, Review, Service } from '@/types';
 
 const weekdayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -15,6 +15,7 @@ type BookingPanelProps = {
   minimumBookingTime: string;
   onBook: (event: FormEvent<HTMLFormElement>) => Promise<void>;
   selectedService: string;
+  policy: BookingPolicy | null;
   services: Service[];
   setSelectedService: (value: string) => void;
   userRole?: string;
@@ -25,6 +26,7 @@ export function ProfessionalProfilePage() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<ProfessionalProfile | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [policy, setPolicy] = useState<BookingPolicy | null>(null);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [rules, setRules] = useState<AvailabilityRule[]>([]);
@@ -48,14 +50,16 @@ export function ProfessionalProfilePage() {
       const loadedProfile = await apiFetch<ProfessionalProfile>(`/api/professionals/${slug}`);
       setProfile(loadedProfile);
 
-      const [loadedServices, loadedPortfolio, loadedReviews, availability] = await Promise.all([
+      const [loadedServices, loadedPolicy, loadedPortfolio, loadedReviews, availability] = await Promise.all([
         apiFetch<Service[]>(`/api/services/professional/${loadedProfile.id}`),
+        apiFetch<BookingPolicy>(`/api/bookings/policies/${loadedProfile.id}`),
         apiFetch<PortfolioItem[]>(`/api/portfolio/professional/${loadedProfile.id}`),
         apiFetch<Review[]>(`/api/reviews/professional/${loadedProfile.id}`),
         apiFetch<{ rules: AvailabilityRule[]; exceptions: AvailabilityException[] }>(`/api/availability/professional/${loadedProfile.id}`),
       ]);
 
       setServices(loadedServices);
+      setPolicy(loadedPolicy);
       setPortfolio(loadedPortfolio);
       setReviews(loadedReviews);
       setRules(availability.rules);
@@ -89,6 +93,8 @@ export function ProfessionalProfilePage() {
     const startsAt = String(form.get('startsAt') || '');
     const startsAtDate = new Date(startsAt);
     const clientNote = String(form.get('clientNote') || '').trim();
+    const policyAccepted = form.get('policyAccepted') === 'on';
+    const reminderOptIn = form.get('reminderOptIn') === 'on';
 
     if (Number.isNaN(startsAtDate.getTime())) {
       setError('Choose a valid appointment date and time.');
@@ -96,6 +102,10 @@ export function ProfessionalProfilePage() {
     }
     if (clientNote.length > 1000) {
       setError('Booking notes must be 1,000 characters or fewer.');
+      return;
+    }
+    if (!policyAccepted) {
+      setError('Please review and accept the booking policy before sending your request.');
       return;
     }
     if (bookingSaving) return;
@@ -109,6 +119,8 @@ export function ProfessionalProfilePage() {
           serviceId: selectedService,
           startsAt: startsAtDate.toISOString(),
           clientNote,
+          policyAccepted,
+          reminderOptIn,
         }),
       });
       setMessage('Booking request sent. You will receive an in-app notification when it is updated.');
@@ -140,6 +152,7 @@ export function ProfessionalProfilePage() {
             message={message}
             minimumBookingTime={minimumBookingTime}
             onBook={book}
+            policy={policy}
             selectedService={selectedService}
             services={services}
             setSelectedService={setSelectedService}
@@ -192,8 +205,10 @@ function ProfileIntro({ canSave, onSave, profile }: { canSave: boolean; onSave: 
   );
 }
 
-function BookingPanel({ bookingSaving, error, message, minimumBookingTime, onBook, selectedService, services, setSelectedService, userRole }: BookingPanelProps) {
+function BookingPanel({ bookingSaving, error, message, minimumBookingTime, onBook, policy, selectedService, services, setSelectedService, userRole }: BookingPanelProps) {
   const canRequestBooking = userRole === 'client' && services.length > 0;
+  const selectedServiceRecord = services.find((service) => service.id === selectedService) ?? null;
+  const depositDue = policy?.depositRequired ? (selectedServiceRecord?.depositCents ?? 0) : 0;
 
   return (
     <form onSubmit={onBook} className="rounded-3xl bg-cream p-5">
@@ -211,8 +226,30 @@ function BookingPanel({ bookingSaving, error, message, minimumBookingTime, onBoo
       <input className="input mt-2" min={minimumBookingTime} name="startsAt" type="datetime-local" disabled={!canRequestBooking} required />
       <p className="mt-2 text-xs font-semibold text-ink/50">Requests are checked against the professional’s weekly schedule, blocked dates, and existing pending or confirmed bookings.</p>
 
+      {selectedServiceRecord && (
+        <div className="mt-4 rounded-2xl bg-white p-3 text-sm text-ink/65">
+          <p className="font-black text-ink">Booking terms</p>
+          <p className="mt-2">{policy?.policySummary ?? 'Deposits may be required to hold appointments. Cancellation rules are shown before booking.'}</p>
+          <dl className="mt-3 grid gap-2 text-xs font-semibold sm:grid-cols-2">
+            <div><dt className="text-ink/45">Service price</dt><dd>{formatMoney(selectedServiceRecord.priceCents)}</dd></div>
+            <div><dt className="text-ink/45">Deposit</dt><dd>{depositDue > 0 ? `${formatMoney(depositDue)} due after confirmation` : 'No deposit required'}</dd></div>
+            <div><dt className="text-ink/45">Cancellation window</dt><dd>{policy?.cancellationWindowHours ?? 24} hours</dd></div>
+            <div><dt className="text-ink/45">Cancellation fee</dt><dd>{formatMoney(policy?.cancellationFeeCents ?? 0)}</dd></div>
+          </dl>
+        </div>
+      )}
+
       <label className="label mt-4 block">Notes</label>
       <textarea className="input mt-2 min-h-28" name="clientNote" placeholder="Share style goals, timing needs, or questions." disabled={!canRequestBooking || bookingSaving} maxLength={1000} />
+
+      <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white p-3 text-sm font-semibold text-ink/70">
+        <input className="mt-1" name="policyAccepted" type="checkbox" disabled={!canRequestBooking || bookingSaving} required />
+        <span>I understand and accept the professional’s booking, deposit, and cancellation policy.</span>
+      </label>
+      <label className="mt-3 flex items-start gap-3 rounded-2xl bg-white p-3 text-sm font-semibold text-ink/70">
+        <input className="mt-1" name="reminderOptIn" type="checkbox" defaultChecked={policy?.remindersEnabled ?? true} disabled={!canRequestBooking || bookingSaving || policy?.remindersEnabled === false} />
+        <span>{policy?.remindersEnabled === false ? 'This professional has reminders turned off.' : `Send me an appointment reminder ${policy?.reminderHoursBefore ?? 24} hours before the booking.`}</span>
+      </label>
 
       {message && <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-700">{message}</p>}
       {error && <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}

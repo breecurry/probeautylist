@@ -31,12 +31,31 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'booking_declined',
   'booking_cancelled',
   'booking_completed',
+  'booking_reschedule_requested',
+  'booking_reschedule_accepted',
+  'booking_reschedule_declined',
+  'payment_required',
+  'payment_recorded',
+  'reminder_scheduled',
+  'calendar_sync_status',
   'message_received',
   'review_received',
   'profile_approved',
   'profile_suspended',
   'system',
 ]);
+
+export const paymentStatusEnum = pgEnum('payment_status', [
+  'not_required',
+  'deposit_due',
+  'deposit_recorded',
+  'paid',
+  'refunded',
+  'failed',
+]);
+export const rescheduleRequestStatusEnum = pgEnum('reschedule_request_status', ['pending', 'accepted', 'declined', 'cancelled']);
+export const reminderStatusEnum = pgEnum('reminder_status', ['scheduled', 'sent', 'cancelled']);
+export const calendarConnectionStatusEnum = pgEnum('calendar_connection_status', ['not_connected', 'connected', 'paused', 'error']);
 
 const timestamps = {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -110,6 +129,24 @@ export const services = pgTable('services', {
   depositRangeCheck: check('services_deposit_range_check', sql`${table.depositCents} >= 0 AND ${table.depositCents} <= ${table.priceCents}`),
 }));
 
+
+export const bookingPolicies = pgTable('booking_policies', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  professionalId: uuid('professional_id').notNull().references(() => professionalProfiles.id, { onDelete: 'cascade' }),
+  cancellationWindowHours: integer('cancellation_window_hours').default(24).notNull(),
+  cancellationFeeCents: integer('cancellation_fee_cents').default(0).notNull(),
+  depositRequired: boolean('deposit_required').default(true).notNull(),
+  remindersEnabled: boolean('reminders_enabled').default(true).notNull(),
+  reminderHoursBefore: integer('reminder_hours_before').default(24).notNull(),
+  policySummary: text('policy_summary').default('Deposits may be required to hold appointments. Cancellation rules are shown before booking.').notNull(),
+  ...timestamps,
+}, (table) => ({
+  professionalUnique: uniqueIndex('booking_policies_professional_unique').on(table.professionalId),
+  cancellationWindowNonNegativeCheck: check('booking_policies_cancellation_window_non_negative_check', sql`${table.cancellationWindowHours} >= 0`),
+  cancellationFeeNonNegativeCheck: check('booking_policies_cancellation_fee_non_negative_check', sql`${table.cancellationFeeCents} >= 0`),
+  reminderHoursPositiveCheck: check('booking_policies_reminder_hours_positive_check', sql`${table.reminderHoursBefore} > 0`),
+}));
+
 export const availabilityRules = pgTable('availability_rules', {
   id: uuid('id').defaultRandom().primaryKey(),
   professionalId: uuid('professional_id').notNull().references(() => professionalProfiles.id, { onDelete: 'cascade' }),
@@ -138,6 +175,22 @@ export const availabilityExceptions = pgTable('availability_exceptions', {
   timePairCheck: check('availability_exceptions_time_pair_check', sql`(${table.startTime} IS NULL AND ${table.endTime} IS NULL) OR (${table.startTime} IS NOT NULL AND ${table.endTime} IS NOT NULL AND ${table.startTime} < ${table.endTime})`),
 }));
 
+
+export const calendarConnections = pgTable('calendar_connections', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  professionalId: uuid('professional_id').notNull().references(() => professionalProfiles.id, { onDelete: 'cascade' }),
+  provider: text('provider').default('manual').notNull(),
+  externalCalendarId: text('external_calendar_id'),
+  status: calendarConnectionStatusEnum('status').default('not_connected').notNull(),
+  syncDirection: text('sync_direction').default('export_only').notNull(),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
+  notes: text('notes'),
+  ...timestamps,
+}, (table) => ({
+  professionalProviderUnique: uniqueIndex('calendar_connections_professional_provider_unique').on(table.professionalId, table.provider),
+  statusIdx: index('calendar_connections_status_idx').on(table.status),
+}));
+
 export const bookings = pgTable('bookings', {
   id: uuid('id').defaultRandom().primaryKey(),
   clientId: uuid('client_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
@@ -148,8 +201,12 @@ export const bookings = pgTable('bookings', {
   status: bookingStatusEnum('status').default('pending').notNull(),
   priceCents: integer('price_cents').notNull(),
   depositCents: integer('deposit_cents').default(0).notNull(),
+  paymentStatus: paymentStatusEnum('payment_status').default('not_required').notNull(),
+  policyAcceptedAt: timestamp('policy_accepted_at', { withTimezone: true }),
+  reminderOptIn: boolean('reminder_opt_in').default(true).notNull(),
   clientNote: text('client_note'),
   professionalNote: text('professional_note'),
+  cancellationReason: text('cancellation_reason'),
   cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
   completedAt: timestamp('completed_at', { withTimezone: true }),
   ...timestamps,
@@ -157,9 +214,57 @@ export const bookings = pgTable('bookings', {
   clientIdx: index('bookings_client_idx').on(table.clientId, table.startsAt),
   professionalIdx: index('bookings_professional_idx').on(table.professionalId, table.startsAt),
   statusIdx: index('bookings_status_idx').on(table.status),
+  paymentStatusIdx: index('bookings_payment_status_idx').on(table.paymentStatus),
   timeOrderCheck: check('bookings_time_order_check', sql`${table.startsAt} < ${table.endsAt}`),
   priceNonNegativeCheck: check('bookings_price_non_negative_check', sql`${table.priceCents} >= 0`),
   depositRangeCheck: check('bookings_deposit_range_check', sql`${table.depositCents} >= 0 AND ${table.depositCents} <= ${table.priceCents}`),
+}));
+
+
+export const bookingPayments = pgTable('booking_payments', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  bookingId: uuid('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  provider: text('provider').default('manual').notNull(),
+  providerReference: text('provider_reference'),
+  status: paymentStatusEnum('status').default('deposit_due').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  currency: text('currency').default('usd').notNull(),
+  recordedAt: timestamp('recorded_at', { withTimezone: true }),
+  failureReason: text('failure_reason'),
+  ...timestamps,
+}, (table) => ({
+  bookingUnique: uniqueIndex('booking_payments_booking_unique').on(table.bookingId),
+  statusIdx: index('booking_payments_status_idx').on(table.status),
+  amountNonNegativeCheck: check('booking_payments_amount_non_negative_check', sql`${table.amountCents} >= 0`),
+}));
+
+export const bookingRescheduleRequests = pgTable('booking_reschedule_requests', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  bookingId: uuid('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  requestedById: uuid('requested_by_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  proposedStartsAt: timestamp('proposed_starts_at', { withTimezone: true }).notNull(),
+  proposedEndsAt: timestamp('proposed_ends_at', { withTimezone: true }).notNull(),
+  status: rescheduleRequestStatusEnum('status').default('pending').notNull(),
+  note: text('note'),
+  respondedAt: timestamp('responded_at', { withTimezone: true }),
+  ...timestamps,
+}, (table) => ({
+  bookingStatusIdx: index('booking_reschedule_requests_booking_status_idx').on(table.bookingId, table.status),
+  timeOrderCheck: check('booking_reschedule_requests_time_order_check', sql`${table.proposedStartsAt} < ${table.proposedEndsAt}`),
+}));
+
+export const bookingReminders = pgTable('booking_reminders', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  bookingId: uuid('booking_id').notNull().references(() => bookings.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  scheduledFor: timestamp('scheduled_for', { withTimezone: true }).notNull(),
+  type: text('type').default('appointment_reminder').notNull(),
+  status: reminderStatusEnum('status').default('scheduled').notNull(),
+  sentAt: timestamp('sent_at', { withTimezone: true }),
+  ...timestamps,
+}, (table) => ({
+  bookingUserUnique: uniqueIndex('booking_reminders_booking_user_type_unique').on(table.bookingId, table.userId, table.type),
+  scheduleIdx: index('booking_reminders_schedule_idx').on(table.status, table.scheduledFor),
 }));
 
 export const reviews = pgTable('reviews', {
@@ -251,6 +356,8 @@ export const professionalProfilesRelations = relations(professionalProfiles, ({ 
   bookings: many(bookings),
   reviews: many(reviews),
   portfolioItems: many(portfolioItems),
+  bookingPolicy: one(bookingPolicies),
+  calendarConnections: many(calendarConnections),
 }));
 
 export type User = typeof users.$inferSelect;
@@ -259,8 +366,18 @@ export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
 export type NewProfessionalProfile = typeof professionalProfiles.$inferInsert;
 export type Service = typeof services.$inferSelect;
 export type NewService = typeof services.$inferInsert;
+export type BookingPolicy = typeof bookingPolicies.$inferSelect;
+export type NewBookingPolicy = typeof bookingPolicies.$inferInsert;
+export type CalendarConnection = typeof calendarConnections.$inferSelect;
+export type NewCalendarConnection = typeof calendarConnections.$inferInsert;
 export type Booking = typeof bookings.$inferSelect;
 export type NewBooking = typeof bookings.$inferInsert;
+export type BookingPayment = typeof bookingPayments.$inferSelect;
+export type NewBookingPayment = typeof bookingPayments.$inferInsert;
+export type BookingRescheduleRequest = typeof bookingRescheduleRequests.$inferSelect;
+export type NewBookingRescheduleRequest = typeof bookingRescheduleRequests.$inferInsert;
+export type BookingReminder = typeof bookingReminders.$inferSelect;
+export type NewBookingReminder = typeof bookingReminders.$inferInsert;
 export type Review = typeof reviews.$inferSelect;
 export type NewReview = typeof reviews.$inferInsert;
 export type Notification = typeof notifications.$inferSelect;

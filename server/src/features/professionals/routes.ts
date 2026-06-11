@@ -1,12 +1,13 @@
 import { Router } from 'express';
 import { and, eq, ilike, or } from 'drizzle-orm';
 import { db } from '../../db/client.js';
-import { professionalProfiles, users } from '../../db/schema.js';
+import { bookingPolicies, calendarConnections, professionalProfiles, users } from '../../db/schema.js';
 import { requireRole } from '../../middleware/auth.js';
 import { validateBody, validateQuery } from '../../middleware/validate.js';
 import { HttpError, sendCreated } from '../../utils/http.js';
+import { requireOwnProfile } from '../../utils/profile.js';
 import { slugify } from '../../utils/slug.js';
-import { professionalProfileSchema, professionalSearchSchema } from './schemas.js';
+import { bookingPolicySchema, calendarConnectionSchema, professionalProfileSchema, professionalSearchSchema } from './schemas.js';
 
 export const professionalsRouter = Router();
 
@@ -94,6 +95,67 @@ professionalsRouter.patch('/me', requireRole('professional', 'admin'), validateB
       .returning();
     if (!updated) throw new HttpError(404, 'Professional profile not found');
     res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+professionalsRouter.get('/me/booking-policy', requireRole('professional', 'admin'), async (req, res, next) => {
+  try {
+    const profile = await requireOwnProfile(req.currentUser!.id);
+    const [policy] = await db.select().from(bookingPolicies).where(eq(bookingPolicies.professionalId, profile.id)).limit(1);
+    res.json(policy ?? {
+      professionalId: profile.id,
+      cancellationWindowHours: 24,
+      cancellationFeeCents: 0,
+      depositRequired: true,
+      remindersEnabled: true,
+      reminderHoursBefore: 24,
+      policySummary: 'Deposits may be required to hold appointments. Cancellation rules are shown before booking.',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+professionalsRouter.put('/me/booking-policy', requireRole('professional', 'admin'), validateBody(bookingPolicySchema), async (req, res, next) => {
+  try {
+    const profile = await requireOwnProfile(req.currentUser!.id);
+    const [policy] = await db.insert(bookingPolicies)
+      .values({ ...req.body, professionalId: profile.id, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: bookingPolicies.professionalId,
+        set: { ...req.body, updatedAt: new Date() },
+      })
+      .returning();
+    res.json(policy);
+  } catch (error) {
+    next(error);
+  }
+});
+
+professionalsRouter.get('/me/calendar-connections', requireRole('professional', 'admin'), async (req, res, next) => {
+  try {
+    const profile = await requireOwnProfile(req.currentUser!.id);
+    const rows = await db.select().from(calendarConnections).where(eq(calendarConnections.professionalId, profile.id));
+    res.json(rows);
+  } catch (error) {
+    next(error);
+  }
+});
+
+professionalsRouter.put('/me/calendar-connections', requireRole('professional', 'admin'), validateBody(calendarConnectionSchema), async (req, res, next) => {
+  try {
+    const profile = await requireOwnProfile(req.currentUser!.id);
+    const [connection] = await db.insert(calendarConnections)
+      .values({ ...req.body, professionalId: profile.id, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [calendarConnections.professionalId, calendarConnections.provider],
+        set: { ...req.body, updatedAt: new Date() },
+      })
+      .returning();
+    res.json(connection);
   } catch (error) {
     next(error);
   }

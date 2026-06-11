@@ -1,4 +1,4 @@
-import type { AdminActionType, AdminTargetType, BookingStatus, NotificationType, ProfessionalStatus, ServiceCategory, UserRole } from '@shared/types';
+import type { AdminActionType, AdminTargetType, BookingStatus, CalendarConnectionStatus, NotificationType, PaymentStatus, ProfessionalStatus, ReminderStatus, RescheduleRequestStatus, ServiceCategory, UserRole } from '@shared/types';
 
 export type User = {
   id: string;
@@ -56,6 +56,58 @@ export type Service = {
   isActive: boolean;
 };
 
+export type BookingPayment = {
+  id: string;
+  bookingId: string;
+  provider: string;
+  providerReference?: string | null;
+  status: PaymentStatus;
+  amountCents: number;
+  currency: string;
+  recordedAt?: string | null;
+  failureReason?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BookingRescheduleRequest = {
+  id: string;
+  bookingId: string;
+  requestedById: string;
+  proposedStartsAt: string;
+  proposedEndsAt: string;
+  status: RescheduleRequestStatus;
+  note?: string | null;
+  respondedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BookingReminder = {
+  id: string;
+  bookingId: string;
+  userId: string;
+  scheduledFor: string;
+  type: string;
+  status: ReminderStatus;
+  sentAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BookingPolicy = {
+  id?: string;
+  professionalId: string;
+  cancellationWindowHours: number;
+  cancellationFeeCents: number;
+  depositRequired: boolean;
+  remindersEnabled: boolean;
+  reminderHoursBefore: number;
+  policySummary: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type Booking = {
   id: string;
   clientId: string;
@@ -66,8 +118,16 @@ export type Booking = {
   status: BookingStatus;
   priceCents: number;
   depositCents: number;
+  paymentStatus: PaymentStatus;
+  policyAcceptedAt?: string | null;
+  reminderOptIn: boolean;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
+  completedAt?: string | null;
   clientNote?: string | null;
   professionalNote?: string | null;
+  payment?: BookingPayment | null;
+  pendingRescheduleRequest?: BookingRescheduleRequest | null;
   service?: Pick<Service, 'id' | 'name' | 'category' | 'durationMinutes' | 'priceCents' | 'depositCents'> | null;
   professional?: Pick<ProfessionalSummary, 'id' | 'displayName' | 'slug' | 'city' | 'state'> | null;
   client?: { id: string; name: string; email: string } | null;
@@ -139,3 +199,16 @@ export type AdminAction = {
   note?: string | null;
   createdAt: string;
 };
+
+export interface CalendarConnection {
+  id: string;
+  professionalId: string;
+  provider: string;
+  externalCalendarId?: string | null;
+  status: CalendarConnectionStatus;
+  syncDirection: 'export_only' | 'import_only' | 'two_way';
+  lastSyncedAt?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { serviceCategories } from '../../constants/domain.js';
+import { calendarConnectionStatuses, serviceCategories } from '../../constants/domain.js';
 
 export const professionalProfileSchema = z.object({
   displayName: z.string().min(2).max(120).trim(),
@@ -24,4 +24,22 @@ export const professionalSearchSchema = z.object({
   category: z.string().trim().max(80).optional(),
   city: z.string().trim().max(100).optional(),
   state: z.string().trim().max(80).optional(),
+});
+
+
+export const bookingPolicySchema = z.object({
+  cancellationWindowHours: z.coerce.number().int().min(0).max(720),
+  cancellationFeeCents: z.coerce.number().int().min(0).max(100000),
+  depositRequired: z.boolean(),
+  remindersEnabled: z.boolean(),
+  reminderHoursBefore: z.coerce.number().int().min(1).max(336),
+  policySummary: z.string().trim().min(20).max(1000),
+});
+
+export const calendarConnectionSchema = z.object({
+  provider: z.string().trim().min(2).max(60),
+  externalCalendarId: z.string().trim().max(240).optional(),
+  status: z.enum(calendarConnectionStatuses),
+  syncDirection: z.enum(['export_only', 'import_only', 'two_way']).default('export_only'),
+  notes: z.string().trim().max(1000).optional(),
 });
