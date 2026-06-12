@@ -150,6 +150,16 @@ Run the quality checks before deploying updates whenever possible:
 npm run verify
 ```
 
+Before a release, also run the comprehensive local end-to-end harness against a disposable local or staging database with an existing admin account. The harness creates realistic client and professional test data, so it must not be pointed at production.
+
+```bash
+PBL_BASE_URL=http://127.0.0.1:3000 \
+PBL_FRONTEND_URL=http://127.0.0.1:5173 \
+PBL_ADMIN_EMAIL=admin@example.com \
+PBL_ADMIN_PASSWORD='your-local-admin-password' \
+npm run e2e:local
+```
+
 ## References
 
 [1]: https://react.dev/ "React Documentation"

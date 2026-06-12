@@ -16,6 +16,7 @@
     "admin:create": "tsx server/src/scripts/create-admin.ts",
     "lint": "eslint . --ext .ts,.tsx --max-warnings=0",
     "smoke:health": "node scripts/smoke-health.mjs",
+    "e2e:local": "node scripts/e2e-local.mjs",
     "verify": "npm run lint && npm run build && npm audit --omit=dev --audit-level=high"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
