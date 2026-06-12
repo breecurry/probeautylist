@@ -39,7 +39,7 @@ availabilityRouter.get('/professional/:professionalId', async (req, res, next) =
   }
 });
 
-availabilityRouter.get('/me', requireRole('professional', 'admin'), async (req, res, next) => {
+availabilityRouter.get('/me', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const rows = await db.select().from(availabilityRules)
@@ -51,7 +51,7 @@ availabilityRouter.get('/me', requireRole('professional', 'admin'), async (req, 
   }
 });
 
-availabilityRouter.post('/me', requireRole('professional', 'admin'), validateBody(availabilityRuleSchema), async (req, res, next) => {
+availabilityRouter.post('/me', requireRole('professional', 'business', 'admin'), validateBody(availabilityRuleSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const [created] = await db.insert(availabilityRules).values({ ...req.body, professionalId: profile.id }).returning();
@@ -61,7 +61,7 @@ availabilityRouter.post('/me', requireRole('professional', 'admin'), validateBod
   }
 });
 
-availabilityRouter.put('/me', requireRole('professional', 'admin'), validateBody(replaceAvailabilityRulesSchema), async (req, res, next) => {
+availabilityRouter.put('/me', requireRole('professional', 'business', 'admin'), validateBody(replaceAvailabilityRulesSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const rows = await db.transaction(async (tx) => {
@@ -75,7 +75,7 @@ availabilityRouter.put('/me', requireRole('professional', 'admin'), validateBody
   }
 });
 
-availabilityRouter.get('/exceptions/me', requireRole('professional', 'admin'), async (req, res, next) => {
+availabilityRouter.get('/exceptions/me', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const rows = await db.select().from(availabilityExceptions)
@@ -87,7 +87,7 @@ availabilityRouter.get('/exceptions/me', requireRole('professional', 'admin'), a
   }
 });
 
-availabilityRouter.post('/exceptions/me', requireRole('professional', 'admin'), validateBody(availabilityExceptionSchema), async (req, res, next) => {
+availabilityRouter.post('/exceptions/me', requireRole('professional', 'business', 'admin'), validateBody(availabilityExceptionSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const [created] = await db.insert(availabilityExceptions).values({ ...req.body, professionalId: profile.id }).returning();
@@ -97,7 +97,7 @@ availabilityRouter.post('/exceptions/me', requireRole('professional', 'admin'), 
   }
 });
 
-availabilityRouter.patch('/exceptions/:id', requireRole('professional', 'admin'), validateBody(updateAvailabilityExceptionSchema), async (req, res, next) => {
+availabilityRouter.patch('/exceptions/:id', requireRole('professional', 'business', 'admin'), validateBody(updateAvailabilityExceptionSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const [updated] = await db.update(availabilityExceptions)
@@ -111,7 +111,7 @@ availabilityRouter.patch('/exceptions/:id', requireRole('professional', 'admin')
   }
 });
 
-availabilityRouter.delete('/exceptions/:id', requireRole('professional', 'admin'), async (req, res, next) => {
+availabilityRouter.delete('/exceptions/:id', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const [deleted] = await db.delete(availabilityExceptions)
@@ -124,7 +124,7 @@ availabilityRouter.delete('/exceptions/:id', requireRole('professional', 'admin'
   }
 });
 
-availabilityRouter.patch('/:id', requireRole('professional', 'admin'), validateBody(updateAvailabilityRuleSchema), async (req, res, next) => {
+availabilityRouter.patch('/:id', requireRole('professional', 'business', 'admin'), validateBody(updateAvailabilityRuleSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const [updated] = await db.update(availabilityRules)

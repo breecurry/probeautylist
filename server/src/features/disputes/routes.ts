@@ -73,7 +73,7 @@ disputesRouter.get('/', requireAuth, async (req, res, next) => {
       res.json(await enrichDisputes(rows));
       return;
     }
-    if (user.role === 'professional') {
+    if (user.role === 'professional' || user.role === 'business') {
       const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles).where(eq(professionalProfiles.userId, user.id)).limit(1);
       if (!profile) return res.json([]);
       const rows = await db.select().from(bookingDisputes).where(eq(bookingDisputes.professionalId, profile.id)).orderBy(desc(bookingDisputes.createdAt)).limit(50);
@@ -87,7 +87,7 @@ disputesRouter.get('/', requireAuth, async (req, res, next) => {
   }
 });
 
-disputesRouter.post('/', requireRole('client', 'professional', 'admin'), validateBody(createDisputeSchema), async (req, res, next) => {
+disputesRouter.post('/', requireRole('client', 'professional', 'business', 'admin'), validateBody(createDisputeSchema), async (req, res, next) => {
   try {
     const input = req.body as z.infer<typeof createDisputeSchema>;
     const user = req.currentUser!;

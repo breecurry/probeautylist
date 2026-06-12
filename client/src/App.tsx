@@ -6,6 +6,7 @@ import { AdminPage } from '@/pages/AdminPage';
 import { LoginPage, RegisterPage } from '@/pages/AuthPages';
 import { AvailabilityPage } from '@/pages/AvailabilityPage';
 import { BookingsPage } from '@/pages/BookingsPage';
+import { BusinessOnboarding } from '@/pages/BusinessOnboarding';
 import { ClientDashboard, ProfessionalDashboard } from '@/pages/Dashboards';
 import { FavoritesPage } from '@/pages/FavoritesPage';
 import { Home } from '@/pages/Home';
@@ -35,7 +36,7 @@ export function App() {
             <Route path="client/favorites" element={<FavoritesPage />} />
             <Route path="client/saved-searches" element={<SavedSearchesPage />} />
           </Route>
-          <Route element={<RequireAuth roles={['professional', 'admin']} />}>
+          <Route element={<RequireAuth roles={['professional', 'business', 'admin']} />}>
             <Route path="professional" element={<ProfessionalDashboard />} />
             <Route path="professional/onboarding" element={<ProfessionalOnboarding />} />
             <Route path="professional/profile" element={<ProfessionalSettings />} />
@@ -44,8 +45,9 @@ export function App() {
             <Route path="professional/operations" element={<ProfessionalOperations />} />
             <Route path="professional/portfolio" element={<PortfolioPage />} />
             <Route path="professional/bookings" element={<BookingsPage />} />
+            <Route path="business/onboarding" element={<BusinessOnboarding />} />
           </Route>
-          <Route element={<RequireAuth roles={['client', 'professional', 'admin']} />}>
+          <Route element={<RequireAuth roles={['client', 'professional', 'business', 'admin']} />}>
             <Route path="notifications" element={<NotificationsPage />} />
             <Route path="account" element={<AccountSettings />} />
           </Route>

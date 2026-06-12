@@ -184,7 +184,7 @@ bookingsRouter.get('/', requireAuth, validateQuery(bookingListQuerySchema), asyn
   try {
     const user = req.currentUser!;
     const { limit } = req.query as unknown as z.infer<typeof bookingListQuerySchema>;
-    if (user.role === 'professional') {
+    if (user.role === 'professional' || user.role === 'business') {
       const [profile] = await db.select({ id: professionalProfiles.id }).from(professionalProfiles).where(eq(professionalProfiles.userId, user.id)).limit(1);
       if (!profile) return res.json([]);
       const rows = await db.select().from(bookings).where(eq(bookings.professionalId, profile.id)).orderBy(desc(bookings.startsAt)).limit(limit);

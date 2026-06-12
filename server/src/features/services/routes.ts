@@ -24,7 +24,7 @@ servicesRouter.get('/professional/:professionalId', async (req, res, next) => {
   }
 });
 
-servicesRouter.get('/me', requireRole('professional', 'admin'), async (req, res, next) => {
+servicesRouter.get('/me', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await requireOwnProfile(req.currentUser!.id, 'Create a professional profile before managing services');
     const rows = await db.select().from(services).where(eq(services.professionalId, profile.id)).orderBy(...serviceOrder);
@@ -34,7 +34,7 @@ servicesRouter.get('/me', requireRole('professional', 'admin'), async (req, res,
   }
 });
 
-servicesRouter.post('/me', requireRole('professional', 'admin'), validateBody(serviceSchema), async (req, res, next) => {
+servicesRouter.post('/me', requireRole('professional', 'business', 'admin'), validateBody(serviceSchema), async (req, res, next) => {
   try {
     const profile = await requireOwnProfile(req.currentUser!.id, 'Create a professional profile before managing services');
     const [created] = await db.insert(services).values({ ...req.body, professionalId: profile.id }).returning();
@@ -44,7 +44,7 @@ servicesRouter.post('/me', requireRole('professional', 'admin'), validateBody(se
   }
 });
 
-servicesRouter.patch('/:id', requireRole('professional', 'admin'), validateBody(serviceSchema.partial()), async (req, res, next) => {
+servicesRouter.patch('/:id', requireRole('professional', 'business', 'admin'), validateBody(serviceSchema.partial()), async (req, res, next) => {
   try {
     const profile = await requireOwnProfile(req.currentUser!.id, 'Create a professional profile before managing services');
     const [updated] = await db.update(services)

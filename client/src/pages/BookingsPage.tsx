@@ -253,7 +253,8 @@ function BookingCard({
   sendingMessage: boolean;
 }) {
   const serviceName = booking.service?.name ?? `Service ${booking.serviceId.slice(0, 8)}`;
-  const otherParty = role === 'professional' ? booking.client?.name : booking.professional?.displayName;
+  const isProviderSide = role === 'professional' || role === 'business';
+  const otherParty = isProviderSide ? booking.client?.name : booking.professional?.displayName;
 
   return (
     <div className="card p-5">
@@ -302,13 +303,13 @@ function BookingActions({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <StatusPill status={booking.status} />
-      {role === 'professional' && booking.status === 'pending' && (
+      {(role === 'professional' || role === 'business') && booking.status === 'pending' && (
         <>
           <button type="button" className="primary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'confirmed')}>Accept</button>
           <button type="button" className="secondary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'declined')}>Decline</button>
         </>
       )}
-      {role === 'professional' && booking.status === 'confirmed' && (
+      {(role === 'professional' || role === 'business') && booking.status === 'confirmed' && (
         <>
           <button type="button" className="primary-button px-4 py-2" onClick={() => void onStatus(booking.id, 'completed')}>Complete</button>
           <button type="button" className="secondary-button px-4 py-2" onClick={() => {

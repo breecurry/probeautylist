@@ -21,7 +21,7 @@ export const bookingStatuses = [
   'no_show',
 ] as const;
 
-export const userRoles = ['client', 'professional', 'admin'] as const;
+export const userRoles = ['client', 'professional', 'business', 'admin'] as const;
 
 export const professionalStatuses = ['draft', 'pending_review', 'approved', 'suspended'] as const;
 

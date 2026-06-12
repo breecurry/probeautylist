@@ -10,7 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "outDir": "../dist/server",
     "rootDir": "src",
-    "types": ["node", "express-session"],
+    "types": ["node"],
     "baseUrl": "src"
   },
   "include": ["src/**/*.ts"]

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Bell, BriefcaseBusiness, CalendarDays, Heart, LogOut, Search, Settings, Sparkles, UserRound, WalletCards } from 'lucide-react';
-import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Bell, BriefcaseBusiness, CalendarDays, Heart, Search, Settings, Sparkles, UserRound, WalletCards } from 'lucide-react';
+import { UserButton } from '@clerk/react';
+import { Link, NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
 
@@ -9,8 +10,7 @@ function navClass({ isActive }: { isActive: boolean }) {
 }
 
 export function Layout() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -22,11 +22,6 @@ export function Layout() {
       .then((result) => setUnreadCount(result.count))
       .catch(() => setUnreadCount(0));
   }, [user]);
-
-  async function onLogout() {
-    await logout();
-    navigate('/');
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream via-white to-blush/60">
@@ -41,8 +36,9 @@ export function Layout() {
             {user?.role === 'client' && <NavLink to="/client" className={navClass}><CalendarDays className="mr-2 inline" size={16} />Client</NavLink>}
             {user?.role === 'client' && <NavLink to="/client/favorites" className={navClass}><Heart className="mr-2 inline" size={16} />Saved</NavLink>}
             {user?.role === 'client' && <NavLink to="/client/saved-searches" className={navClass}><Sparkles className="mr-2 inline" size={16} />Searches</NavLink>}
-            {user?.role === 'professional' && <NavLink to="/professional" className={navClass}><BriefcaseBusiness className="mr-2 inline" size={16} />Professional</NavLink>}
-            {user?.role === 'professional' && <NavLink to="/professional/operations" className={navClass}><WalletCards className="mr-2 inline" size={16} />Operations</NavLink>}
+            {(user?.role === 'professional' || user?.role === 'business') && <NavLink to="/professional" className={navClass}><BriefcaseBusiness className="mr-2 inline" size={16} />Professional</NavLink>}
+            {user?.role === 'business' && <NavLink to="/business/onboarding" className={navClass}><BriefcaseBusiness className="mr-2 inline" size={16} />Business</NavLink>}
+            {(user?.role === 'professional' || user?.role === 'business') && <NavLink to="/professional/operations" className={navClass}><WalletCards className="mr-2 inline" size={16} />Operations</NavLink>}
             {user?.role === 'admin' && <NavLink to="/admin" className={navClass}>Admin</NavLink>}
             {user && <NavLink to="/notifications" className={navClass}><Bell className="mr-2 inline" size={16} />Notifications{unreadCount > 0 && <span className="ml-2 rounded-full bg-gold px-2 py-0.5 text-xs text-ink">{unreadCount}</span>}</NavLink>}
             {user && <NavLink to="/account" className={navClass}><Settings className="mr-2 inline" size={16} />Account</NavLink>}
@@ -51,7 +47,7 @@ export function Layout() {
             {user ? (
               <>
                 <span className="hidden text-sm font-semibold text-ink/70 sm:inline">{user.firstName}</span>
-                <button onClick={onLogout} className="secondary-button px-4 py-2"><LogOut size={16} /></button>
+                <UserButton />
               </>
             ) : (
               <>

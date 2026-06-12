@@ -225,7 +225,7 @@ professionalsRouter.get('/', validateQuery(professionalSearchSchema), async (req
   }
 });
 
-professionalsRouter.get('/me', requireRole('professional', 'admin'), async (req, res, next) => {
+professionalsRouter.get('/me', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, req.currentUser!.id)).limit(1);
     res.json(profile ?? null);
@@ -234,7 +234,7 @@ professionalsRouter.get('/me', requireRole('professional', 'admin'), async (req,
   }
 });
 
-professionalsRouter.post('/me', requireRole('professional', 'admin'), validateBody(professionalProfileSchema), async (req, res, next) => {
+professionalsRouter.post('/me', requireRole('professional', 'business', 'admin'), validateBody(professionalProfileSchema), async (req, res, next) => {
   try {
     const [existing] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, req.currentUser!.id)).limit(1);
     if (existing) throw new HttpError(409, 'Professional profile already exists');
@@ -246,6 +246,7 @@ professionalsRouter.post('/me', requireRole('professional', 'admin'), validateBo
         ...req.body,
         slug: candidateSlug(baseSlug, attempt),
         userId: req.currentUser!.id,
+        organizationId: req.currentOrganization?.id ?? null,
         status: 'pending_review',
         isVisible: false,
         profileCompletionPercent: completionPercent,
@@ -265,7 +266,7 @@ professionalsRouter.post('/me', requireRole('professional', 'admin'), validateBo
   }
 });
 
-professionalsRouter.patch('/me', requireRole('professional', 'admin'), validateBody(professionalProfileSchema.partial()), async (req, res, next) => {
+professionalsRouter.patch('/me', requireRole('professional', 'business', 'admin'), validateBody(professionalProfileSchema.partial()), async (req, res, next) => {
   try {
     const [current] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, req.currentUser!.id)).limit(1);
     if (!current) throw new HttpError(404, 'Professional profile not found');
@@ -289,7 +290,7 @@ professionalsRouter.patch('/me', requireRole('professional', 'admin'), validateB
   }
 });
 
-professionalsRouter.get('/me/onboarding', requireRole('professional', 'admin'), async (req, res, next) => {
+professionalsRouter.get('/me/onboarding', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const [profile] = await db.select().from(professionalProfiles).where(eq(professionalProfiles.userId, req.currentUser!.id)).limit(1);
     if (!profile) {
@@ -321,7 +322,7 @@ professionalsRouter.get('/me/onboarding', requireRole('professional', 'admin'), 
   }
 });
 
-professionalsRouter.get('/me/booking-policy', requireRole('professional', 'admin'), async (req, res, next) => {
+professionalsRouter.get('/me/booking-policy', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await requireOwnProfile(req.currentUser!.id);
     const [policy] = await db.select().from(bookingPolicies).where(eq(bookingPolicies.professionalId, profile.id)).limit(1);
@@ -339,7 +340,7 @@ professionalsRouter.get('/me/booking-policy', requireRole('professional', 'admin
   }
 });
 
-professionalsRouter.put('/me/booking-policy', requireRole('professional', 'admin'), validateBody(bookingPolicySchema), async (req, res, next) => {
+professionalsRouter.put('/me/booking-policy', requireRole('professional', 'business', 'admin'), validateBody(bookingPolicySchema), async (req, res, next) => {
   try {
     const profile = await requireOwnProfile(req.currentUser!.id);
     const [policy] = await db.insert(bookingPolicies)
@@ -355,7 +356,7 @@ professionalsRouter.put('/me/booking-policy', requireRole('professional', 'admin
   }
 });
 
-professionalsRouter.get('/me/calendar-connections', requireRole('professional', 'admin'), async (req, res, next) => {
+professionalsRouter.get('/me/calendar-connections', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await requireOwnProfile(req.currentUser!.id);
     const rows = await db.select().from(calendarConnections).where(eq(calendarConnections.professionalId, profile.id));
@@ -365,7 +366,7 @@ professionalsRouter.get('/me/calendar-connections', requireRole('professional', 
   }
 });
 
-professionalsRouter.put('/me/calendar-connections', requireRole('professional', 'admin'), validateBody(calendarConnectionSchema), async (req, res, next) => {
+professionalsRouter.put('/me/calendar-connections', requireRole('professional', 'business', 'admin'), validateBody(calendarConnectionSchema), async (req, res, next) => {
   try {
     const profile = await requireOwnProfile(req.currentUser!.id);
     const [connection] = await db.insert(calendarConnections)

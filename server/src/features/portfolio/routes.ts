@@ -34,7 +34,7 @@ portfolioRouter.get('/professional/:professionalId', async (req, res, next) => {
   }
 });
 
-portfolioRouter.get('/me', requireRole('professional', 'admin'), async (req, res, next) => {
+portfolioRouter.get('/me', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await findOwnProfile(req.currentUser!.id);
     if (!profile) return res.json([]);
@@ -45,7 +45,7 @@ portfolioRouter.get('/me', requireRole('professional', 'admin'), async (req, res
   }
 });
 
-portfolioRouter.post('/me', requireRole('professional', 'admin'), validateBody(portfolioSchema), async (req, res, next) => {
+portfolioRouter.post('/me', requireRole('professional', 'business', 'admin'), validateBody(portfolioSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id, 'Create a profile before adding portfolio work');
     const [created] = await db.insert(portfolioItems).values({ ...req.body, professionalId: profile.id }).returning();
@@ -56,7 +56,7 @@ portfolioRouter.post('/me', requireRole('professional', 'admin'), validateBody(p
 });
 
 
-portfolioRouter.patch('/:id', requireRole('professional', 'admin'), validateBody(portfolioUpdateSchema), async (req, res, next) => {
+portfolioRouter.patch('/:id', requireRole('professional', 'business', 'admin'), validateBody(portfolioUpdateSchema), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const [updated] = await db.update(portfolioItems)
@@ -70,7 +70,7 @@ portfolioRouter.patch('/:id', requireRole('professional', 'admin'), validateBody
   }
 });
 
-portfolioRouter.delete('/:id', requireRole('professional', 'admin'), async (req, res, next) => {
+portfolioRouter.delete('/:id', requireRole('professional', 'business', 'admin'), async (req, res, next) => {
   try {
     const profile = await getOwnProfile(req.currentUser!.id);
     const [deleted] = await db.delete(portfolioItems).where(and(eq(portfolioItems.id, req.params.id), eq(portfolioItems.professionalId, profile.id))).returning();

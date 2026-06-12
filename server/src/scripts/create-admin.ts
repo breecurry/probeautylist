@@ -1,30 +1,25 @@
-import argon2 from 'argon2';
-import { sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { env } from '../config/env.js';
 import { db, pool } from '../db/client.js';
 import { users } from '../db/schema.js';
 
-if (!env.ADMIN_EMAIL || !env.ADMIN_PASSWORD) {
-  console.error('ADMIN_EMAIL and ADMIN_PASSWORD are required for this command.');
+if (!env.ADMIN_EMAIL && !env.ADMIN_CLERK_USER_ID) {
+  console.error('ADMIN_EMAIL or ADMIN_CLERK_USER_ID is required for this command. Sign in once through Clerk and sync the user before promoting it.');
   process.exit(1);
 }
 
-const existing = await db.select({ id: users.id }).from(users).where(sql`lower(${users.email}) = ${env.ADMIN_EMAIL.toLowerCase()}`).limit(1);
-if (existing.length) {
-  console.error('An account with ADMIN_EMAIL already exists.');
+const whereClause = env.ADMIN_CLERK_USER_ID
+  ? eq(users.clerkUserId, env.ADMIN_CLERK_USER_ID)
+  : sql`lower(${users.email}) = ${env.ADMIN_EMAIL!.toLowerCase()}`;
+
+const [existing] = await db.select().from(users).where(whereClause).limit(1);
+if (!existing) {
+  console.error('No synced Clerk-backed local user found. Sign in through Clerk first, then run this command with ADMIN_EMAIL or ADMIN_CLERK_USER_ID.');
   await pool.end();
   process.exit(1);
 }
 
-const passwordHash = await argon2.hash(env.ADMIN_PASSWORD, { type: argon2.argon2id });
-await db.insert(users).values({
-  email: env.ADMIN_EMAIL.toLowerCase(),
-  passwordHash,
-  firstName: 'Platform',
-  lastName: 'Admin',
-  role: 'admin',
-  emailVerified: true,
-});
+await db.update(users).set({ role: 'admin', updatedAt: new Date() }).where(eq(users.id, existing.id));
 
-console.log('Admin account created successfully. Remove ADMIN_PASSWORD from the environment after use.');
+console.log(`Admin role granted to ${existing.email}.`);
 await pool.end();

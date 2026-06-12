@@ -1,139 +1,189 @@
-import argon2 from 'argon2';
+import { clerkClient, getAuth } from '@clerk/express';
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../../db/client.js';
-import { users } from '../../db/schema.js';
+import { organizationMemberships, organizations, users, type Organization, type User } from '../../db/schema.js';
 import { requireAuth, publicUser } from '../../middleware/auth.js';
-import { ensureCsrfToken } from '../../middleware/csrf.js';
-import { validateBody } from '../../middleware/validate.js';
-import { HttpError, sendCreated } from '../../utils/http.js';
-import { accountUpdateSchema, loginSchema, passwordChangeSchema, registerSchema } from './schemas.js';
+import { asyncHandler } from '../../utils/async-handler.js';
+import { HttpError } from '../../utils/http.js';
+import { accountUpdateSchema, syncOrganizationSchema, syncUserSchema } from './schemas.js';
 
 export const authRouter = Router();
 
-const authWriteLimit = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: 'Too many authentication attempts. Please wait and try again.' },
-});
+type ClerkUserProfile = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  imageUrl: string;
+  primaryEmailAddressId: string | null;
+  emailAddresses: Array<{
+    id: string;
+    emailAddress: string;
+    verification?: { status?: string } | null;
+  }>;
+};
 
+type ClerkOrganizationProfile = {
+  id: string;
+  name: string;
+  slug: string | null;
+  imageUrl: string | null;
+};
 
-authRouter.get('/csrf', (req, res) => {
-  res.json({ csrfToken: ensureCsrfToken(req) });
-});
+function getPrimaryEmail(clerkUser: ClerkUserProfile) {
+  const primary = clerkUser.emailAddresses.find((email) => email.id === clerkUser.primaryEmailAddressId);
+  const fallback = clerkUser.emailAddresses[0];
+  const email = primary?.emailAddress ?? fallback?.emailAddress;
 
-authRouter.post('/register', authWriteLimit, validateBody(registerSchema), async (req, res, next) => {
-  try {
-    const existing = await db.select({ id: users.id }).from(users).where(sql`lower(${users.email}) = ${req.body.email}`).limit(1);
-    if (existing.length) {
-      throw new HttpError(409, 'An account with this email already exists');
-    }
-
-    const passwordHash = await argon2.hash(req.body.password, { type: argon2.argon2id });
-    const [user] = await db.insert(users).values({
-      email: req.body.email,
-      passwordHash,
-      firstName: req.body.firstName,
-      lastName: req.body.lastName,
-      phone: req.body.phone || null,
-      role: req.body.role,
-    }).returning();
-
-    req.session.userId = user.id;
-    ensureCsrfToken(req);
-    sendCreated(res, publicUser(user));
-  } catch (error) {
-    next(error);
+  if (!email) {
+    throw new HttpError(422, 'Clerk user does not have an email address');
   }
-});
 
-authRouter.post('/login', authWriteLimit, validateBody(loginSchema), async (req, res, next) => {
-  try {
-    const [user] = await db.select({
-      id: users.id,
-      email: users.email,
-      passwordHash: users.passwordHash,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      phone: users.phone,
-      avatarUrl: users.avatarUrl,
-      role: users.role,
-      emailVerified: users.emailVerified,
-      isActive: users.isActive,
-      lastLoginAt: users.lastLoginAt,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-    }).from(users).where(sql`lower(${users.email}) = ${req.body.email}`).limit(1);
-    if (!user || !user.isActive) {
-      throw new HttpError(401, 'Invalid email or password');
-    }
+  return {
+    email: email.toLowerCase(),
+    emailVerified: (primary ?? fallback)?.verification?.status === 'verified',
+  };
+}
 
-    const valid = await argon2.verify(user.passwordHash, req.body.password);
-    if (!valid) {
-      throw new HttpError(401, 'Invalid email or password');
-    }
+function cleanName(value: string | null | undefined, fallback: string) {
+  const cleaned = value?.trim();
+  return cleaned && cleaned.length > 0 ? cleaned : fallback;
+}
 
-    const loggedInAt = new Date();
-    await db.update(users).set({ lastLoginAt: loggedInAt, updatedAt: loggedInAt }).where(eq(users.id, user.id));
-    req.session.regenerate((error) => {
-      if (error) return next(error);
-      req.session.userId = user.id;
-      ensureCsrfToken(req);
-      res.json(publicUser({ ...user, lastLoginAt: loggedInAt, updatedAt: loggedInAt }));
-    });
-  } catch (error) {
-    next(error);
+function mapClerkOrganizationRole(value: string | null | undefined, isNewOrganization: boolean) {
+  if (isNewOrganization) return 'owner' as const;
+  if (value === 'org:admin' || value === 'admin' || value === 'owner') return 'admin' as const;
+  return 'member' as const;
+}
+
+async function fetchClerkUser(userId: string) {
+  return await clerkClient.users.getUser(userId) as ClerkUserProfile;
+}
+
+async function fetchClerkOrganization(organizationId: string) {
+  return await clerkClient.organizations.getOrganization({ organizationId }) as ClerkOrganizationProfile;
+}
+
+authRouter.get('/me', requireAuth, asyncHandler(async (req, res) => {
+  res.json({ user: publicUser(req.currentUser!), organization: req.currentOrganization ?? null });
+}));
+
+authRouter.post('/sync-user', asyncHandler(async (req, res) => {
+  const { userId } = getAuth(req);
+  if (!userId) {
+    throw new HttpError(401, 'Authentication required');
   }
-});
 
-authRouter.post('/logout', requireAuth, (req, res, next) => {
-  req.session.destroy((error) => {
-    if (error) return next(error);
-    res.clearCookie('pbl.sid');
-    res.json({ message: 'Logged out' });
-  });
-});
+  const parsed = syncUserSchema.parse(req.body ?? {});
+  const clerkUser = await fetchClerkUser(userId);
+  const { email, emailVerified } = getPrimaryEmail(clerkUser);
 
-authRouter.get('/me', requireAuth, (req, res) => {
-  res.json(publicUser(req.currentUser!));
-});
+  const [existing] = await db.select().from(users).where(eq(users.clerkUserId, userId)).limit(1);
+  const values = {
+    tenantId: userId,
+    email,
+    firstName: cleanName(clerkUser.firstName, 'New'),
+    lastName: cleanName(clerkUser.lastName, 'User'),
+    phone: parsed.phone || null,
+    avatarUrl: clerkUser.imageUrl || null,
+    emailVerified,
+    role: parsed.role,
+    isActive: true,
+    lastLoginAt: new Date(),
+    updatedAt: new Date(),
+  } satisfies Partial<User>;
 
-authRouter.patch('/me', requireAuth, validateBody(accountUpdateSchema), async (req, res, next) => {
+  let user: User;
+  if (existing) {
+    [user] = await db.update(users).set(values).where(eq(users.id, existing.id)).returning();
+  } else {
+    [user] = await db.insert(users).values({ clerkUserId: userId, ...values }).returning();
+  }
+
+  req.currentUser = user;
+  res.status(existing ? 200 : 201).json({ user: publicUser(user) });
+}));
+
+authRouter.patch('/account', requireAuth, asyncHandler(async (req, res) => {
+  const parsed = accountUpdateSchema.parse(req.body);
+
+  const [updated] = await db.update(users)
+    .set({
+      firstName: parsed.firstName ?? req.currentUser!.firstName,
+      lastName: parsed.lastName ?? req.currentUser!.lastName,
+      phone: parsed.phone === '' ? null : parsed.phone,
+      avatarUrl: parsed.avatarUrl === '' ? null : parsed.avatarUrl,
+      role: parsed.role ?? req.currentUser!.role,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, req.currentUser!.id))
+    .returning();
+
+  res.json({ user: publicUser(updated) });
+}));
+
+authRouter.post('/sync-organization', requireAuth, asyncHandler(async (req, res) => {
+  const auth = getAuth(req) as ReturnType<typeof getAuth> & { orgRole?: string; orgSlug?: string; orgMembershipId?: string };
+  const parsed = syncOrganizationSchema.parse(req.body ?? {});
+  const clerkOrgId = parsed.clerkOrgId ?? auth.orgId;
+
+  if (!clerkOrgId) {
+    throw new HttpError(400, 'Active Clerk organization required');
+  }
+
+  let clerkOrganization: ClerkOrganizationProfile | null = null;
   try {
-    const [updated] = await db.update(users)
-      .set({
-        firstName: req.body.firstName,
-        lastName: req.body.lastName,
-        phone: req.body.phone || null,
-        avatarUrl: req.body.avatarUrl || null,
+    clerkOrganization = await fetchClerkOrganization(clerkOrgId);
+  } catch {
+    if (!parsed.name) {
+      throw new HttpError(422, 'Organization name is required when Clerk organization details are unavailable');
+    }
+  }
+
+  const name = parsed.name ?? clerkOrganization?.name;
+  if (!name) {
+    throw new HttpError(422, 'Organization name is required');
+  }
+
+  const [existing] = await db.select().from(organizations).where(eq(organizations.clerkOrgId, clerkOrgId)).limit(1);
+  const organizationValues = {
+    tenantId: clerkOrgId,
+    name,
+    slug: parsed.slug || clerkOrganization?.slug || auth.orgSlug || null,
+    imageUrl: parsed.imageUrl || clerkOrganization?.imageUrl || null,
+    createdByUserId: existing?.createdByUserId ?? req.currentUser!.id,
+    isActive: true,
+    updatedAt: new Date(),
+  } satisfies Partial<Organization>;
+
+  let organization: Organization;
+  if (existing) {
+    [organization] = await db.update(organizations).set(organizationValues).where(eq(organizations.id, existing.id)).returning();
+  } else {
+    [organization] = await db.insert(organizations).values({ clerkOrgId, ...organizationValues }).returning();
+  }
+
+  const membershipRole = mapClerkOrganizationRole(auth.orgRole ?? parsed.role, !existing);
+  const clerkMembershipId = parsed.clerkMembershipId ?? auth.orgMembershipId ?? null;
+  const [membership] = await db.insert(organizationMemberships)
+    .values({
+      organizationId: organization.id,
+      userId: req.currentUser!.id,
+      clerkMembershipId,
+      role: membershipRole,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: [organizationMemberships.organizationId, organizationMemberships.userId],
+      set: {
+        clerkMembershipId,
+        role: membershipRole,
+        isActive: true,
         updatedAt: new Date(),
-      })
-      .where(eq(users.id, req.currentUser!.id))
-      .returning();
-    res.json(publicUser(updated));
-  } catch (error) {
-    next(error);
-  }
-});
+      },
+    })
+    .returning();
 
-authRouter.patch('/password', authWriteLimit, requireAuth, validateBody(passwordChangeSchema), async (req, res, next) => {
-  try {
-    const valid = await argon2.verify(req.currentUser!.passwordHash, req.body.currentPassword);
-    if (!valid) throw new HttpError(401, 'Current password is incorrect');
-
-    const passwordHash = await argon2.hash(req.body.newPassword, { type: argon2.argon2id });
-    const userId = req.currentUser!.id;
-    await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, userId));
-    req.session.regenerate((error) => {
-      if (error) return next(error);
-      req.session.userId = userId;
-      ensureCsrfToken(req);
-      res.json({ message: 'Password updated' });
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+  req.currentOrganization = organization;
+  res.status(existing ? 200 : 201).json({ organization, membership });
+}));

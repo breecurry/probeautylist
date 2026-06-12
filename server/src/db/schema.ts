@@ -14,7 +14,8 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 
-export const userRoleEnum = pgEnum('user_role', ['client', 'professional', 'admin']);
+export const userRoleEnum = pgEnum('user_role', ['client', 'professional', 'business', 'admin']);
+export const organizationRoleEnum = pgEnum('organization_role', ['owner', 'admin', 'member']);
 export const professionalStatusEnum = pgEnum('professional_status', ['draft', 'pending_review', 'approved', 'suspended']);
 export const bookingStatusEnum = pgEnum('booking_status', [
   'pending',
@@ -68,8 +69,9 @@ const timestamps = {
 
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
+  clerkUserId: text('clerk_user_id').notNull(),
+  tenantId: text('tenant_id').notNull(),
   email: text('email').notNull(),
-  passwordHash: text('password_hash').notNull(),
   role: userRoleEnum('role').default('client').notNull(),
   firstName: text('first_name').notNull(),
   lastName: text('last_name').notNull(),
@@ -80,13 +82,46 @@ export const users = pgTable('users', {
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   ...timestamps,
 }, (table) => ({
+  clerkUserIdx: uniqueIndex('users_clerk_user_id_unique').on(table.clerkUserId),
+  tenantIdx: index('users_tenant_id_idx').on(table.tenantId),
   emailIdx: uniqueIndex('users_email_unique').on(sql`lower(${table.email})`),
   roleIdx: index('users_role_idx').on(table.role),
+}));
+
+export const organizations = pgTable('organizations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  clerkOrgId: text('clerk_org_id').notNull(),
+  tenantId: text('tenant_id').notNull(),
+  name: text('name').notNull(),
+  slug: text('slug'),
+  imageUrl: text('image_url'),
+  createdByUserId: uuid('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  isActive: boolean('is_active').default(true).notNull(),
+  ...timestamps,
+}, (table) => ({
+  clerkOrgIdx: uniqueIndex('organizations_clerk_org_id_unique').on(table.clerkOrgId),
+  tenantIdx: index('organizations_tenant_id_idx').on(table.tenantId),
+  slugIdx: index('organizations_slug_idx').on(table.slug),
+}));
+
+export const organizationMemberships = pgTable('organization_memberships', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  organizationId: uuid('organization_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  clerkMembershipId: text('clerk_membership_id'),
+  role: organizationRoleEnum('role').default('member').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  ...timestamps,
+}, (table) => ({
+  uniqueOrgUser: uniqueIndex('organization_memberships_org_user_unique').on(table.organizationId, table.userId),
+  clerkMembershipIdx: uniqueIndex('organization_memberships_clerk_membership_id_unique').on(table.clerkMembershipId),
+  userIdx: index('organization_memberships_user_idx').on(table.userId),
 }));
 
 export const professionalProfiles = pgTable('professional_profiles', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  organizationId: uuid('organization_id').references(() => organizations.id, { onDelete: 'set null' }),
   displayName: text('display_name').notNull(),
   slug: text('slug').notNull(),
   headline: text('headline').notNull(),
@@ -114,6 +149,7 @@ export const professionalProfiles = pgTable('professional_profiles', {
   ...timestamps,
 }, (table) => ({
   userIdx: uniqueIndex('professional_profiles_user_unique').on(table.userId),
+  organizationIdx: index('professional_profiles_organization_idx').on(table.organizationId),
   slugIdx: uniqueIndex('professional_profiles_slug_unique').on(table.slug),
   searchIdx: index('professional_profiles_search_idx').on(table.category, table.city, table.state, table.status),
 }));
@@ -404,14 +440,28 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.id],
     references: [professionalProfiles.userId],
   }),
+  organizationMemberships: many(organizationMemberships),
+  createdOrganizations: many(organizations),
   clientBookings: many(bookings),
   notifications: many(notifications),
   savedSearches: many(savedSearches),
   openedDisputes: many(bookingDisputes),
 }));
 
+export const organizationsRelations = relations(organizations, ({ one, many }) => ({
+  createdBy: one(users, { fields: [organizations.createdByUserId], references: [users.id] }),
+  memberships: many(organizationMemberships),
+  professionalProfiles: many(professionalProfiles),
+}));
+
+export const organizationMembershipsRelations = relations(organizationMemberships, ({ one }) => ({
+  organization: one(organizations, { fields: [organizationMemberships.organizationId], references: [organizations.id] }),
+  user: one(users, { fields: [organizationMemberships.userId], references: [users.id] }),
+}));
+
 export const professionalProfilesRelations = relations(professionalProfiles, ({ one, many }) => ({
   user: one(users, { fields: [professionalProfiles.userId], references: [users.id] }),
+  organization: one(organizations, { fields: [professionalProfiles.organizationId], references: [organizations.id] }),
   services: many(services),
   bookings: many(bookings),
   reviews: many(reviews),
@@ -423,6 +473,10 @@ export const professionalProfilesRelations = relations(professionalProfiles, ({ 
 
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Organization = typeof organizations.$inferSelect;
+export type NewOrganization = typeof organizations.$inferInsert;
+export type OrganizationMembership = typeof organizationMemberships.$inferSelect;
+export type NewOrganizationMembership = typeof organizationMemberships.$inferInsert;
 export type ProfessionalProfile = typeof professionalProfiles.$inferSelect;
 export type NewProfessionalProfile = typeof professionalProfiles.$inferInsert;
 export type Service = typeof services.$inferSelect;
