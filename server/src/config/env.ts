@@ -10,6 +10,7 @@ const envSchema = z.object({
   CLERK_SECRET_KEY: z.string().min(1, 'CLERK_SECRET_KEY is required'),
   CLERK_PUBLISHABLE_KEY: z.string().optional(),
   APP_ORIGIN: z.string().url().default('http://localhost:5173'),
+  APP_ORIGINS: z.string().optional(),
   TRUST_PROXY: z.coerce.number().int().min(0).max(5).default(process.env.NODE_ENV === 'production' ? 1 : 0),
   UPLOAD_DIR: z.string().default('uploads'),
   MAX_UPLOAD_MB: z.coerce.number().int().positive().max(10).default(5),
@@ -26,3 +27,8 @@ if (!parsed.success) {
 
 export const env = parsed.data;
 export const isProduction = env.NODE_ENV === 'production';
+
+export const appOrigins = Array.from(new Set([
+  env.APP_ORIGIN,
+  ...(env.APP_ORIGINS?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? []),
+]));

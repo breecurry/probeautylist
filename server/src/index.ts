@@ -6,7 +6,8 @@ import cors from 'cors';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
-import { env, isProduction } from './config/env.js';
+import { appOrigins, env, isProduction } from './config/env.js';
+import { pool } from './db/client.js';
 import { attachCurrentUser } from './middleware/auth.js';
 import { normalizeError } from './utils/http.js';
 import { registerRoutes } from './routes.js';
@@ -21,7 +22,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       baseUri: ["'self'"],
-      connectSrc: ["'self'", env.APP_ORIGIN, 'https://*.clerk.accounts.dev', 'https://api.clerk.com'],
+      connectSrc: ["'self'", ...appOrigins, 'https://*.clerk.accounts.dev', 'https://api.clerk.com'],
       fontSrc: ["'self'", 'data:'],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
@@ -35,10 +36,28 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },
   referrerPolicy: { policy: 'no-referrer' },
 }));
-app.use(cors({ origin: env.APP_ORIGIN, credentials: true, methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || appOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 app.use(express.json({ limit: '512kb' }));
 app.use(express.urlencoded({ extended: false, limit: '64kb' }));
 app.use(cookieParser());
+
+app.use((req, res, next) => {
+  if (!isProduction) return next();
+  const host = req.headers.host?.toLowerCase();
+  const canonicalHost = new URL(env.APP_ORIGIN).host.toLowerCase();
+  if (host === `www.${canonicalHost}`) {
+    return res.redirect(308, `${env.APP_ORIGIN}${req.originalUrl}`);
+  }
+  return next();
+});
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 200,
@@ -49,8 +68,19 @@ app.use(rateLimit({
 
 app.use(clerkMiddleware());
 app.use(attachCurrentUser);
-app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR), { fallthrough: false, maxAge: isProduction ? '7d' : 0 }));
+app.use('/uploads', express.static(path.resolve(env.UPLOAD_DIR), {
+  fallthrough: false,
+  immutable: isProduction,
+  maxAge: isProduction ? '7d' : 0,
+  setHeaders(res) {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+  },
+}));
 registerRoutes(app);
+
+app.use('/api', (_req, res) => {
+  res.status(404).json({ error: { message: 'API route not found' } });
+});
 
 if (isProduction) {
   app.use(express.static(path.resolve(__dirname, '../client')));
@@ -62,6 +92,18 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   res.status(normalized.status).json(normalized.body);
 });
 
-app.listen(env.PORT, () => {
+const server = app.listen(env.PORT, () => {
   console.log(`Pro Beauty List API listening on port ${env.PORT}`);
 });
+
+async function shutdown(signal: NodeJS.Signals) {
+  console.log(`${signal} received. Shutting down gracefully.`);
+  server.close(async () => {
+    await pool.end();
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

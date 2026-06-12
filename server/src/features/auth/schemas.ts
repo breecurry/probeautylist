@@ -19,8 +19,7 @@ export const accountUpdateSchema = z.object({
   lastName: z.string().min(1).max(80).trim().optional(),
   phone: optionalPhoneSchema.or(z.literal('')),
   avatarUrl: z.string().url().refine((value) => value.startsWith('https://'), 'Avatar URL must use HTTPS').optional().or(z.literal('')),
-  role: z.enum(['client', 'professional', 'business']).optional(),
-});
+}).strict();
 
 export const syncOrganizationSchema = z.object({
   clerkOrgId: z.string().min(1).optional(),

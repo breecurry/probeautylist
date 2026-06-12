@@ -1,4 +1,5 @@
 import type { Express } from 'express';
+import { pool } from './db/client.js';
 import { adminRouter } from './features/admin/routes.js';
 import { availabilityRouter } from './features/availability/routes.js';
 import { authRouter } from './features/auth/routes.js';
@@ -15,6 +16,15 @@ import { servicesRouter } from './features/services/routes.js';
 
 export function registerRoutes(app: Express) {
   app.get('/api/health', (_req, res) => res.json({ ok: true }));
+  app.get('/api/ready', async (_req, res, next) => {
+    try {
+      await pool.query('select 1');
+      res.json({ ok: true, database: true });
+    } catch (error) {
+      res.status(503);
+      next(error);
+    }
+  });
   app.use('/api/auth', authRouter);
   app.use('/api/availability', availabilityRouter);
   app.use('/api/professionals', professionalsRouter);

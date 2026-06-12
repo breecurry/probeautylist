@@ -87,7 +87,6 @@ authRouter.post('/sync-user', asyncHandler(async (req, res) => {
     phone: parsed.phone || null,
     avatarUrl: clerkUser.imageUrl || null,
     emailVerified,
-    role: parsed.role,
     isActive: true,
     lastLoginAt: new Date(),
     updatedAt: new Date(),
@@ -97,7 +96,7 @@ authRouter.post('/sync-user', asyncHandler(async (req, res) => {
   if (existing) {
     [user] = await db.update(users).set(values).where(eq(users.id, existing.id)).returning();
   } else {
-    [user] = await db.insert(users).values({ clerkUserId: userId, ...values }).returning();
+    [user] = await db.insert(users).values({ clerkUserId: userId, role: parsed.role, ...values }).returning();
   }
 
   req.currentUser = user;
@@ -113,7 +112,6 @@ authRouter.patch('/account', requireAuth, asyncHandler(async (req, res) => {
       lastName: parsed.lastName ?? req.currentUser!.lastName,
       phone: parsed.phone === '' ? null : parsed.phone,
       avatarUrl: parsed.avatarUrl === '' ? null : parsed.avatarUrl,
-      role: parsed.role ?? req.currentUser!.role,
       updatedAt: new Date(),
     })
     .where(eq(users.id, req.currentUser!.id))
