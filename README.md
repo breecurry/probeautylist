@@ -72,7 +72,7 @@ The rebuilt app includes scripts for type checking, linting, production build va
 
 ## Local end-to-end testing
 
-The local end-to-end harness expects a clean or disposable local database, a running API server, a running frontend server, and an existing admin account. It creates unique client and professional test accounts on each run, publishes a professional profile through the admin workflow, and exercises the main app lifecycle through bookings, messages, reviews, disputes, notifications, saved searches, recommendations, and static frontend routes.
+The local end-to-end harness validates the deployed or locally running app shell, public API health, public professional search endpoints, and protected-route guards. Authentication is now Clerk-backed, so authenticated checks are optional and require a valid Clerk bearer token supplied through `PBL_E2E_BEARER_TOKEN`.
 
 A typical local run looks like this:
 
@@ -83,19 +83,23 @@ NODE_ENV=development npm run dev
 # terminal 2: frontend
 npm run dev:client
 
-# terminal 3: E2E harness
+# terminal 3: E2E smoke harness
 PBL_BASE_URL=http://127.0.0.1:3000 \
 PBL_FRONTEND_URL=http://127.0.0.1:5173 \
-PBL_ADMIN_EMAIL=admin@example.com \
-PBL_ADMIN_PASSWORD='your-local-admin-password' \
+npm run e2e:local
+
+# optional authenticated Clerk-backed checks
+PBL_E2E_BEARER_TOKEN='valid-clerk-test-token' \
+PBL_BASE_URL=http://127.0.0.1:3000 \
+PBL_FRONTEND_URL=http://127.0.0.1:5173 \
 npm run e2e:local
 ```
 
-The harness prints a JSON summary when it passes. Because it writes realistic test data, run it against a dedicated local testing database rather than production.
+The harness prints a pass/fail summary when it completes. The default unauthenticated smoke path is safe for production health checks because it does not create or mutate data. Authenticated token-backed checks should be run only with an intended test account.
 
 ## Validation status
 
-The rebuilt application has been validated with linting, TypeScript checks, production build generation, compiled-server health smoke testing, a high-severity production dependency audit, and a comprehensive local end-to-end test that exercises the core client, professional, and admin workflows.
+The rebuilt application has been validated with linting, TypeScript checks, production build generation, compiled-server health smoke testing, a high-severity production dependency audit, and a Clerk-aware smoke workflow that validates the public app shell, public API routes, and protected-route guards.
 
 | Check | Result |
 |---|---|

@@ -150,13 +150,17 @@ Run the quality checks before deploying updates whenever possible:
 npm run verify
 ```
 
-Before a release, also run the comprehensive local end-to-end harness against a disposable local or staging database with an existing admin account. The harness creates realistic client and professional test data, so it must not be pointed at production.
+Before a release, also run the Clerk-aware smoke harness against the target environment. The default unauthenticated path validates health, readiness, public frontend routes, public professional search endpoints, and protected-route guards without creating or mutating data. Optional authenticated checks require a valid Clerk test bearer token.
 
 ```bash
 PBL_BASE_URL=http://127.0.0.1:3000 \
 PBL_FRONTEND_URL=http://127.0.0.1:5173 \
-PBL_ADMIN_EMAIL=admin@example.com \
-PBL_ADMIN_PASSWORD='your-local-admin-password' \
+npm run e2e:local
+
+# optional authenticated checks with a test Clerk session token
+PBL_E2E_BEARER_TOKEN='valid-clerk-test-token' \
+PBL_BASE_URL=http://127.0.0.1:3000 \
+PBL_FRONTEND_URL=http://127.0.0.1:5173 \
 npm run e2e:local
 ```
 
