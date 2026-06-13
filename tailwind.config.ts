@@ -5,15 +5,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#1d171a',
-        blush: '#f8e5e8',
-        rosewood: '#7f334d',
-        berry: '#a52456',
-        cream: '#fff8f3',
+        ink: '#2f241f',
+        blush: '#efe4d8',
+        rosewood: '#5f4638',
+        berry: '#8a5a2b',
+        cream: '#f7f0e8',
         gold: '#c99a46',
       },
       boxShadow: {
-        soft: '0 18px 60px rgba(84, 31, 52, 0.12)',
+        soft: '0 18px 60px rgba(95, 70, 56, 0.12)',
       },
     },
   },
