@@ -15,6 +15,8 @@ import { registerRoutes } from './routes.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+const clerkFrontendSrc = 'https://*.clerk.accounts.dev';
+const cloudflareTurnstileSrc = 'https://challenges.cloudflare.com';
 
 app.set('trust proxy', env.TRUST_PROXY);
 app.use(helmet({
@@ -22,13 +24,14 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       baseUri: ["'self'"],
-      connectSrc: ["'self'", ...appOrigins, 'https://*.clerk.accounts.dev', 'https://api.clerk.com'],
+      connectSrc: ["'self'", ...appOrigins, clerkFrontendSrc, 'https://api.clerk.com'],
       fontSrc: ["'self'", 'data:'],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],
       imgSrc: ["'self'", 'data:', 'https:'],
       objectSrc: ["'none'"],
-      scriptSrc: ["'self'", 'https://*.clerk.accounts.dev'],
+      scriptSrc: ["'self'", clerkFrontendSrc, cloudflareTurnstileSrc],
+      frameSrc: [cloudflareTurnstileSrc],
       styleSrc: ["'self'", "'unsafe-inline'"],
       upgradeInsecureRequests: isProduction ? [] : null,
     },
